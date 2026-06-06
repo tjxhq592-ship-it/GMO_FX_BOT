@@ -206,13 +206,14 @@ def optimize_symbol(symbol, idx, total, wft_cutoff, prev_params):
 
     bt = Backtest(train_data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
     stats = bt.optimize(
-        ma_short=range(3, 20, 2),
-        ma_long=range(10, 60, 5),
-        rsi_upper=range(60, 80, 5),
-        rsi_lower=range(20, 40, 5),
-        atr_period=range(10, 20, 2),
-        atr_sl_mult=[1.0, 1.5, 2.0],
-        atr_tp_mult=[2.0, 2.5, 3.0],
+        ma_short=range(5, 20, 5),      # 3通り
+        ma_long=range(20, 60, 10),     # 4通り
+        rsi_upper=[65, 70],            # 2通り
+        rsi_lower=[30, 35],            # 2通り
+        atr_period=[14],               # 1通り（固定）
+        atr_sl_mult=[1.5, 2.0],        # 2通り
+        atr_tp_mult=[2.0, 2.5],        # 2通り
+        # 合計: 3×4×2×2×1×2×2 = 192パターン
         maximize="Sharpe Ratio",
         constraint=lambda p: p.ma_short < p.ma_long
     )
