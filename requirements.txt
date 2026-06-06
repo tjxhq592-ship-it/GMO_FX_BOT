@@ -7,3 +7,5 @@ yfinance
 backtesting
 python-dateutil
 tqdm
+schedule
+websocket-client

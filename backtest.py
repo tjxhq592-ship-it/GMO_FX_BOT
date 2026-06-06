@@ -289,6 +289,21 @@ def check_param_change(symbol, new_params, prev_params):
 
 # ==================== メイン ====================
 
+def run_backtest_job() -> None:
+    """scheduler.py から毎週月曜に呼び出すエントリーポイント"""
+    import sys
+    print("=== 週次バックテスト開始 ===")
+    # __main__ ブロックと同じ処理を関数化して呼び出す
+    # （グローバル変数に依存しているため sys.argv をダミー指定して再実行）
+    import subprocess
+    result = subprocess.run(
+        [sys.executable, __file__],
+        capture_output=False,
+    )
+    if result.returncode != 0:
+        print("バックテストジョブがエラーで終了しました")
+
+
 if __name__ == "__main__":
     prev_params = load_prev_params()
     wft_cutoff  = END_DATE - relativedelta(months=WF_TEST_MONTHS)

@@ -9,6 +9,7 @@ import re
 import anthropic
 import requests
 
+from polymarket import get_polymarket_signal
 from config import (
     GMO_API_KEY, GMO_SECRET_KEY, ANTHROPIC_API_KEY,
     LOG_FILE, PARAMS_FILE, SYMBOLS,
@@ -77,8 +78,25 @@ def get_market_data(symbol: str, symbol_params: dict) -> object:
     return bars
 
 
+# ── Polymarketコンテキスト生成 ──────────────────────────────────────────
+def build_polymarket_context(signal: dict) -> str:
+    if not signal.get("enabled"):
+        return "（対象マーケットなし）"
+    lines = []
+    for m in signal.get("markets", []):
+        surge_mark = " ⚠️急変中" if m["surge"] else ""
+        lines.append(f"  - {m['question']}: Yes={m['prob']:.0%}{surge_mark}")
+    if not lines:
+        return "（取得データなし）"
+    return "\n".join(lines)
+
+
+def should_block_entry(signal: dict) -> bool:
+    return signal.get("risk_block", False) or signal.get("surge_detected", False)
+
+
 # ── Claudeに判断を依頼 ─────────────────────────────────────────────────
-def ask_claude(bars, symbol: str, symbol_params: dict) -> dict:
+def ask_claude(bars, symbol: str, symbol_params: dict, poly_signal: dict) -> dict:
     p      = symbol_params[symbol]
     latest = bars.iloc[-1]
     prev   = bars.iloc[-2]
@@ -89,6 +107,8 @@ def ask_claude(bars, symbol: str, symbol_params: dict) -> dict:
         f"終値:{row['close']:.5f}  RSI:{row['RSI']:.1f}  出来高:{int(row['volume']):,}"
         for _, row in recent.iterrows()
     ])
+
+    poly_context = build_polymarket_context(poly_signal)
 
     prompt = f"""
 あなたはFXトレードAIです。以下のデータを分析して売買判断をしてください。
@@ -106,6 +126,9 @@ BB_mid: {latest['BB_mid']:.5f}
 【直近5日間の推移】
 {recent_summary}
 
+【Polymarketマクロ環境】
+{poly_context}
+
 ルール：
 - リスクを極力抑えた小額取引を重視
 - RSIが{p['rsi_upper']}以上は買いを避ける
@@ -113,6 +136,7 @@ BB_mid: {latest['BB_mid']:.5f}
 - EMA{p['ma_short']}がEMA{p['ma_long']}を上抜けたら買いシグナル
 - EMA{p['ma_short']}がEMA{p['ma_long']}を下抜けたら売りシグナル
 - MACD・BB・直近トレンド・出来高変化も考慮すること
+- Polymarketで急変・高確率イベントがある場合はリスクを強く意識すること
 - FXはレバレッジがあるため特にリスク管理を優先すること
 
 以下のJSON形式のみで回答してください（他の文章は不要）：
@@ -164,30 +188,48 @@ def run_bot() -> None:
         p = symbol_params[symbol]
 
         try:
-            bars     = get_market_data(symbol, symbol_params)
-            position = get_position(symbol)
+            bars       = get_market_data(symbol, symbol_params)
+            position   = get_position(symbol)
+            poly_signal = get_polymarket_signal(symbol)
 
             # 市場環境（通貨ペア自身のトレンドで判断）
             market = get_market_condition(bars)
             logging.info(f"市場環境({symbol}): {market}")
+            logging.info(f"Polymarket({symbol}): risk_block={poly_signal['risk_block']}  surge={poly_signal['surge_detected']}")
+
+            # ポジション保有中に急変検知 → 即決済
+            if position and poly_signal.get("surge_detected"):
+                close_side = "SELL" if position["side"] == "BUY" else "BUY"
+                gmo.close_position(position["positionId"], symbol, close_side, int(position["size"]))
+                msg = f"⚡ Polymarket急変検知のため即決済\n{symbol} @ {float(bars.iloc[-1]['close']):.5f}"
+                logging.info(msg)
+                send_line(msg)
+                sell_count += 1
+                summary_lines.append(f"  {symbol}: Polymarket急変決済")
+                continue
 
             logging.info("Claudeに判断を依頼中...")
-            decision = ask_claude(bars, symbol, symbol_params)
+            decision = ask_claude(bars, symbol, symbol_params, poly_signal)
             logging.info(f"Claudeの判断: {decision['action']} - {decision['reason']}")
 
             price = float(bars.iloc[-1]["close"])
-            size  = calc_trade_size(cash, price)  # ロット数（1000通貨単位）
+            size  = calc_trade_size(cash, price)
 
             logging.info(f"{symbol} 価格: {price}, 取引数量: {size}ロット, ポジション: {position}")
 
             # ATRベースのSL/TP算出
-            atr          = float(bars.iloc[-1]["ATR"])
-            atr_sl_mult  = p.get("atr_sl_mult", 1.5)
-            atr_tp_mult  = p.get("atr_tp_mult", 2.5)
-            sl           = round(price - atr * atr_sl_mult, 5)
-            tp           = round(price + atr * atr_tp_mult, 5)
+            atr         = float(bars.iloc[-1]["ATR"])
+            atr_sl_mult = p.get("atr_sl_mult", 1.5)
+            atr_tp_mult = p.get("atr_tp_mult", 2.5)
+            sl          = round(price - atr * atr_sl_mult, 5)
+            tp          = round(price + atr * atr_tp_mult, 5)
 
             if decision["action"] == "buy" and position is None and market == "bull":
+                # Polymarketリスクブロック
+                if should_block_entry(poly_signal):
+                    logging.info(f"{symbol} Polymarketリスクブロック: エントリースキップ")
+                    summary_lines.append(f"  {symbol}: Polymarketリスクブロックでスキップ")
+                    continue
                 result = gmo.place_order(symbol, "BUY", size)
                 logging.info(f"買い注文実行: {symbol} {size}ロット @ {price}  SL={sl}  TP={tp}")
 
