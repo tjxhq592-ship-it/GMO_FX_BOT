@@ -422,7 +422,14 @@ def main(debug: bool = False) -> None:
         log_lines.append(msg)
 
     try:
-        config = _cfg
+        # 起動直前に backtest_config.json を再読み込み（ダッシュボードでの変更を反映）
+        _bt_cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), BT_CFG_FILE)
+        try:
+            with open(_bt_cfg_path, "r", encoding="utf-8") as f:
+                config = json.load(f)
+        except Exception:
+            config = _cfg  # fallback
+
         gs_cfg: dict = {}
         if os.path.exists(GS_CFG_FILE):
             with open(GS_CFG_FILE, "r", encoding="utf-8") as f:
@@ -438,8 +445,16 @@ def main(debug: bool = False) -> None:
         wt_pf     = score_weights.get("pf",         0.2)
         wt_trades = score_weights.get("trades",      0.2)
 
-        # grid_search_symbols 優先、未設定なら symbols にフォールバック
-        symbols = config.get("grid_search_symbols") or config.get("symbols", SYMBOLS)
+        # grid_search_symbols を使用（未設定・空の場合はエラー）
+        symbols = config.get("grid_search_symbols") or []
+        if not symbols:
+            log("エラー: グリッドサーチ対象ペアが設定されていません")
+            log("ダッシュボードの設定タブでグリッドサーチ対象ペアを選択してください")
+            _write_progress(0, 0, 0.0, {}, 0, 0,
+                            ["エラー: グリッドサーチ対象ペアが未設定です。設定タブで選択してください。"])
+            _update_pid_status("error")
+            sys.exit(1)
+
         top_n   = int(config.get("grid_search_top_n", 3))
 
         bb_cfg   = config.get("bb_period", {"min": 10, "max": 30, "step": 5})
@@ -473,12 +488,13 @@ def main(debug: bool = False) -> None:
         max_workers = max(1, min(int(gs_cfg.get("max_workers", 1)), (os.cpu_count() or 4) - 2))
 
         log("=== グリッドサーチ開始 (並列実行) ===")
-        log(f"対象ペア: {symbols}")
+        log(f"対象ペア ({len(symbols)}件): {symbols}")
         log(f"組み合わせ数: {len(combos)} x {len(symbols)}銘柄 = {total} 件")
         log(f"並列ワーカー数: {max_workers}")
 
         # 起動直後に progress ファイルを初期化（ダッシュボードが即座に「running」を検知できるよう）
-        _write_progress(0, total, 0.0, {}, 0, 0, ["グリッドサーチ開始..."])
+        _write_progress(0, total, 0.0, {}, 0, 0,
+                        [f"グリッドサーチ開始...", f"対象ペア ({len(symbols)}件): {symbols}"])
         log(f"スコア重み: WFT={wt_wft} IS={wt_is} PF={wt_pf} 取引={wt_trades}")
         log(f"除外条件: 取引>={min_trades}  PF>={min_pf}  WFTシャープ>={min_wft_sharpe}")
         log("")
