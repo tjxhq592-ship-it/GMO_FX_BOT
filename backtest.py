@@ -1,6 +1,7 @@
 import ctypes
 import multiprocessing
 import os
+import subprocess
 import sys
 import matplotlib
 matplotlib.use("Agg")
@@ -635,15 +636,24 @@ if __name__ == "__main__":
         except Exception:
             max_workers = 1
 
+        # 対象シンボル: params.json に保存済みのペア優先、初回は backtest_config.json を使用
+        try:
+            with open(PARAMS_FILE, "r", encoding="utf-8") as _f:
+                _saved = json.load(_f).get("params", {})
+            TARGET_SYMBOLS = [s for s in SYMBOLS if s in _saved] if _saved else SYMBOLS
+        except Exception:
+            TARGET_SYMBOLS = SYMBOLS
+
         _bt_log(f"バックテスト期間 : {START_DATE.date()} 〜 {END_DATE.date()}")
         _bt_log(f"最適化 / WFT     : 〜 {wft_cutoff.date()} / {wft_cutoff.date()} 〜 {END_DATE.date()}")
         _bt_log(f"フォワードテスト : {FW_START_DATE.date()} 〜 {FW_END_DATE.date()}")
         _bt_log(f"並列ワーカー数   : {max_workers}")
+        _bt_log(f"対象ペア         : {TARGET_SYMBOLS}")
         _bt_log("")
 
         raw_results = {}
         errors      = {}
-        total       = len(SYMBOLS)
+        total       = len(TARGET_SYMBOLS)
         _write_bt_progress(0, total, "", "running")
 
         # タスク生成
@@ -651,10 +661,25 @@ if __name__ == "__main__":
                                   f".cache/bt_worker_{os.getpid()}")
         _tasks = [
             (symbol, idx, total, wft_cutoff, prev_params)
-            for idx, symbol in enumerate(SYMBOLS, 1)
+            for idx, symbol in enumerate(TARGET_SYMBOLS, 1)
         ]
 
-        _ctx      = multiprocessing.get_context("spawn")
+        _ctx = multiprocessing.get_context("spawn")
+
+        # Windows: ワーカー起動時のコンソールウィンドウを完全に非表示
+        if sys.platform == "win32":
+            _orig_popen = _ctx.Process._popen_class
+
+            class _HiddenPopen(_orig_popen):
+                def __init__(self, *args, **kwargs):
+                    si = subprocess.STARTUPINFO()
+                    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                    si.wShowWindow = subprocess.SW_HIDE
+                    kwargs["startupinfo"] = si
+                    super().__init__(*args, **kwargs)
+
+            _ctx.Process._popen_class = _HiddenPopen
+
         _executor = ProcessPoolExecutor(
             max_workers=max_workers,
             mp_context=_ctx,
@@ -714,7 +739,7 @@ if __name__ == "__main__":
         results       = []
         equity_finals = []
 
-        for symbol in SYMBOLS:
+        for symbol in TARGET_SYMBOLS:
             if symbol not in raw_results:
                 continue
             r     = raw_results[symbol]
@@ -756,7 +781,7 @@ if __name__ == "__main__":
             print(f"総合リターン: {(total_final - total_initial) / total_initial * 100:.1f}%")
 
         print("\n=== 銘柄別最適パラメータ一覧 ===")
-        for symbol in SYMBOLS:
+        for symbol in TARGET_SYMBOLS:
             if symbol in raw_results:
                 print(f"{symbol}: {raw_results[symbol]['params_dict']}")
 
@@ -765,7 +790,7 @@ if __name__ == "__main__":
         params_out   = {}
         excluded     = []
 
-        for symbol in SYMBOLS:
+        for symbol in TARGET_SYMBOLS:
             if symbol not in raw_results:
                 continue
             r     = results_dict[symbol]
@@ -821,7 +846,7 @@ if __name__ == "__main__":
 
         # === backtest_results.json 保存 ===
         bt_results = {}
-        for symbol in SYMBOLS:
+        for symbol in TARGET_SYMBOLS:
             if symbol not in raw_results:
                 continue
             r     = raw_results[symbol]
