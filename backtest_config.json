@@ -65,5 +65,7 @@
   "min_wft_sharpe": -0.3,
   "active_symbols": [
     "AUD_NZD"
-  ]
+  ],
+  "grid_search_symbols": [],
+  "grid_search_top_n": 3
 }

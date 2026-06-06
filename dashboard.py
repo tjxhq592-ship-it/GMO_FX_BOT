@@ -267,10 +267,21 @@ with tab_main:
 
 with tab_config:
     st.subheader("設定")
-    cfg    = load_config()
-    gs_cfg = load_gs_config()
-    sw     = gs_cfg.get("score_weights", {})
+    cfg      = load_config()
+    gs_cfg   = load_gs_config()
+    sw       = gs_cfg.get("score_weights", {})
     _cpu_max = max(1, (os.cpu_count() or 4) - 2)
+
+    _available = cfg.get("available_symbols", [
+        "USD_JPY", "EUR_JPY", "GBP_JPY", "AUD_JPY",
+        "NZD_JPY", "CAD_JPY", "CHF_JPY", "ZAR_JPY",
+        "EUR_USD", "GBP_USD", "AUD_USD", "EUR_GBP",
+        "AUD_NZD", "EUR_CHF", "GBP_CHF", "EUR_AUD",
+    ])
+    _params_now     = load_params() or {}
+    _adopted_syms   = list(_params_now.get("params", {}).keys())
+    _active_syms    = cfg.get("active_symbols", cfg.get("symbols", []))
+    _gs_syms        = cfg.get("grid_search_symbols", [])
 
     with st.form("settings_form"):
 
@@ -278,46 +289,6 @@ with tab_config:
         # 📌 共通設定
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         st.markdown("### 📌 共通設定")
-
-        available       = cfg.get("available_symbols", [
-            "USD_JPY", "EUR_JPY", "GBP_JPY", "AUD_JPY",
-            "NZD_JPY", "CAD_JPY", "CHF_JPY", "ZAR_JPY",
-            "EUR_USD", "GBP_USD", "AUD_USD", "EUR_GBP",
-            "AUD_NZD", "EUR_CHF", "GBP_CHF", "EUR_AUD",
-        ])
-        active_symbols  = cfg.get("active_symbols", cfg.get("symbols", []))
-        _params_now     = load_params() or {}
-        adopted_symbols = list(_params_now.get("params", {}).keys())
-
-        st.markdown("#### 取引通貨ペア")
-        st.info(
-            "✅ 採用済みペアのみ選択可能です。"
-            "新しいペアの追加はグリッドサーチから行ってください。"
-        )
-        new_active: list[str] = []
-        sym_cols = st.columns(4)
-        for i, sym in enumerate(available):
-            is_adopted = sym in adopted_symbols
-            is_active  = sym in active_symbols
-            with sym_cols[i % 4]:
-                if is_adopted:
-                    checked = st.checkbox(
-                        sym,
-                        value=is_active,
-                        key=f"sym_{sym}",
-                    )
-                    if checked:
-                        new_active.append(sym)
-                else:
-                    st.checkbox(
-                        sym,
-                        value=False,
-                        disabled=True,
-                        key=f"sym_{sym}",
-                        help="グリッドサーチで採用されていません",
-                    )
-        # 保存ボタン用に選択値を保持
-        selected_symbols_form = new_active
 
         st.markdown("#### データ期間")
         d_col1, d_col2 = st.columns(2)
@@ -332,30 +303,35 @@ with tab_config:
         st.markdown("---")
 
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        # 📊 バックテスト設定
-        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        st.markdown("### 📊 バックテスト設定")
-
-        wf_col1, wf_col2 = st.columns(2)
-        with wf_col1:
-            wf_train = st.slider("WFT学習期間（ヶ月）", 1, 24,
-                                  value=int(cfg.get("wf_train_months", 12)))
-        with wf_col2:
-            wf_test = st.slider("WFT検証期間（ヶ月）", 1, 6,
-                                 value=int(cfg.get("wf_test_months", 1)))
-
-        st.markdown("#### 除外条件")
-        ex_col1, ex_col2, ex_col3 = st.columns(3)
-        min_trades     = ex_col1.number_input("最小取引回数",       value=int(cfg.get("min_trades",      200)), min_value=0)
-        min_pf         = ex_col2.number_input("最小PF",            value=float(cfg.get("min_pf",         1.2)), min_value=0.0, step=0.1, format="%.1f")
-        min_wft_sharpe = ex_col3.number_input("最小WFTシャープ",    value=float(cfg.get("min_wft_sharpe", 0.0)), step=0.1, format="%.1f")
-
-        st.markdown("---")
-
-        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         # 🔍 グリッドサーチ設定
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         st.markdown("### 🔍 グリッドサーチ設定")
+
+        st.markdown("#### 対象通貨ペア")
+        st.info(
+            "グリッドサーチを実施する通貨ペアを選択してください。"
+            "結果上位N件がトレード対象に採用されます。"
+        )
+        gs_new_syms: list[str] = []
+        gs_sym_cols = st.columns(4)
+        for _i, _sym in enumerate(_available):
+            with gs_sym_cols[_i % 4]:
+                _checked = st.checkbox(
+                    _sym,
+                    value=(_sym in _gs_syms),
+                    key=f"gs_sym_{_sym}",
+                )
+                if _checked:
+                    gs_new_syms.append(_sym)
+
+        st.markdown("#### 採用銘柄数")
+        gs_top_n = st.number_input(
+            "上位N銘柄を採用",
+            min_value=1,
+            max_value=10,
+            value=int(cfg.get("grid_search_top_n", 3)),
+            help="グリッドサーチ結果のスコア上位N件をトレード対象に採用",
+        )
 
         st.markdown("#### 探索パラメータ範囲")
 
@@ -419,73 +395,124 @@ with tab_config:
         st.markdown("---")
 
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        # 📊 バックテスト・トレード設定
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        st.markdown("### 📊 バックテスト・トレード設定")
+
+        st.markdown("#### 対象通貨ペア")
+        st.info(
+            "グリッドサーチで採用されたペアが自動設定されます。"
+            "採用済みペアの手動除外のみ可能です。"
+        )
+        bt_new_active: list[str] = []
+        bt_sym_cols = st.columns(4)
+        for _i, _sym in enumerate(_available):
+            _is_adopted = _sym in _adopted_syms
+            _is_active  = _sym in _active_syms
+            with bt_sym_cols[_i % 4]:
+                if _is_adopted:
+                    _cb = st.checkbox(
+                        _sym,
+                        value=_is_active,
+                        key=f"bt_sym_{_sym}",
+                    )
+                    if _cb:
+                        bt_new_active.append(_sym)
+                else:
+                    st.checkbox(
+                        _sym,
+                        value=False,
+                        disabled=True,
+                        key=f"bt_sym_{_sym}",
+                        help="グリッドサーチで採用されていません",
+                    )
+
+        st.markdown("#### WFT設定")
+        wf_col1, wf_col2 = st.columns(2)
+        with wf_col1:
+            wf_train = st.slider("WFT学習期間（ヶ月）", 6, 24,
+                                  value=int(cfg.get("wf_train_months", 12)))
+        with wf_col2:
+            wf_test = st.slider("WFT検証期間（ヶ月）", 1, 6,
+                                 value=int(cfg.get("wf_test_months", 1)))
+
+        st.markdown("#### 除外条件")
+        ex_col1, ex_col2, ex_col3 = st.columns(3)
+        min_trades     = ex_col1.number_input("最小取引回数",    value=int(cfg.get("min_trades",       100)), min_value=0)
+        min_pf         = ex_col2.number_input("最小PF",         value=float(cfg.get("min_pf",          1.2)), min_value=0.0, step=0.1, format="%.1f")
+        min_wft_sharpe = ex_col3.number_input("最小WFTシャープ", value=float(cfg.get("min_wft_sharpe", -0.3)), step=0.1, format="%.1f")
+
+        st.markdown("---")
+
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         # 保存ボタン（1つだけ）
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         submitted = st.form_submit_button("💾 設定を保存", type="primary", use_container_width=True)
 
     if submitted:
-        if not selected_symbols_form:
-            st.warning("⚠️ 最低1つのアクティブペアを選択してください。")
+        errors = []
+
+        # ── backtest_config.json に保存 ──────────────────────────────────
+        existing_cfg = load_config()
+        new_cfg = {
+            **existing_cfg,
+            "available_symbols":   _available,
+            "start_date":          start_date.isoformat(),
+            "end_date":            "auto",
+            "grid_search_symbols": gs_new_syms,
+            "grid_search_top_n":   int(gs_top_n),
+            "wf_train_months":     wf_train,
+            "wf_test_months":      wf_test,
+            "active_symbols":      bt_new_active,
+            "symbols":             bt_new_active,   # 後方互換
+            "bb_period":           {"min": int(bb_min),  "max": int(bb_max),  "step": int(bb_step)},
+            "bb_std":              sorted(bb_std)  if bb_std  else [2.0],
+            "rsi_upper":           {"min": int(rsi_upper_min), "max": int(rsi_upper_max), "step": int(rsi_upper_step)},
+            "rsi_lower":           {"min": int(rsi_lower_min), "max": int(rsi_lower_max), "step": int(rsi_lower_step)},
+            "atr_sl_mult":         sorted(atr_sl)  if atr_sl  else [1.5],
+            "atr_tp_mult":         sorted(atr_tp)  if atr_tp  else [2.0],
+            "min_trades":          int(min_trades),
+            "min_pf":              float(min_pf),
+            "min_wft_sharpe":      float(min_wft_sharpe),
+            "max_workers":         max_workers_val,
+        }
+        try:
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(new_cfg, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            errors.append(f"backtest_config.json 保存エラー: {e}")
+
+        # ── grid_search_config.json に保存 ───────────────────────────────
+        existing_gs = load_gs_config()
+        existing_gs["score_weights"] = {
+            "wft_sharpe": wt_wft, "is_sharpe": wt_is,
+            "pf": wt_pf, "trades": wt_trades,
+        }
+        existing_gs["max_workers"] = max_workers_val
+        try:
+            with open(GS_CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(existing_gs, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            errors.append(f"grid_search_config.json 保存エラー: {e}")
+
+        if errors:
+            for err in errors:
+                st.error(err)
         else:
-            errors = []
-
-            # ── backtest_config.json に保存 ──────────────────────────────
-            existing_cfg = load_config()
-            new_cfg = {
-                **existing_cfg,
-                "available_symbols": available,
-                "start_date":        start_date.isoformat(),
-                "end_date":          "auto",
-                "wf_train_months":   wf_train,
-                "wf_test_months":    wf_test,
-                "active_symbols":    selected_symbols_form,
-                "symbols":           selected_symbols_form,  # 後方互換
-                "bb_period":         {"min": int(bb_min),  "max": int(bb_max),  "step": int(bb_step)},
-                "bb_std":            sorted(bb_std)  if bb_std  else [2.0],
-                "rsi_upper":         {"min": int(rsi_upper_min), "max": int(rsi_upper_max), "step": int(rsi_upper_step)},
-                "rsi_lower":         {"min": int(rsi_lower_min), "max": int(rsi_lower_max), "step": int(rsi_lower_step)},
-                "atr_sl_mult":       sorted(atr_sl)  if atr_sl  else [1.5],
-                "atr_tp_mult":       sorted(atr_tp)  if atr_tp  else [2.0],
-                "min_trades":        int(min_trades),
-                "min_pf":            float(min_pf),
-                "min_wft_sharpe":    float(min_wft_sharpe),
-            }
-            try:
-                with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-                    json.dump(new_cfg, f, indent=2, ensure_ascii=False)
-            except Exception as e:
-                errors.append(f"backtest_config.json 保存エラー: {e}")
-
-            # ── grid_search_config.json に保存 ───────────────────────────
-            existing_gs = load_gs_config()
-            existing_gs["score_weights"] = {
-                "wft_sharpe": wt_wft, "is_sharpe": wt_is,
-                "pf": wt_pf, "trades": wt_trades,
-            }
-            existing_gs["max_workers"] = max_workers_val
-            try:
-                with open(GS_CONFIG_FILE, "w", encoding="utf-8") as f:
-                    json.dump(existing_gs, f, indent=2, ensure_ascii=False)
-            except Exception as e:
-                errors.append(f"grid_search_config.json 保存エラー: {e}")
-
-            if errors:
-                for err in errors:
-                    st.error(err)
-            else:
-                st.success(
-                    f"✅ 保存しました  "
-                    f"アクティブペア: {', '.join(selected_symbols_form)}  /  "
-                    f"max_workers: {max_workers_val}"
-                )
-                with st.expander("保存内容を確認"):
-                    c_left, c_right = st.columns(2)
-                    with c_left:
-                        st.caption("backtest_config.json")
-                        st.json(load_config())
-                    with c_right:
-                        st.caption("grid_search_config.json")
-                        st.json(load_gs_config())
+            st.success(
+                f"✅ 保存しました  "
+                f"GS対象: {', '.join(gs_new_syms) or '(未選択)'}  /  "
+                f"アクティブ: {', '.join(bt_new_active) or '(なし)'}  /  "
+                f"max_workers: {max_workers_val}"
+            )
+            with st.expander("保存内容を確認"):
+                c_left, c_right = st.columns(2)
+                with c_left:
+                    st.caption("backtest_config.json")
+                    st.json(load_config())
+                with c_right:
+                    st.caption("grid_search_config.json")
+                    st.json(load_gs_config())
 
 
 # ==================== TAB 3: バックテスト実行 ====================
@@ -657,6 +684,22 @@ with tab_gs:
                          height=250, disabled=True, key="gs_log_area")
     else:
         st.caption("`grid_search_progress.json` がありません。実行開始後に進捗が表示されます。")
+
+    # ── スコアランキング（完了後） ─────────────────────────────────────────
+    if gs_prog is not None:
+        _ranking = gs_prog.get("ranking", [])
+        if _ranking:
+            st.markdown("#### スコアランキング（採用/除外判定）")
+            _rank_rows = []
+            for _r in _ranking:
+                _status_label = "✅ 採用" if _r.get("status") == "adopted" else "❌ 除外"
+                _rank_rows.append({
+                    "順位":   _r.get("rank", ""),
+                    "銘柄":   _r.get("symbol", ""),
+                    "スコア": f"{_r.get('score', 0):.4f}",
+                    "結果":   _status_label,
+                })
+            st.dataframe(pd.DataFrame(_rank_rows), use_container_width=True, hide_index=True)
 
     # ── 検索結果テーブル ──────────────────────────────────────────────────
     if os.path.exists(GS_RESULTS_FILE):

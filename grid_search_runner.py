@@ -174,7 +174,8 @@ def _write_progress(current, total, best_score, best_params,
                     completed_symbols: dict | None = None,
                     current_symbol: str = "",
                     symbol_current: int = 0,
-                    symbol_total: int = 0) -> None:
+                    symbol_total: int = 0,
+                    ranking: list | None = None) -> None:
     data = {
         "current":           current,
         "total":             total,
@@ -188,6 +189,7 @@ def _write_progress(current, total, best_score, best_params,
         "current_symbol":    current_symbol,
         "symbol_current":    symbol_current,
         "symbol_total":      symbol_total,
+        "ranking":           ranking or [],
     }
     with _progress_lock:
         with open(PROGRESS_FILE, "w", encoding="utf-8") as f:
@@ -433,7 +435,9 @@ def main(debug: bool = False) -> None:
         wt_pf     = score_weights.get("pf",         0.2)
         wt_trades = score_weights.get("trades",      0.2)
 
-        symbols = config.get("symbols", SYMBOLS)
+        # grid_search_symbols 優先、未設定なら symbols にフォールバック
+        symbols = config.get("grid_search_symbols") or config.get("symbols", SYMBOLS)
+        top_n   = int(config.get("grid_search_top_n", 3))
 
         bb_cfg   = config.get("bb_period", {"min": 10, "max": 30, "step": 5})
         bb_stds  = config.get("bb_std",    [1.0, 1.5, 2.0, 2.5])
@@ -633,26 +637,57 @@ def main(debug: bool = False) -> None:
                     f"WFTシャープ({sym_best_row['wft_sharpe']:.2f}) < 最小値({min_wft_sharpe})"
                 )
 
-            if exclude_reason:
-                log(f"  [EXCLUDED] {symbol}: {exclude_reason}")
-                _save_to_params(symbol, None, log, exclude_reason=exclude_reason)
-                completed_symbols[symbol] = {
-                    "status":      "excluded",
-                    "reason":      exclude_reason,
-                    "best_score":  round(sym_best_score, 4),
-                    "best_params": sym_best_params,
-                }
-            else:
-                _save_to_params(symbol, sym_best_params, log)
-                log(f"  [SAVED] {symbol} params.json に保存 (score={sym_best_score:.4f})")
-                completed_symbols[symbol] = {
-                    "status":      "saved",
-                    "best_score":  round(sym_best_score, 4),
-                    "best_params": sym_best_params,
-                }
+            # ペアの成否に関わらずスコアを記録（後で top_N 判定に使う）
+            completed_symbols[symbol] = {
+                "status":      "pending",   # top_N 判定後に上書き
+                "reason":      exclude_reason or "",
+                "best_score":  round(sym_best_score, 4),
+                "best_params": sym_best_params,
+            }
+            log(f"[{symbol}] 暫定スコア={sym_best_score:.4f}"
+                + (f"  除外候補: {exclude_reason}" if exclude_reason else ""))
 
+        # ── 全ペア完了: top_N 採用判定 ─────────────────────────────────────
         if error_count > 0:
             log(f"\n! バックテスト例外合計: {error_count} 件 (--debug で詳細確認)")
+
+        # スコア降順でランキング（エラーペアは除く）
+        ranked = sorted(
+            [
+                {"symbol": sym, "best_score": info["best_score"],
+                 "best_params": info["best_params"], "reason": info["reason"]}
+                for sym, info in completed_symbols.items()
+                if info["status"] != "error"
+            ],
+            key=lambda x: x["best_score"],
+            reverse=True,
+        )
+        adopted_set  = {r["symbol"] for r in ranked[:top_n]}
+        excluded_set = {r["symbol"] for r in ranked[top_n:]}
+
+        log(f"\n=== top_N={top_n} 採用判定 ===")
+        ranking_out: list[dict] = []
+        for rank_i, r in enumerate(ranked, 1):
+            sym   = r["symbol"]
+            score_val = r["best_score"]
+            adopt = sym in adopted_set
+            status_str = "adopted" if adopt else "excluded"
+            ranking_out.append({
+                "rank": rank_i, "symbol": sym,
+                "score": score_val, "status": status_str,
+            })
+            log(f"  #{rank_i} {sym}: score={score_val:.4f}  → {status_str}")
+
+            if adopt:
+                _save_to_params(sym, r["best_params"], log)
+                log(f"  [ADOPTED] {sym} params.json に保存")
+                completed_symbols[sym]["status"] = "saved"
+            else:
+                reason = r["reason"] or f"top_{top_n}圏外(score={score_val:.4f})"
+                _save_to_params(sym, None, log, exclude_reason=reason)
+                log(f"  [EXCLUDED] {sym}: {reason}")
+                completed_symbols[sym]["status"]  = "excluded"
+                completed_symbols[sym]["reason"]  = reason
 
         results.sort(key=lambda x: x["score"], reverse=True)
 
@@ -664,7 +699,8 @@ def main(debug: bool = False) -> None:
         log(f"結果を {RESULTS_FILE} に保存しました。")
 
         _write_progress(total, total, best_score, best_params, elapsed, 0, log_lines,
-                        done=True, completed_symbols=completed_symbols)
+                        done=True, completed_symbols=completed_symbols,
+                        ranking=ranking_out)
         _update_pid_status("completed")
 
     except Exception as e:
