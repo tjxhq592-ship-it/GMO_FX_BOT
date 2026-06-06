@@ -1,28 +1,30 @@
 {
+  "updated_at": "2026-06-06 00:00:00",
   "params": {
-    "USD_JPY": {
+    "EUR_GBP": {
       "ma_short": 9,
-      "ma_long": 21,
+      "ma_long": 25,
       "rsi_upper": 70,
       "rsi_lower": 30,
-      "take_profit_pct": 1.005,
-      "stop_loss_pct": 0.997
+      "stop_loss_pct": 0.97,
+      "take_profit_pct": 1.06
     },
-    "EUR_JPY": {
+    "AUD_NZD": {
       "ma_short": 9,
-      "ma_long": 21,
+      "ma_long": 25,
       "rsi_upper": 70,
       "rsi_lower": 30,
-      "take_profit_pct": 1.005,
-      "stop_loss_pct": 0.997
+      "stop_loss_pct": 0.97,
+      "take_profit_pct": 1.06
     },
-    "GBP_JPY": {
+    "EUR_CHF": {
       "ma_short": 9,
-      "ma_long": 21,
-      "rsi_upper": 68,
-      "rsi_lower": 32,
-      "take_profit_pct": 1.007,
-      "stop_loss_pct": 0.995
+      "ma_long": 25,
+      "rsi_upper": 70,
+      "rsi_lower": 30,
+      "stop_loss_pct": 0.97,
+      "take_profit_pct": 1.06
     }
-  }
+  },
+  "excluded": []
 }

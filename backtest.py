@@ -47,11 +47,11 @@ PARAMS_FILE  = "params.json"
 RESULTS_FILE = "backtest_results.json"
 
 # FXシンボルマッピング（GMO FX → Yahoo Finance）
-SYMBOLS = ["USD_JPY", "EUR_JPY", "GBP_JPY"]
+SYMBOLS = ["EUR_GBP", "AUD_NZD", "EUR_CHF"]
 SYMBOL_MAP = {
-    "USD_JPY": "USDJPY=X",
-    "EUR_JPY": "EURJPY=X",
-    "GBP_JPY": "GBPJPY=X",
+    "EUR_GBP": "EURGBP=X",
+    "AUD_NZD": "AUDNZD=X",
+    "EUR_CHF": "EURCHF=X",
 }
 
 # === データキャッシュ ===

@@ -25,7 +25,7 @@ LOG_FILE    = BASE_DIR / "trade_log.txt"
 TRADE_AMOUNT = 10000  # 円建て（GMO FXは円単位）
 
 # 取引通貨ペア（GMOコインFX対応ペア）
-SYMBOLS = ["USD_JPY", "EUR_JPY", "GBP_JPY"]
+SYMBOLS = ["EUR_GBP", "AUD_NZD", "EUR_CHF"]
 
 CANDIDATE_SYMBOLS = [
     "USD_JPY", "EUR_JPY", "GBP_JPY",
