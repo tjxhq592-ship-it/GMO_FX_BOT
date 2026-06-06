@@ -2,31 +2,37 @@
   "updated_at": "2026-06-06 00:00:00",
   "params": {
     "EUR_GBP": {
-      "ma_short": 9,
-      "ma_long": 25,
+      "bb_period": 20,
+      "bb_std": 2.0,
+      "rsi_period": 14,
       "rsi_upper": 70,
       "rsi_lower": 30,
       "atr_period": 14,
       "atr_sl_mult": 1.5,
-      "atr_tp_mult": 2.5
+      "atr_tp_mult": 2.0,
+      "atr_range_mult": 1.0
     },
     "AUD_NZD": {
-      "ma_short": 9,
-      "ma_long": 25,
+      "bb_period": 20,
+      "bb_std": 2.0,
+      "rsi_period": 14,
       "rsi_upper": 70,
       "rsi_lower": 30,
       "atr_period": 14,
       "atr_sl_mult": 1.5,
-      "atr_tp_mult": 2.5
+      "atr_tp_mult": 2.0,
+      "atr_range_mult": 1.0
     },
     "EUR_CHF": {
-      "ma_short": 9,
-      "ma_long": 25,
+      "bb_period": 20,
+      "bb_std": 2.0,
+      "rsi_period": 14,
       "rsi_upper": 70,
       "rsi_lower": 30,
       "atr_period": 14,
       "atr_sl_mult": 1.5,
-      "atr_tp_mult": 2.5
+      "atr_tp_mult": 2.0,
+      "atr_range_mult": 1.0
     }
   },
   "excluded": []

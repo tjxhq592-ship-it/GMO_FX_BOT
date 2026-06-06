@@ -3,7 +3,6 @@ import matplotlib
 matplotlib.use("Agg")
 
 from backtesting import Backtest, Strategy
-from backtesting.lib import crossover
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import hashlib
@@ -14,7 +13,11 @@ import pickle
 import json
 import time
 import yfinance as yf
-from utils import calculate_rsi as _calculate_rsi, calculate_atr as _calculate_atr
+from utils import (
+    calculate_rsi as _calculate_rsi,
+    calculate_atr as _calculate_atr,
+    calculate_bollinger as _calculate_bollinger,
+)
 
 # ログ・警告の抑制
 logging.getLogger("yfinance").setLevel(logging.CRITICAL)
@@ -29,6 +32,18 @@ def calculate_rsi(prices, period=14):
 def calculate_atr(high, low, close, period=14):
     result = _calculate_atr(pd.Series(high), pd.Series(low), pd.Series(close), period=period)
     return result.values if hasattr(result, "values") else result
+
+def _bb_upper(close, period, std_mult):
+    bb = _calculate_bollinger(pd.Series(close), period=period, std_mult=std_mult)
+    return bb["upper"].values
+
+def _bb_mid(close, period, std_mult):
+    bb = _calculate_bollinger(pd.Series(close), period=period, std_mult=std_mult)
+    return bb["mid"].values
+
+def _bb_lower(close, period, std_mult):
+    bb = _calculate_bollinger(pd.Series(close), period=period, std_mult=std_mult)
+    return bb["lower"].values
 
 # === 設定 ===
 # yfinance 1h足は直近730日分のみ取得可能
@@ -105,56 +120,75 @@ def get_forward_data(symbol):
         pickle.dump(df, f)
     return df
 
-# === 戦略 ===
+# === 戦略: ボリンジャーバンド + RSI 逆張り ===
 class ImprovedStrategy(Strategy):
-    ma_short    = 13
-    ma_long     = 15
-    rsi_upper   = 75
-    rsi_lower   = 25
-    atr_period  = 14
-    atr_sl_mult = 1.5   # 損切 = 建値 - ATR × atr_sl_mult
-    atr_tp_mult = 2.5   # 利確 = 建値 + ATR × atr_tp_mult
-    trade_size  = 0.2
+    bb_period      = 20
+    bb_std         = 2.0
+    rsi_period     = 14
+    rsi_upper      = 70
+    rsi_lower      = 30
+    atr_period     = 14
+    atr_sl_mult    = 1.5
+    atr_tp_mult    = 2.0
+    atr_range_mult = 1.0   # レンジ判定: 直近ATR < 過去20期間平均 × この倍率
+    trade_size     = 0.2
 
     def init(self):
         close = self.data.Close
         high  = self.data.High
         low   = self.data.Low
-        self.ma_s = self.I(
-            lambda x: pd.Series(x).ewm(span=self.ma_short, adjust=False).mean().values,
-            close
-        )
-        self.ma_l = self.I(
-            lambda x: pd.Series(x).ewm(span=self.ma_long, adjust=False).mean().values,
-            close
-        )
-        self.rsi = self.I(calculate_rsi, close)
-        self.atr = self.I(calculate_atr, high, low, close, self.atr_period)
+
+        self.bb_upper = self.I(_bb_upper, close, self.bb_period, self.bb_std)
+        self.bb_mid   = self.I(_bb_mid,   close, self.bb_period, self.bb_std)
+        self.bb_lower = self.I(_bb_lower, close, self.bb_period, self.bb_std)
+        self.rsi      = self.I(calculate_rsi, close, self.rsi_period)
+        self.atr      = self.I(calculate_atr, high, low, close, self.atr_period)
+
+    def _is_range(self):
+        """直近ATRが過去20期間ATR平均より低ければレンジ相場と判定"""
+        if len(self.atr) < 21:
+            return False
+        atr_now = self.atr[-1]
+        atr_avg = pd.Series(self.atr[-20:]).mean()
+        return atr_now < atr_avg * self.atr_range_mult
 
     def next(self):
-        price = self.data.Close[-1]
-        atr   = self.atr[-1]
+        price    = self.data.Close[-1]
+        atr      = self.atr[-1]
+        in_range = self._is_range()
 
-        # ロング用 SL/TP
-        long_sl = price - atr * self.atr_sl_mult
-        long_tp = price + atr * self.atr_tp_mult
-        # ショート用 SL/TP（上下反転）
+        long_sl  = price - atr * self.atr_sl_mult
+        long_tp  = price + atr * self.atr_tp_mult
         short_sl = price + atr * self.atr_sl_mult
         short_tp = price - atr * self.atr_tp_mult
 
-        # ゴールデンクロス: ロングエントリー（ショートがあれば先に決済）
-        if crossover(self.ma_s, self.ma_l) and self.rsi[-1] < self.rsi_upper:
+        # ── ロングエントリー ────────────────────────────────────────────
+        # 終値がBB下限割れ + RSI売られすぎ + レンジ相場
+        if (price < self.bb_lower[-1]
+                and self.rsi[-1] <= self.rsi_lower
+                and in_range):
             if self.position.is_short:
                 self.position.close()
             if not self.position:
                 self.buy(size=self.trade_size, sl=long_sl, tp=long_tp)
 
-        # デッドクロス: ショートエントリー（ロングがあれば先に決済）
-        elif crossover(self.ma_l, self.ma_s) and self.rsi[-1] > self.rsi_lower:
+        # ── ショートエントリー ──────────────────────────────────────────
+        # 終値がBB上限超え + RSI買われすぎ + レンジ相場
+        elif (price > self.bb_upper[-1]
+                and self.rsi[-1] >= self.rsi_upper
+                and in_range):
             if self.position.is_long:
                 self.position.close()
             if not self.position:
                 self.sell(size=self.trade_size, sl=short_sl, tp=short_tp)
+
+        # ── ロング決済: 終値がBB中心線を上回った ───────────────────────
+        elif self.position.is_long and price > self.bb_mid[-1]:
+            self.position.close()
+
+        # ── ショート決済: 終値がBB中心線を下回った ─────────────────────
+        elif self.position.is_short and price < self.bb_mid[-1]:
+            self.position.close()
 
 def _extract_stats(stats):
     """backtesting Stats オブジェクトから必要な指標を dict で返す"""
@@ -206,27 +240,30 @@ def optimize_symbol(symbol, idx, total, wft_cutoff, prev_params):
 
     bt = Backtest(train_data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
     stats = bt.optimize(
-        ma_short=range(5, 20, 5),      # 3通り
-        ma_long=range(20, 60, 10),     # 4通り
-        rsi_upper=[65, 70],            # 2通り
-        rsi_lower=[30, 35],            # 2通り
-        atr_period=[14],               # 1通り（固定）
-        atr_sl_mult=[1.5, 2.0],        # 2通り
-        atr_tp_mult=[2.0, 2.5],        # 2通り
-        # 合計: 3×4×2×2×1×2×2 = 192パターン
+        bb_period=range(10, 30, 5),      # 4通り
+        bb_std=[1.5, 2.0, 2.5],         # 3通り
+        rsi_period=[14],                 # 1通り（固定）
+        rsi_upper=[65, 70, 75],          # 3通り
+        rsi_lower=[25, 30, 35],          # 3通り
+        atr_period=[14],                 # 1通り（固定）
+        atr_sl_mult=[1.5, 2.0],          # 2通り
+        atr_tp_mult=[2.0, 2.5],          # 2通り
+        atr_range_mult=[0.8, 1.0],       # 2通り
+        # 合計: 4×3×1×3×3×1×2×2×2 = 864パターン
         maximize="Sharpe Ratio",
-        constraint=lambda p: p.ma_short < p.ma_long
     )
 
     p = stats._strategy
     params_dict = {
-        "ma_short":    int(p.ma_short),
-        "ma_long":     int(p.ma_long),
-        "rsi_upper":   int(p.rsi_upper),
-        "rsi_lower":   int(p.rsi_lower),
-        "atr_period":  int(p.atr_period),
-        "atr_sl_mult": float(p.atr_sl_mult),
-        "atr_tp_mult": float(p.atr_tp_mult),
+        "bb_period":      int(p.bb_period),
+        "bb_std":         float(p.bb_std),
+        "rsi_period":     int(p.rsi_period),
+        "rsi_upper":      int(p.rsi_upper),
+        "rsi_lower":      int(p.rsi_lower),
+        "atr_period":     int(p.atr_period),
+        "atr_sl_mult":    float(p.atr_sl_mult),
+        "atr_tp_mult":    float(p.atr_tp_mult),
+        "atr_range_mult": float(p.atr_range_mult),
     }
 
     is_stats = _extract_stats(stats)

@@ -17,7 +17,7 @@ from config import (
 )
 from gmo_client import GmoFxClient
 from utils import (
-    calculate_rsi, calculate_macd, calculate_bollinger, calculate_atr,
+    calculate_rsi, calculate_bollinger, calculate_atr,
     get_market_condition, calc_trade_size,
 )
 
@@ -62,18 +62,24 @@ def get_market_data(symbol: str, symbol_params: dict) -> object:
     p    = symbol_params[symbol]
     bars = gmo.get_klines_range(symbol, interval="1day", days=90)
 
-    bars["MA_short"] = bars["close"].ewm(span=p["ma_short"], adjust=False).mean()
-    bars["MA_long"]  = bars["close"].ewm(span=p["ma_long"],  adjust=False).mean()
-    bars["RSI"]      = calculate_rsi(bars["close"])
+    # ボリンジャーバンド
+    bb_period = p.get("bb_period", 20)
+    bb_std    = p.get("bb_std", 2.0)
+    bb = calculate_bollinger(bars["close"], period=bb_period, std_mult=bb_std)
+    bars["BB_upper"] = bb["upper"]
+    bars["BB_mid"]   = bb["mid"]
+    bars["BB_lower"] = bb["lower"]
 
-    macd = calculate_macd(bars["close"])
-    bars["MACD_hist"] = macd["hist"]
+    # RSI
+    rsi_period  = p.get("rsi_period", 14)
+    bars["RSI"] = calculate_rsi(bars["close"], period=rsi_period)
 
-    bb = calculate_bollinger(bars["close"])
-    bars["BB_mid"] = bb["mid"]
+    # ATR
+    atr_period  = p.get("atr_period", 14)
+    bars["ATR"] = calculate_atr(bars["high"], bars["low"], bars["close"], period=atr_period)
 
-    atr_period    = p.get("atr_period", 14)
-    bars["ATR"]   = calculate_atr(bars["high"], bars["low"], bars["close"], period=atr_period)
+    # レンジ判定用ATR平均
+    bars["ATR_avg20"] = bars["ATR"].rolling(20).mean()
 
     return bars
 
@@ -104,24 +110,29 @@ def ask_claude(bars, symbol: str, symbol_params: dict, poly_signal: dict) -> dic
     recent = bars.iloc[-5:]
     recent_summary = "\n".join([
         f"  {row.name.date() if hasattr(row.name, 'date') else ''} "
-        f"終値:{row['close']:.5f}  RSI:{row['RSI']:.1f}  出来高:{int(row['volume']):,}"
+        f"終値:{row['close']:.5f}  RSI:{row['RSI']:.1f}"
+        f"  BB上:{row['BB_upper']:.5f} / 下:{row['BB_lower']:.5f}"
         for _, row in recent.iterrows()
     ])
 
     poly_context = build_polymarket_context(poly_signal)
 
+    atr_now    = latest["ATR"]
+    atr_avg    = latest["ATR_avg20"]
+    in_range   = (atr_now < atr_avg * p.get("atr_range_mult", 1.0)) if pd.notna(atr_avg) else False
+    range_str  = "レンジ相場" if in_range else "トレンド相場"
+
     prompt = f"""
-あなたはFXトレードAIです。以下のデータを分析して売買判断をしてください。
+あなたはFXトレードAIです。ボリンジャーバンド+RSI逆張り戦略でレンジ相場の売買判断をしてください。
 
 通貨ペア: {symbol}
 現在値: {latest['close']:.5f}
-EMA{p['ma_short']}: {latest['MA_short']:.5f}
-EMA{p['ma_long']}: {latest['MA_long']:.5f}
-RSI: {latest['RSI']:.1f}
-MACD_hist: {latest['MACD_hist']:.6f}
-BB_mid: {latest['BB_mid']:.5f}
-前日EMA{p['ma_short']}: {prev['MA_short']:.5f}
-前日EMA{p['ma_long']}: {prev['MA_long']:.5f}
+BB上限: {latest['BB_upper']:.5f}
+BB中心: {latest['BB_mid']:.5f}
+BB下限: {latest['BB_lower']:.5f}
+RSI({p.get('rsi_period', 14)}): {latest['RSI']:.1f}
+ATR: {atr_now:.5f} / ATR20期間平均: {atr_avg:.5f if pd.notna(atr_avg) else 'N/A'}
+相場環境: {range_str}
 
 【直近5日間の推移】
 {recent_summary}
@@ -130,13 +141,12 @@ BB_mid: {latest['BB_mid']:.5f}
 {poly_context}
 
 ルール：
-- リスクを極力抑えた小額取引を重視
-- RSIが{p['rsi_upper']}以上は買いを避ける
-- RSIが{p['rsi_lower']}以下は売りを避ける
-- EMA{p['ma_short']}がEMA{p['ma_long']}を上抜けたら買いシグナル
-- EMA{p['ma_short']}がEMA{p['ma_long']}を下抜けたら売りシグナル
-- MACD・BB・直近トレンド・出来高変化も考慮すること
-- Polymarketで急変・高確率イベントがある場合はリスクを強く意識すること
+- レンジ相場（ATRが平均以下）でのみエントリーを推奨
+- 終値がBB下限を下回り RSI≦{p['rsi_lower']}なら買いシグナル
+- 終値がBB上限を上回り RSI≧{p['rsi_upper']}なら売りシグナル
+- 終値がBB中心付近なら決済を検討
+- トレンド相場ではholdを優先すること
+- Polymarketで急変・高確率イベントがある場合はholdすること
 - FXはレバレッジがあるため特にリスク管理を優先すること
 
 以下のJSON形式のみで回答してください（他の文章は不要）：
