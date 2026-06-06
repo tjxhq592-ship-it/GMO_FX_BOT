@@ -397,6 +397,35 @@ with tab_config:
             except Exception as e:
                 st.error(f"保存エラー: {e}")
 
+    # ── 並列処理設定（グリッドサーチ用） ──────────────────────────────────
+    st.markdown("---")
+    st.markdown("#### 並列処理設定（グリッドサーチ）")
+    _gs_cfg_mw: dict = {}
+    if os.path.exists(os.path.join(BASE_DIR, "grid_search_config.json")):
+        try:
+            with open(os.path.join(BASE_DIR, "grid_search_config.json"), "r", encoding="utf-8") as _f:
+                _gs_cfg_mw = json.load(_f)
+        except Exception:
+            pass
+    _cpu_max = max(1, (os.cpu_count() or 4) - 2)
+    _saved_mw = max(1, min(int(_gs_cfg_mw.get("max_workers", 1)), _cpu_max))
+    gs_max_workers = st.slider(
+        "並列ワーカー数",
+        min_value=1,
+        max_value=_cpu_max,
+        value=_saved_mw,
+        help=f"CPUコア数({os.cpu_count()})の上限-2={_cpu_max}まで設定可能。大きいほど速いが負荷も高い",
+        key="gs_max_workers",
+    )
+    if st.button("💾 並列ワーカー数を保存", key="save_max_workers"):
+        _gs_cfg_mw["max_workers"] = gs_max_workers
+        try:
+            with open(os.path.join(BASE_DIR, "grid_search_config.json"), "w", encoding="utf-8") as _f:
+                json.dump(_gs_cfg_mw, _f, indent=2, ensure_ascii=False)
+            st.success(f"✅ 並列ワーカー数を保存しました: {gs_max_workers}")
+        except Exception as e:
+            st.error(f"保存エラー: {e}")
+
 
 # ==================== TAB 3: バックテスト実行 ====================
 
@@ -533,13 +562,10 @@ with tab_gs:
             with open(GS_CONFIG_FILE, "r", encoding="utf-8") as f:
                 _gs_cfg_now = json.load(f)
             _sw = _gs_cfg_now.get("score_weights") or _gs_cfg_now.get("weights", {})
-            _saved_max_workers = int(_gs_cfg_now.get("max_workers", 1))
         except Exception:
             _sw = _gs_cfg_default["score_weights"]
-            _saved_max_workers = 1
     else:
         _sw = _gs_cfg_default["score_weights"]
-        _saved_max_workers = 1
 
     w_col1, w_col2, w_col3, w_col4 = st.columns(4)
     wt_wft    = w_col1.slider("WFTシャープ", 0.0, 1.0, float(_sw.get("wft_sharpe", 0.4)), 0.05, key="wt_wft")
@@ -552,28 +578,22 @@ with tab_gs:
     if total_w > 1.001:
         st.warning(f"⚠️ 重みの合計が {total_w:.2f} です。1.0 を超えています。")
 
-    st.markdown("#### 並列処理設定")
-    _cpu_max = max(1, (os.cpu_count() or 4) - 2)
-    gs_max_workers = st.slider(
-        "並列ワーカー数",
-        min_value=1,
-        max_value=_cpu_max,
-        value=min(_saved_max_workers, _cpu_max),
-        help=f"CPUコア数({os.cpu_count()})の上限-2={_cpu_max}まで設定可能。大きいほど速いが負荷も高い",
-        key="gs_max_workers",
-    )
-
     if st.button("💾 重み設定を保存"):
-        _new_gs_cfg = {
-            "score_weights": {
-                "wft_sharpe": wt_wft, "is_sharpe": wt_is,
-                "pf": wt_pf, "trades": wt_trades,
-            },
-            "max_workers": gs_max_workers,
+        # 既存の grid_search_config.json を読み込んで score_weights だけ上書き（max_workers は保持）
+        _existing_gs_cfg: dict = {}
+        if os.path.exists(GS_CONFIG_FILE):
+            try:
+                with open(GS_CONFIG_FILE, "r", encoding="utf-8") as f:
+                    _existing_gs_cfg = json.load(f)
+            except Exception:
+                pass
+        _existing_gs_cfg["score_weights"] = {
+            "wft_sharpe": wt_wft, "is_sharpe": wt_is,
+            "pf": wt_pf, "trades": wt_trades,
         }
         with open(GS_CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(_new_gs_cfg, f, indent=2)
-        st.success(f"grid_search_config.json を保存しました。(max_workers={gs_max_workers})")
+            json.dump(_existing_gs_cfg, f, indent=2, ensure_ascii=False)
+        st.success("grid_search_config.json を保存しました。")
 
     # ── 進捗表示 ─────────────────────────────────────────────────────────
     st.markdown("#### 実行状況")
