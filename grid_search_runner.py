@@ -454,26 +454,19 @@ def debug_run(config: dict, score_weights: dict) -> None:
     print("=== デバッグモード: 最初の1パターンのみ実行 ===")
     print("=" * 60)
 
-    symbols  = config.get("symbols", SYMBOLS)
-    bb_cfg   = config.get("bb_period", {"min": 10, "max": 30, "step": 5})
-    bb_stds  = config.get("bb_std",    [1.0, 1.5, 2.0, 2.5])
-    ru_cfg   = config.get("rsi_upper", {"min": 60, "max": 75, "step": 5})
-    rl_cfg   = config.get("rsi_lower", {"min": 25, "max": 40, "step": 5})
-    sl_mults = config.get("atr_sl_mult", [1.5, 2.0])
-    tp_mults = config.get("atr_tp_mult", [2.0, 2.5])
-
+    # デバッグ用固定パラメータ
     params_dict = {
-        "bb_period":   bb_cfg["min"],
-        "bb_std":      bb_stds[0],
+        "bb_period":   20,
+        "bb_std":      1.5,
         "rsi_period":  14,
-        "rsi_upper":   ru_cfg["min"],
-        "rsi_lower":   rl_cfg["min"],
+        "rsi_upper":   80,
+        "rsi_lower":   20,
         "atr_period":  14,
-        "atr_sl_mult": sl_mults[0],
-        "atr_tp_mult": tp_mults[0],
+        "atr_sl_mult": 1.0,
+        "atr_tp_mult": 1.5,
     }
 
-    symbol     = symbols[0]
+    symbol     = "EUR_AUD"
     wft_cutoff = END_DATE - relativedelta(months=WF_TEST_MONTHS)
 
     print(f"\n対象シンボル : {symbol}")
@@ -494,6 +487,16 @@ def debug_run(config: dict, score_weights: dict) -> None:
 
     train_data = data[data.index < wft_cutoff]
     print(f"  学習: {len(train_data)}件 / テスト: {len(data) - len(train_data)}件")
+
+    # コミッション・スプレッドコストの表示
+    _price      = float(data["Close"].iloc[-1])
+    _spread     = SPREAD_PIPS.get(symbol, 0.0003)
+    _commission = calc_commission(symbol, _price)
+    print(f"\n[コスト情報]")
+    print(f"  現在価格    : {_price:.5f}")
+    print(f"  spread      : {_spread:.6f}  ({'銭' if symbol.endswith('_JPY') else 'pips'})")
+    print(f"  commission  : {_commission:.6f}  (手数料+スプレッド)")
+    print(f"  往復コスト  : {_commission * 2 * 100:.4f}%")
 
     wt_wft    = score_weights.get("wft_sharpe", 0.4)
     wt_is     = score_weights.get("is_sharpe",  0.2)
@@ -651,13 +654,24 @@ def main(debug: bool = False) -> None:
             for a in sym_task_args
         }
 
+        # 1ペアあたりのタイムアウト: コンボ数 × 推定秒数（余裕を持って設定）
+        _sym_timeout = max(3600, len(combos) * 2)  # 最低1時間、コンボ2秒換算
+        log(f"タイムアウト設定: {_sym_timeout // 60}分/ペア")
+
         completed_syms_count = 0
         try:
-            for future in as_completed(sym_futures):
+            for future in as_completed(sym_futures, timeout=_sym_timeout * len(symbols)):
                 symbol = sym_futures[future]
                 completed_syms_count += 1
                 try:
-                    sym_result = future.result()
+                    sym_result = future.result(timeout=_sym_timeout)
+                except TimeoutError:
+                    sym_result = {
+                        "symbol": symbol,
+                        "error": f"タイムアウト（{_sym_timeout // 60}分超過）",
+                        "rows": [], "best_score": 0.0,
+                        "best_params": {}, "best_row": None,
+                    }
                 except Exception as e:
                     sym_result = {
                         "symbol": symbol, "error": str(e),
@@ -707,8 +721,19 @@ def main(debug: bool = False) -> None:
                                 current_symbol=symbol,
                                 symbol_current=len(combos),
                                 symbol_total=len(combos))
+        except TimeoutError:
+            # as_completed 全体のタイムアウト: 未完了ペアをエラー扱いにして続行
+            for future, symbol in sym_futures.items():
+                if symbol not in completed_symbols:
+                    log(f"[{symbol}] タイムアウト（スキップ）")
+                    completed_symbols[symbol] = {
+                        "status": "error",
+                        "reason": "タイムアウト",
+                        "best_score": 0.0, "best_params": {},
+                    }
+                    current += len(combos)
         finally:
-            sym_executor.shutdown(wait=True)
+            sym_executor.shutdown(wait=False)  # ハングしたワーカーを強制終了
 
         # ── 旧コードとの互換: シンボル完了情報を整形 ─────────────────────────
         # top_N 判定処理に渡すためにシンボルごとのベスト情報を取り出す
