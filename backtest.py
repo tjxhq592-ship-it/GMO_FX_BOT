@@ -122,16 +122,15 @@ def get_forward_data(symbol):
 
 # === 戦略: ボリンジャーバンド + RSI 逆張り ===
 class ImprovedStrategy(Strategy):
-    bb_period      = 20
-    bb_std         = 2.0
-    rsi_period     = 14
-    rsi_upper      = 70
-    rsi_lower      = 30
-    atr_period     = 14
-    atr_sl_mult    = 1.5
-    atr_tp_mult    = 2.0
-    atr_range_mult = 1.0   # レンジ判定: 直近ATR < 過去20期間平均 × この倍率
-    trade_size     = 0.2
+    bb_period   = 20
+    bb_std      = 2.0
+    rsi_period  = 14
+    rsi_upper   = 70
+    rsi_lower   = 30
+    atr_period  = 14
+    atr_sl_mult = 1.5
+    atr_tp_mult = 2.0
+    trade_size  = 0.2
 
     def init(self):
         close = self.data.Close
@@ -144,39 +143,24 @@ class ImprovedStrategy(Strategy):
         self.rsi      = self.I(calculate_rsi, close, self.rsi_period)
         self.atr      = self.I(calculate_atr, high, low, close, self.atr_period)
 
-    def _is_range(self):
-        """直近ATRが過去20期間ATR平均より低ければレンジ相場と判定"""
-        if len(self.atr) < 21:
-            return False
-        atr_now = self.atr[-1]
-        atr_avg = pd.Series(self.atr[-20:]).mean()
-        return atr_now < atr_avg * self.atr_range_mult
-
     def next(self):
-        price    = self.data.Close[-1]
-        atr      = self.atr[-1]
-        in_range = self._is_range()
+        price = self.data.Close[-1]
+        atr   = self.atr[-1]
 
         long_sl  = price - atr * self.atr_sl_mult
         long_tp  = price + atr * self.atr_tp_mult
         short_sl = price + atr * self.atr_sl_mult
         short_tp = price - atr * self.atr_tp_mult
 
-        # ── ロングエントリー ────────────────────────────────────────────
-        # 終値がBB下限割れ + RSI売られすぎ + レンジ相場
-        if (price < self.bb_lower[-1]
-                and self.rsi[-1] <= self.rsi_lower
-                and in_range):
+        # ── ロングエントリー: 終値がBB下限割れ + RSI売られすぎ ─────────
+        if price < self.bb_lower[-1] and self.rsi[-1] <= self.rsi_lower:
             if self.position.is_short:
                 self.position.close()
             if not self.position:
                 self.buy(size=self.trade_size, sl=long_sl, tp=long_tp)
 
-        # ── ショートエントリー ──────────────────────────────────────────
-        # 終値がBB上限超え + RSI買われすぎ + レンジ相場
-        elif (price > self.bb_upper[-1]
-                and self.rsi[-1] >= self.rsi_upper
-                and in_range):
+        # ── ショートエントリー: 終値がBB上限超え + RSI買われすぎ ────────
+        elif price > self.bb_upper[-1] and self.rsi[-1] >= self.rsi_upper:
             if self.position.is_long:
                 self.position.close()
             if not self.position:
@@ -241,29 +225,27 @@ def optimize_symbol(symbol, idx, total, wft_cutoff, prev_params):
     bt = Backtest(train_data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
     stats = bt.optimize(
         bb_period=range(10, 30, 5),      # 4通り
-        bb_std=[1.5, 2.0, 2.5],         # 3通り
+        bb_std=[1.0, 1.5, 2.0, 2.5],    # 4通り
         rsi_period=[14],                 # 1通り（固定）
-        rsi_upper=[65, 70, 75],          # 3通り
-        rsi_lower=[25, 30, 35],          # 3通り
+        rsi_upper=[60, 65, 70, 75],      # 4通り
+        rsi_lower=[25, 30, 35, 40],      # 4通り
         atr_period=[14],                 # 1通り（固定）
         atr_sl_mult=[1.5, 2.0],          # 2通り
         atr_tp_mult=[2.0, 2.5],          # 2通り
-        atr_range_mult=[0.8, 1.0],       # 2通り
-        # 合計: 4×3×1×3×3×1×2×2×2 = 864パターン
+        # 合計: 4×4×1×4×4×1×2×2 = 1,024パターン
         maximize="Sharpe Ratio",
     )
 
     p = stats._strategy
     params_dict = {
-        "bb_period":      int(p.bb_period),
-        "bb_std":         float(p.bb_std),
-        "rsi_period":     int(p.rsi_period),
-        "rsi_upper":      int(p.rsi_upper),
-        "rsi_lower":      int(p.rsi_lower),
-        "atr_period":     int(p.atr_period),
-        "atr_sl_mult":    float(p.atr_sl_mult),
-        "atr_tp_mult":    float(p.atr_tp_mult),
-        "atr_range_mult": float(p.atr_range_mult),
+        "bb_period":   int(p.bb_period),
+        "bb_std":      float(p.bb_std),
+        "rsi_period":  int(p.rsi_period),
+        "rsi_upper":   int(p.rsi_upper),
+        "rsi_lower":   int(p.rsi_lower),
+        "atr_period":  int(p.atr_period),
+        "atr_sl_mult": float(p.atr_sl_mult),
+        "atr_tp_mult": float(p.atr_tp_mult),
     }
 
     is_stats = _extract_stats(stats)
