@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import hashlib
 import logging
+import matplotlib
+matplotlib.use("Agg")
 import os
 import warnings
 import pandas as pd
@@ -271,15 +273,19 @@ if __name__ == "__main__":
     raw_results = {}
     errors      = {}
 
-    for symbol in tqdm(SYMBOLS, desc="最適化中", unit="ペア"):
-        try:
-            raw_results[symbol] = optimize_symbol(symbol, wft_cutoff, prev_params)
-        except Exception as e:
-            errors[symbol] = str(e)
+    with tqdm(SYMBOLS, desc="Optimizing", unit="pair") as pbar:
+        for symbol in pbar:
+            pbar.set_description(f"Optimizing [{symbol}]")
+            try:
+                raw_results[symbol] = optimize_symbol(symbol, wft_cutoff, prev_params)
+            except Exception as e:
+                errors[symbol] = str(e)
 
     fw_results = {}
-    for symbol in tqdm(raw_results, desc="フォワードテスト中", unit="ペア"):
-        fw_results[symbol] = run_forward_test(symbol, raw_results[symbol]["params_dict"])
+    with tqdm(list(raw_results), desc="ForwardTest", unit="pair") as pbar:
+        for symbol in pbar:
+            pbar.set_description(f"ForwardTest  [{symbol}]")
+            fw_results[symbol] = run_forward_test(symbol, raw_results[symbol]["params_dict"])
 
     if errors:
         print()
