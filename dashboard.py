@@ -12,13 +12,14 @@ import os
 from datetime import date, datetime
 from streamlit_autorefresh import st_autorefresh
 
-PARAMS_FILE  = "params.json"
-RESULTS_FILE = "backtest_results.json"
-LOG_FILE     = "trade_log.txt"
-CONFIG_FILE  = "backtest_config.json"
-
-# スクリプトと同じディレクトリを作業ディレクトリとして使用
+# スクリプトと同じディレクトリを基準ディレクトリとして使用（相対パス問題を回避）
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+os.chdir(BASE_DIR)
+
+PARAMS_FILE  = os.path.join(BASE_DIR, "params.json")
+RESULTS_FILE = os.path.join(BASE_DIR, "backtest_results.json")
+LOG_FILE     = os.path.join(BASE_DIR, "trade_log.txt")
+CONFIG_FILE  = os.path.join(BASE_DIR, "backtest_config.json")
 
 
 def _launch_detached(cmd: list[str]) -> subprocess.Popen:
@@ -399,8 +400,8 @@ with tab_config:
 
 # ==================== TAB 3: バックテスト実行 ====================
 
-BT_PROGRESS_FILE = "backtest_progress.json"
-BT_PID_FILE      = "backtest_pid.json"
+BT_PROGRESS_FILE = os.path.join(BASE_DIR, "backtest_progress.json")
+BT_PID_FILE      = os.path.join(BASE_DIR, "backtest_pid.json")
 
 with tab_run:
     st.subheader("バックテスト実行")
@@ -475,10 +476,10 @@ with tab_run:
 
 # ==================== TAB 4: グリッドサーチ ====================
 
-GS_PROGRESS_FILE = "grid_search_progress.json"
-GS_RESULTS_FILE  = "grid_search_results.json"
-GS_CONFIG_FILE   = "grid_search_config.json"
-GS_PID_FILE      = "grid_search_pid.json"
+GS_PROGRESS_FILE = os.path.join(BASE_DIR, "grid_search_progress.json")
+GS_RESULTS_FILE  = os.path.join(BASE_DIR, "grid_search_results.json")
+GS_CONFIG_FILE   = os.path.join(BASE_DIR, "grid_search_config.json")
+GS_PID_FILE      = os.path.join(BASE_DIR, "grid_search_pid.json")
 
 with tab_gs:
     st.subheader("グリッドサーチ")
