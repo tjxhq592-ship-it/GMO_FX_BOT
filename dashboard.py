@@ -284,173 +284,164 @@ with tab_config:
     _active_syms    = cfg.get("active_symbols", cfg.get("symbols", []))
     _gs_syms        = cfg.get("grid_search_symbols", [])
 
-    with st.form("settings_form"):
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # 📌 共通設定
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    st.markdown("### 📌 共通設定")
 
-        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        # 📌 共通設定
-        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        st.markdown("### 📌 共通設定")
+    st.markdown("#### データ期間")
+    d_col1, d_col2 = st.columns(2)
+    with d_col1:
+        start_date = st.date_input(
+            "開始日",
+            value=date.fromisoformat(cfg.get("start_date", "2024-06-16")),
+        )
+    with d_col2:
+        st.text_input("終了日", value="auto（昨日）", disabled=True)
 
-        st.markdown("#### データ期間")
-        d_col1, d_col2 = st.columns(2)
-        with d_col1:
-            start_date = st.date_input(
-                "開始日",
-                value=date.fromisoformat(cfg.get("start_date", "2024-06-16")),
+    st.markdown("---")
+
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # 🔍 グリッドサーチ設定
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    st.markdown("### 🔍 グリッドサーチ設定")
+
+    st.markdown("#### 対象通貨ペア")
+    st.info(
+        "グリッドサーチを実施する通貨ペアを選択してください。"
+        "結果上位N件がトレード対象に採用されます。"
+    )
+    gs_new_syms: list[str] = []
+    gs_sym_cols = st.columns(4)
+    for _i, _sym in enumerate(_available):
+        with gs_sym_cols[_i % 4]:
+            _checked = st.checkbox(
+                _sym,
+                value=(_sym in _gs_syms),
+                key=f"gs_sym_{_sym}",
             )
-        with d_col2:
-            st.text_input("終了日", value="auto（昨日）", disabled=True)
+            if _checked:
+                gs_new_syms.append(_sym)
 
-        st.markdown("---")
+    st.markdown("#### 採用銘柄数")
+    gs_top_n = st.number_input(
+        "上位N銘柄を採用",
+        min_value=1,
+        max_value=10,
+        value=int(cfg.get("grid_search_top_n", 3)),
+        help="グリッドサーチ結果のスコア上位N件をトレード対象に採用",
+    )
 
-        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        # 🔍 グリッドサーチ設定
-        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        st.markdown("### 🔍 グリッドサーチ設定")
+    st.markdown("#### 探索パラメータ範囲")
 
-        st.markdown("#### 対象通貨ペア")
-        st.info(
-            "グリッドサーチを実施する通貨ペアを選択してください。"
-            "結果上位N件がトレード対象に採用されます。"
-        )
-        gs_new_syms: list[str] = []
-        gs_sym_cols = st.columns(4)
-        for _i, _sym in enumerate(_available):
-            with gs_sym_cols[_i % 4]:
-                _checked = st.checkbox(
+    st.markdown("**BB期間 (bb_period)**")
+    bb_col1, bb_col2, bb_col3 = st.columns(3)
+    bb_min  = bb_col1.number_input("min",  value=int(cfg.get("bb_period", {}).get("min",  10)), min_value=1, step=1, key="bb_min")
+    bb_max  = bb_col2.number_input("max",  value=int(cfg.get("bb_period", {}).get("max",  30)), min_value=1, step=1, key="bb_max")
+    bb_step = bb_col3.number_input("step", value=int(cfg.get("bb_period", {}).get("step",  5)), min_value=1, step=1, key="bb_step")
+
+    _bb_std_opts = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
+    _bb_std_def  = [v for v in cfg.get("bb_std", [1.0, 1.5, 2.0, 2.5]) if v in _bb_std_opts]
+    bb_std = st.multiselect("BB標準偏差 (bb_std)", options=_bb_std_opts, default=_bb_std_def)
+
+    st.markdown("**RSI上限 (rsi_upper)**")
+    ru_col1, ru_col2, ru_col3 = st.columns(3)
+    rsi_upper_min  = ru_col1.number_input("min",  value=int(cfg.get("rsi_upper", {}).get("min",  60)), min_value=50, max_value=95, step=5, key="ru_min")
+    rsi_upper_max  = ru_col2.number_input("max",  value=int(cfg.get("rsi_upper", {}).get("max",  75)), min_value=50, max_value=95, step=5, key="ru_max")
+    rsi_upper_step = ru_col3.number_input("step", value=int(cfg.get("rsi_upper", {}).get("step",  5)), min_value=1,  step=1,       key="ru_step")
+
+    st.markdown("**RSI下限 (rsi_lower)**")
+    rl_col1, rl_col2, rl_col3 = st.columns(3)
+    rsi_lower_min  = rl_col1.number_input("min",  value=int(cfg.get("rsi_lower", {}).get("min",  25)), min_value=5, max_value=50, step=5, key="rl_min")
+    rsi_lower_max  = rl_col2.number_input("max",  value=int(cfg.get("rsi_lower", {}).get("max",  40)), min_value=5, max_value=50, step=5, key="rl_max")
+    rsi_lower_step = rl_col3.number_input("step", value=int(cfg.get("rsi_lower", {}).get("step",  5)), min_value=1, step=1,       key="rl_step")
+
+    _atr_sl_opts = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
+    _atr_sl_def  = [v for v in cfg.get("atr_sl_mult", [1.5, 2.0]) if v in _atr_sl_opts]
+    atr_sl = st.multiselect("ATR損切倍率 (atr_sl_mult)", options=_atr_sl_opts, default=_atr_sl_def)
+
+    _atr_tp_opts = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0]
+    _atr_tp_def  = [v for v in cfg.get("atr_tp_mult", [2.0, 2.5]) if v in _atr_tp_opts]
+    atr_tp = st.multiselect("ATR利確倍率 (atr_tp_mult)", options=_atr_tp_opts, default=_atr_tp_def)
+
+    st.markdown("#### 並列ワーカー数")
+    _saved_mw = max(1, min(int(gs_cfg.get("max_workers", 1)), _cpu_max))
+    max_workers_val = st.slider(
+        "並列ワーカー数",
+        min_value=1,
+        max_value=_cpu_max,
+        value=_saved_mw,
+        help=f"グリッドサーチ・バックテストの並列処理数。CPUコア数({os.cpu_count()})の上限-2={_cpu_max}まで設定可能。大きいほど速いが負荷も高い",
+        key="gs_max_workers",
+    )
+
+    st.markdown("#### スコアリング重み")
+    wt_col1, wt_col2, wt_col3, wt_col4 = st.columns(4)
+    wt_wft    = wt_col1.slider("WFTシャープ", 0.0, 1.0, float(sw.get("wft_sharpe", 0.4)), 0.05, key="wt_wft")
+    wt_is     = wt_col2.slider("ISシャープ",  0.0, 1.0, float(sw.get("is_sharpe",  0.2)), 0.05, key="wt_is")
+    wt_pf     = wt_col3.slider("PF",          0.0, 1.0, float(sw.get("pf",         0.2)), 0.05, key="wt_pf")
+    wt_trades = wt_col4.slider("取引回数",    0.0, 1.0, float(sw.get("trades",     0.2)), 0.05, key="wt_trades")
+    total_w = wt_wft + wt_is + wt_pf + wt_trades
+    st.caption(f"合計: **{total_w:.2f}**")
+    if total_w > 1.001:
+        st.warning(f"⚠️ 重みの合計が {total_w:.2f} です。1.0 を超えています。")
+
+    st.markdown("---")
+
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # 📊 バックテスト・トレード設定
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    st.markdown("### 📊 バックテスト・トレード設定")
+
+    st.markdown("#### 対象通貨ペア")
+    st.info(
+        "グリッドサーチで採用されたペアが自動設定されます。"
+        "採用済みペアの手動除外のみ可能です。"
+    )
+    bt_new_active: list[str] = []
+    bt_sym_cols = st.columns(4)
+    for _i, _sym in enumerate(_available):
+        _is_adopted = _sym in _adopted_syms
+        _is_active  = _sym in _active_syms
+        with bt_sym_cols[_i % 4]:
+            if _is_adopted:
+                _cb = st.checkbox(
                     _sym,
-                    value=(_sym in _gs_syms),
-                    key=f"gs_sym_{_sym}",
+                    value=_is_active,
+                    key=f"bt_sym_{_sym}",
                 )
-                if _checked:
-                    gs_new_syms.append(_sym)
+                if _cb:
+                    bt_new_active.append(_sym)
+            else:
+                st.checkbox(
+                    _sym,
+                    value=False,
+                    disabled=True,
+                    key=f"bt_sym_{_sym}",
+                    help="グリッドサーチで採用されていません",
+                )
 
-        st.markdown("#### 採用銘柄数")
-        gs_top_n = st.number_input(
-            "上位N銘柄を採用",
-            min_value=1,
-            max_value=10,
-            value=int(cfg.get("grid_search_top_n", 3)),
-            help="グリッドサーチ結果のスコア上位N件をトレード対象に採用",
-        )
+    st.markdown("#### WFT設定")
+    wf_col1, wf_col2 = st.columns(2)
+    with wf_col1:
+        wf_train = st.slider("WFT学習期間（ヶ月）", 6, 24,
+                              value=int(cfg.get("wf_train_months", 12)))
+    with wf_col2:
+        wf_test = st.slider("WFT検証期間（ヶ月）", 1, 6,
+                             value=int(cfg.get("wf_test_months", 1)))
 
-        st.markdown("#### 探索パラメータ範囲")
+    st.markdown("#### 除外条件")
+    ex_col1, ex_col2, ex_col3 = st.columns(3)
+    min_trades     = ex_col1.number_input("最小取引回数",    value=int(cfg.get("min_trades",       100)), min_value=0)
+    min_pf         = ex_col2.number_input("最小PF",         value=float(cfg.get("min_pf",          1.2)), min_value=0.0, step=0.1, format="%.1f")
+    min_wft_sharpe = ex_col3.number_input("最小WFTシャープ", value=float(cfg.get("min_wft_sharpe", -0.3)), step=0.1, format="%.1f")
 
-        st.markdown("**BB期間 (bb_period)**")
-        bb_col1, bb_col2, bb_col3 = st.columns(3)
-        bb_min  = bb_col1.number_input("min",  value=int(cfg.get("bb_period", {}).get("min",  10)), min_value=1, step=1, key="bb_min")
-        bb_max  = bb_col2.number_input("max",  value=int(cfg.get("bb_period", {}).get("max",  30)), min_value=1, step=1, key="bb_max")
-        bb_step = bb_col3.number_input("step", value=int(cfg.get("bb_period", {}).get("step",  5)), min_value=1, step=1, key="bb_step")
+    st.markdown("---")
 
-        bb_std = st.multiselect(
-            "BB標準偏差 (bb_std)",
-            options=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
-            default=cfg.get("bb_std", [1.0, 1.5, 2.0, 2.5]),
-        )
-
-        st.markdown("**RSI上限 (rsi_upper)**")
-        ru_col1, ru_col2, ru_col3 = st.columns(3)
-        rsi_upper_min  = ru_col1.number_input("min",  value=int(cfg.get("rsi_upper", {}).get("min",  60)), min_value=50, max_value=95, step=5, key="ru_min")
-        rsi_upper_max  = ru_col2.number_input("max",  value=int(cfg.get("rsi_upper", {}).get("max",  75)), min_value=50, max_value=95, step=5, key="ru_max")
-        rsi_upper_step = ru_col3.number_input("step", value=int(cfg.get("rsi_upper", {}).get("step",  5)), min_value=1,  step=1,       key="ru_step")
-
-        st.markdown("**RSI下限 (rsi_lower)**")
-        rl_col1, rl_col2, rl_col3 = st.columns(3)
-        rsi_lower_min  = rl_col1.number_input("min",  value=int(cfg.get("rsi_lower", {}).get("min",  25)), min_value=5, max_value=50, step=5, key="rl_min")
-        rsi_lower_max  = rl_col2.number_input("max",  value=int(cfg.get("rsi_lower", {}).get("max",  40)), min_value=5, max_value=50, step=5, key="rl_max")
-        rsi_lower_step = rl_col3.number_input("step", value=int(cfg.get("rsi_lower", {}).get("step",  5)), min_value=1, step=1,       key="rl_step")
-
-        atr_sl = st.multiselect(
-            "ATR損切倍率 (atr_sl_mult)",
-            options=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
-            default=cfg.get("atr_sl_mult", [1.5, 2.0]),
-        )
-        atr_tp = st.multiselect(
-            "ATR利確倍率 (atr_tp_mult)",
-            options=[1.0, 1.5, 2.0, 2.5, 3.0, 4.0],
-            default=cfg.get("atr_tp_mult", [2.0, 2.5]),
-        )
-
-        st.markdown("#### 並列ワーカー数")
-        _saved_mw = max(1, min(int(gs_cfg.get("max_workers", 1)), _cpu_max))
-        max_workers_val = st.slider(
-            "並列ワーカー数",
-            min_value=1,
-            max_value=_cpu_max,
-            value=_saved_mw,
-            help=f"グリッドサーチ・バックテストの並列処理数。CPUコア数({os.cpu_count()})の上限-2={_cpu_max}まで設定可能。大きいほど速いが負荷も高い",
-            key="gs_max_workers",
-        )
-
-        st.markdown("#### スコアリング重み")
-        wt_col1, wt_col2, wt_col3, wt_col4 = st.columns(4)
-        wt_wft    = wt_col1.slider("WFTシャープ", 0.0, 1.0, float(sw.get("wft_sharpe", 0.4)), 0.05, key="wt_wft")
-        wt_is     = wt_col2.slider("ISシャープ",  0.0, 1.0, float(sw.get("is_sharpe",  0.2)), 0.05, key="wt_is")
-        wt_pf     = wt_col3.slider("PF",          0.0, 1.0, float(sw.get("pf",         0.2)), 0.05, key="wt_pf")
-        wt_trades = wt_col4.slider("取引回数",    0.0, 1.0, float(sw.get("trades",     0.2)), 0.05, key="wt_trades")
-        total_w = wt_wft + wt_is + wt_pf + wt_trades
-        st.caption(f"合計: **{total_w:.2f}**")
-        if total_w > 1.001:
-            st.warning(f"⚠️ 重みの合計が {total_w:.2f} です。1.0 を超えています。")
-
-        st.markdown("---")
-
-        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        # 📊 バックテスト・トレード設定
-        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        st.markdown("### 📊 バックテスト・トレード設定")
-
-        st.markdown("#### 対象通貨ペア")
-        st.info(
-            "グリッドサーチで採用されたペアが自動設定されます。"
-            "採用済みペアの手動除外のみ可能です。"
-        )
-        bt_new_active: list[str] = []
-        bt_sym_cols = st.columns(4)
-        for _i, _sym in enumerate(_available):
-            _is_adopted = _sym in _adopted_syms
-            _is_active  = _sym in _active_syms
-            with bt_sym_cols[_i % 4]:
-                if _is_adopted:
-                    _cb = st.checkbox(
-                        _sym,
-                        value=_is_active,
-                        key=f"bt_sym_{_sym}",
-                    )
-                    if _cb:
-                        bt_new_active.append(_sym)
-                else:
-                    st.checkbox(
-                        _sym,
-                        value=False,
-                        disabled=True,
-                        key=f"bt_sym_{_sym}",
-                        help="グリッドサーチで採用されていません",
-                    )
-
-        st.markdown("#### WFT設定")
-        wf_col1, wf_col2 = st.columns(2)
-        with wf_col1:
-            wf_train = st.slider("WFT学習期間（ヶ月）", 6, 24,
-                                  value=int(cfg.get("wf_train_months", 12)))
-        with wf_col2:
-            wf_test = st.slider("WFT検証期間（ヶ月）", 1, 6,
-                                 value=int(cfg.get("wf_test_months", 1)))
-
-        st.markdown("#### 除外条件")
-        ex_col1, ex_col2, ex_col3 = st.columns(3)
-        min_trades     = ex_col1.number_input("最小取引回数",    value=int(cfg.get("min_trades",       100)), min_value=0)
-        min_pf         = ex_col2.number_input("最小PF",         value=float(cfg.get("min_pf",          1.2)), min_value=0.0, step=0.1, format="%.1f")
-        min_wft_sharpe = ex_col3.number_input("最小WFTシャープ", value=float(cfg.get("min_wft_sharpe", -0.3)), step=0.1, format="%.1f")
-
-        st.markdown("---")
-
-        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        # 保存ボタン（1つだけ）
-        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-        submitted = st.form_submit_button("💾 設定を保存", type="primary", use_container_width=True)
-
-    if submitted:
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    # 保存ボタン（1つだけ）
+    # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    if st.button("💾 設定を保存", type="primary", use_container_width=True, key="save_settings"):
         errors = []
 
         # ── backtest_config.json に保存 ──────────────────────────────────
