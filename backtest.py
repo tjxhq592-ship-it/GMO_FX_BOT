@@ -21,6 +21,22 @@ from utils import (
     calculate_bollinger as _calculate_bollinger,
 )
 
+# Windows の DETACHED_PROCESS 起動では sys.stdout/stderr が None になる場合がある。
+# 書き込みテストで有効性を確認し、失敗なら devnull へリダイレクト。
+def _ensure_valid_stream(stream_name: str) -> None:
+    stream = getattr(sys, stream_name, None)
+    try:
+        if stream is None:
+            raise AttributeError("None")
+        stream.write("")
+        stream.flush()
+    except Exception:
+        devnull = open(os.devnull, "w", encoding="utf-8", errors="replace")
+        setattr(sys, stream_name, devnull)
+
+_ensure_valid_stream("stdout")
+_ensure_valid_stream("stderr")
+
 # ログ・警告の抑制
 logging.getLogger("yfinance").setLevel(logging.CRITICAL)
 logging.getLogger("peewee").setLevel(logging.CRITICAL)
@@ -597,6 +613,8 @@ if __name__ == "__main__":
             _bt_log(f"\n{'='*50}")
             _bt_log(f"[{idx}/{total}] {symbol} 開始...")
             _write_bt_progress(idx - 1, total, symbol, "running")
+            _ensure_valid_stream("stdout")
+            _ensure_valid_stream("stderr")
             try:
                 raw_results[symbol] = optimize_symbol(symbol, idx, total, wft_cutoff, prev_params)
                 _bt_log(f"[{idx}/{total}] {symbol} 完了")
