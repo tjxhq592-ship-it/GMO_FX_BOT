@@ -16,10 +16,16 @@ from streamlit_autorefresh import st_autorefresh
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 os.chdir(BASE_DIR)
 
-PARAMS_FILE  = os.path.join(BASE_DIR, "params.json")
-RESULTS_FILE = os.path.join(BASE_DIR, "backtest_results.json")
-LOG_FILE     = os.path.join(BASE_DIR, "trade_log.txt")
-CONFIG_FILE  = os.path.join(BASE_DIR, "backtest_config.json")
+PARAMS_FILE      = os.path.join(BASE_DIR, "params.json")
+RESULTS_FILE     = os.path.join(BASE_DIR, "backtest_results.json")
+LOG_FILE         = os.path.join(BASE_DIR, "trade_log.txt")
+CONFIG_FILE      = os.path.join(BASE_DIR, "backtest_config.json")
+GS_PROGRESS_FILE = os.path.join(BASE_DIR, "grid_search_progress.json")
+GS_RESULTS_FILE  = os.path.join(BASE_DIR, "grid_search_results.json")
+GS_CONFIG_FILE   = os.path.join(BASE_DIR, "grid_search_config.json")
+GS_PID_FILE      = os.path.join(BASE_DIR, "grid_search_pid.json")
+BT_PROGRESS_FILE = os.path.join(BASE_DIR, "backtest_progress.json")
+BT_PID_FILE      = os.path.join(BASE_DIR, "backtest_pid.json")
 
 
 def _launch_detached(cmd: list[str]) -> subprocess.Popen:
@@ -31,15 +37,10 @@ def _launch_detached(cmd: list[str]) -> subprocess.Popen:
             cwd=BASE_DIR,
         )
     else:
-        return subprocess.Popen(
-            cmd,
-            start_new_session=True,
-            cwd=BASE_DIR,
-        )
+        return subprocess.Popen(cmd, start_new_session=True, cwd=BASE_DIR)
 
 
 def _kill_pid(pid: int) -> bool:
-    """PID を指定してプロセスを停止する。成功なら True"""
     try:
         if sys.platform == "win32":
             subprocess.call(["taskkill", "/F", "/PID", str(pid)],
@@ -60,12 +61,6 @@ def _read_pid_file(path: str) -> dict:
 
 
 def _read_progress_json(path: str, retries: int = 3, delay: float = 0.1) -> dict | None:
-    """
-    進捗 JSON ファイルを安全に読み込む。
-    - ファイルサイズが 0 の場合はスキップ（None を返す）
-    - JSON パースエラーは 0.1 秒待ってリトライ（最大 retries 回）
-    - 全リトライ失敗時は None を返し、呼び出し元で前回表示を維持させる
-    """
     if not os.path.exists(path):
         return None
     if os.path.getsize(path) == 0:
@@ -122,6 +117,23 @@ def load_config() -> dict:
     with open(CONFIG_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
+def load_gs_config() -> dict:
+    default = {
+        "score_weights": {"wft_sharpe": 0.4, "is_sharpe": 0.2, "pf": 0.2, "trades": 0.2},
+        "max_workers": 1,
+    }
+    if not os.path.exists(GS_CONFIG_FILE):
+        return default
+    try:
+        with open(GS_CONFIG_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        # 旧フォーマット互換
+        if "weights" in data and "score_weights" not in data:
+            data["score_weights"] = data.pop("weights")
+        return {**default, **data}
+    except Exception:
+        return default
+
 def load_log():
     records = []
     if not os.path.exists(LOG_FILE):
@@ -157,7 +169,7 @@ def load_log():
 
 tab_main, tab_config, tab_run, tab_gs = st.tabs([
     "📊 ダッシュボード",
-    "⚙️ バックテスト設定",
+    "⚙️ 設定",
     "🚀 バックテスト実行",
     "🔍 グリッドサーチ",
 ])
@@ -167,7 +179,6 @@ tab_main, tab_config, tab_run, tab_gs = st.tabs([
 
 with tab_main:
 
-    # 1. サマリーカード
     st.subheader("サマリー")
     params_data = load_params()
 
@@ -198,7 +209,6 @@ with tab_main:
         c4.metric("除外ペア数",        len(excluded))
         c5.metric("最終更新",          updated_at)
 
-    # 2. バックテスト結果テーブル
     st.subheader("最適パラメータ一覧")
     if params_data and params_data.get("params"):
         rows = []
@@ -214,7 +224,6 @@ with tab_main:
     else:
         st.info("params.json にパラメータがありません。")
 
-    # 3. エクイティカーブ
     st.subheader("エクイティカーブ")
     results_data = load_results()
     if results_data is None:
@@ -234,7 +243,6 @@ with tab_main:
         else:
             st.line_chart(equity_df)
 
-    # 4. 取引履歴
     st.subheader("取引履歴")
     df_log = load_log()
     if df_log.empty:
@@ -254,15 +262,22 @@ with tab_main:
         st.bar_chart(count_df)
 
 
-# ==================== TAB 2: バックテスト設定 ====================
+# ==================== TAB 2: 設定 ====================
 
 with tab_config:
-    st.subheader("バックテスト設定")
-    cfg = load_config()
+    st.subheader("設定")
+    cfg    = load_config()
+    gs_cfg = load_gs_config()
+    sw     = gs_cfg.get("score_weights", {})
+    _cpu_max = max(1, (os.cpu_count() or 4) - 2)
 
-    with st.form("config_form"):
-        # ── 通貨ペア選択 ──────────────────────────────────────────────────
-        st.markdown("#### 取引通貨ペア")
+    with st.form("settings_form"):
+
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        # 📌 共通設定
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        st.markdown("### 📌 共通設定")
+
         available = cfg.get("available_symbols", [
             "USD_JPY", "EUR_JPY", "GBP_JPY", "AUD_JPY",
             "NZD_JPY", "CAD_JPY", "CHF_JPY", "ZAR_JPY",
@@ -270,64 +285,134 @@ with tab_config:
             "AUD_NZD", "EUR_CHF", "GBP_CHF", "EUR_AUD",
         ])
         current_symbols = cfg.get("symbols", [])
-
-        # multiselect で選択。key= を付けて session_state に保持させる。
-        # session_state に未登録の場合のみ config から初期値を設定。
         if "symbols_ms" not in st.session_state:
             st.session_state["symbols_ms"] = [s for s in current_symbols if s in available]
 
+        st.markdown("#### 取引通貨ペア")
         selected_symbols_form = st.multiselect(
             "通貨ペアを選択（複数可）",
             options=available,
             default=st.session_state["symbols_ms"],
             key="symbols_ms",
         )
-
-        # 4列グリッドでチェック状態を視覚的に表示（読み取り専用プレビュー）
         st.caption("選択中のペア:")
-        cols = st.columns(4)
+        sym_cols = st.columns(4)
         for i, sym in enumerate(available):
-            with cols[i % 4]:
+            with sym_cols[i % 4]:
                 checked = sym in selected_symbols_form
-                st.markdown(
-                    f"{'✅' if checked else '⬜'} {sym}",
-                    help=sym,
-                )
+                st.markdown(f"{'✅' if checked else '⬜'} {sym}", help=sym)
 
-        st.markdown("#### 基本設定")
-        col1, col2 = st.columns(2)
-        with col1:
+        st.markdown("#### データ期間")
+        d_col1, d_col2 = st.columns(2)
+        with d_col1:
             start_date = st.date_input(
                 "開始日",
                 value=date.fromisoformat(cfg.get("start_date", "2024-06-16")),
             )
-        with col2:
+        with d_col2:
             st.text_input("終了日", value="auto（昨日）", disabled=True)
 
-        col3, col4 = st.columns(2)
-        with col3:
-            wf_train = st.slider("学習期間（ヶ月）", 1, 24,
+        st.markdown("---")
+
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        # 📊 バックテスト設定
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        st.markdown("### 📊 バックテスト設定")
+
+        wf_col1, wf_col2 = st.columns(2)
+        with wf_col1:
+            wf_train = st.slider("WFT学習期間（ヶ月）", 1, 24,
                                   value=int(cfg.get("wf_train_months", 12)))
-        with col4:
-            wf_test  = st.slider("WFT検証期間（ヶ月）", 1, 6,
-                                  value=int(cfg.get("wf_test_months", 1)))
+        with wf_col2:
+            wf_test = st.slider("WFT検証期間（ヶ月）", 1, 6,
+                                 value=int(cfg.get("wf_test_months", 1)))
 
         st.markdown("#### 除外条件")
         ex_col1, ex_col2, ex_col3 = st.columns(3)
-        min_trades    = ex_col1.number_input("最低取引回数",        value=int(cfg.get("min_trades",     200)), min_value=0)
-        min_pf        = ex_col2.number_input("最低 Profit Factor", value=float(cfg.get("min_pf",       1.2)), min_value=0.0, step=0.1, format="%.1f")
-        min_wft_sharpe = ex_col3.number_input("最低WFTシャープ",    value=float(cfg.get("min_wft_sharpe", 0.0)), step=0.1, format="%.1f")
+        min_trades     = ex_col1.number_input("最小取引回数",       value=int(cfg.get("min_trades",      200)), min_value=0)
+        min_pf         = ex_col2.number_input("最小PF",            value=float(cfg.get("min_pf",         1.2)), min_value=0.0, step=0.1, format="%.1f")
+        min_wft_sharpe = ex_col3.number_input("最小WFTシャープ",    value=float(cfg.get("min_wft_sharpe", 0.0)), step=0.1, format="%.1f")
 
-        submitted = st.form_submit_button("💾 設定を保存")
+        st.markdown("---")
+
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        # 🔍 グリッドサーチ設定
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        st.markdown("### 🔍 グリッドサーチ設定")
+
+        st.markdown("#### 探索パラメータ範囲")
+
+        st.markdown("**BB期間 (bb_period)**")
+        bb_col1, bb_col2, bb_col3 = st.columns(3)
+        bb_min  = bb_col1.number_input("min",  value=int(cfg.get("bb_period", {}).get("min",  10)), min_value=1, step=1, key="bb_min")
+        bb_max  = bb_col2.number_input("max",  value=int(cfg.get("bb_period", {}).get("max",  30)), min_value=1, step=1, key="bb_max")
+        bb_step = bb_col3.number_input("step", value=int(cfg.get("bb_period", {}).get("step",  5)), min_value=1, step=1, key="bb_step")
+
+        bb_std = st.multiselect(
+            "BB標準偏差 (bb_std)",
+            options=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
+            default=cfg.get("bb_std", [1.0, 1.5, 2.0, 2.5]),
+        )
+
+        st.markdown("**RSI上限 (rsi_upper)**")
+        ru_col1, ru_col2, ru_col3 = st.columns(3)
+        rsi_upper_min  = ru_col1.number_input("min",  value=int(cfg.get("rsi_upper", {}).get("min",  60)), min_value=50, max_value=95, step=5, key="ru_min")
+        rsi_upper_max  = ru_col2.number_input("max",  value=int(cfg.get("rsi_upper", {}).get("max",  75)), min_value=50, max_value=95, step=5, key="ru_max")
+        rsi_upper_step = ru_col3.number_input("step", value=int(cfg.get("rsi_upper", {}).get("step",  5)), min_value=1,  step=1,       key="ru_step")
+
+        st.markdown("**RSI下限 (rsi_lower)**")
+        rl_col1, rl_col2, rl_col3 = st.columns(3)
+        rsi_lower_min  = rl_col1.number_input("min",  value=int(cfg.get("rsi_lower", {}).get("min",  25)), min_value=5, max_value=50, step=5, key="rl_min")
+        rsi_lower_max  = rl_col2.number_input("max",  value=int(cfg.get("rsi_lower", {}).get("max",  40)), min_value=5, max_value=50, step=5, key="rl_max")
+        rsi_lower_step = rl_col3.number_input("step", value=int(cfg.get("rsi_lower", {}).get("step",  5)), min_value=1, step=1,       key="rl_step")
+
+        atr_sl = st.multiselect(
+            "ATR損切倍率 (atr_sl_mult)",
+            options=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
+            default=cfg.get("atr_sl_mult", [1.5, 2.0]),
+        )
+        atr_tp = st.multiselect(
+            "ATR利確倍率 (atr_tp_mult)",
+            options=[1.0, 1.5, 2.0, 2.5, 3.0, 4.0],
+            default=cfg.get("atr_tp_mult", [2.0, 2.5]),
+        )
+
+        st.markdown("#### 並列ワーカー数")
+        _saved_mw = max(1, min(int(gs_cfg.get("max_workers", 1)), _cpu_max))
+        max_workers_val = st.slider(
+            "並列ワーカー数",
+            min_value=1,
+            max_value=_cpu_max,
+            value=_saved_mw,
+            help=f"CPUコア数({os.cpu_count()})の上限-2={_cpu_max}まで設定可能。大きいほど速いが負荷も高い",
+            key="gs_max_workers",
+        )
+
+        st.markdown("#### スコアリング重み")
+        wt_col1, wt_col2, wt_col3, wt_col4 = st.columns(4)
+        wt_wft    = wt_col1.slider("WFTシャープ", 0.0, 1.0, float(sw.get("wft_sharpe", 0.4)), 0.05, key="wt_wft")
+        wt_is     = wt_col2.slider("ISシャープ",  0.0, 1.0, float(sw.get("is_sharpe",  0.2)), 0.05, key="wt_is")
+        wt_pf     = wt_col3.slider("PF",          0.0, 1.0, float(sw.get("pf",         0.2)), 0.05, key="wt_pf")
+        wt_trades = wt_col4.slider("取引回数",    0.0, 1.0, float(sw.get("trades",     0.2)), 0.05, key="wt_trades")
+        total_w = wt_wft + wt_is + wt_pf + wt_trades
+        st.caption(f"合計: **{total_w:.2f}**")
+        if total_w > 1.001:
+            st.warning(f"⚠️ 重みの合計が {total_w:.2f} です。1.0 を超えています。")
+
+        st.markdown("---")
+
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        # 保存ボタン（1つだけ）
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        submitted = st.form_submit_button("💾 設定を保存", type="primary", use_container_width=True)
 
     if submitted:
-        # multiselect の値を使用（form 内で確実にキャプチャされる）
-        selected_symbols = selected_symbols_form
-
-        if not selected_symbols:
+        if not selected_symbols_form:
             st.warning("⚠️ 最低1つの通貨ペアを選択してください。")
         else:
-            # 既存設定を読み込んでパラメータ範囲（グリッドサーチタブで管理）を保持
+            errors = []
+
+            # ── backtest_config.json に保存 ──────────────────────────────
             existing_cfg = load_config()
             new_cfg = {
                 **existing_cfg,
@@ -336,7 +421,13 @@ with tab_config:
                 "end_date":          "auto",
                 "wf_train_months":   wf_train,
                 "wf_test_months":    wf_test,
-                "symbols":           selected_symbols,
+                "symbols":           selected_symbols_form,
+                "bb_period":         {"min": int(bb_min),  "max": int(bb_max),  "step": int(bb_step)},
+                "bb_std":            sorted(bb_std)  if bb_std  else [2.0],
+                "rsi_upper":         {"min": int(rsi_upper_min), "max": int(rsi_upper_max), "step": int(rsi_upper_step)},
+                "rsi_lower":         {"min": int(rsi_lower_min), "max": int(rsi_lower_max), "step": int(rsi_lower_step)},
+                "atr_sl_mult":       sorted(atr_sl)  if atr_sl  else [1.5],
+                "atr_tp_mult":       sorted(atr_tp)  if atr_tp  else [2.0],
                 "min_trades":        int(min_trades),
                 "min_pf":            float(min_pf),
                 "min_wft_sharpe":    float(min_wft_sharpe),
@@ -344,56 +435,48 @@ with tab_config:
             try:
                 with open(CONFIG_FILE, "w", encoding="utf-8") as f:
                     json.dump(new_cfg, f, indent=2, ensure_ascii=False)
-
-                # 保存後に session_state を更新し再読み込みして確認表示
-                st.session_state["symbols_ms"] = selected_symbols
-                saved = load_config()
-                st.success(f"✅ 保存しました: {', '.join(saved.get('symbols', []))}")
-                with st.expander("保存された設定を確認"):
-                    st.json(saved)
+                st.session_state["symbols_ms"] = selected_symbols_form
             except Exception as e:
-                st.error(f"保存エラー: {e}")
+                errors.append(f"backtest_config.json 保存エラー: {e}")
 
-    # ── 並列処理設定（グリッドサーチ用） ──────────────────────────────────
-    st.markdown("---")
-    st.markdown("#### 並列処理設定（グリッドサーチ）")
-    _gs_cfg_mw: dict = {}
-    if os.path.exists(os.path.join(BASE_DIR, "grid_search_config.json")):
-        try:
-            with open(os.path.join(BASE_DIR, "grid_search_config.json"), "r", encoding="utf-8") as _f:
-                _gs_cfg_mw = json.load(_f)
-        except Exception:
-            pass
-    _cpu_max = max(1, (os.cpu_count() or 4) - 2)
-    _saved_mw = max(1, min(int(_gs_cfg_mw.get("max_workers", 1)), _cpu_max))
-    gs_max_workers = st.slider(
-        "並列ワーカー数",
-        min_value=1,
-        max_value=_cpu_max,
-        value=_saved_mw,
-        help=f"CPUコア数({os.cpu_count()})の上限-2={_cpu_max}まで設定可能。大きいほど速いが負荷も高い",
-        key="gs_max_workers",
-    )
-    if st.button("💾 並列ワーカー数を保存", key="save_max_workers"):
-        _gs_cfg_mw["max_workers"] = gs_max_workers
-        try:
-            with open(os.path.join(BASE_DIR, "grid_search_config.json"), "w", encoding="utf-8") as _f:
-                json.dump(_gs_cfg_mw, _f, indent=2, ensure_ascii=False)
-            st.success(f"✅ 並列ワーカー数を保存しました: {gs_max_workers}")
-        except Exception as e:
-            st.error(f"保存エラー: {e}")
+            # ── grid_search_config.json に保存 ───────────────────────────
+            existing_gs = load_gs_config()
+            existing_gs["score_weights"] = {
+                "wft_sharpe": wt_wft, "is_sharpe": wt_is,
+                "pf": wt_pf, "trades": wt_trades,
+            }
+            existing_gs["max_workers"] = max_workers_val
+            try:
+                with open(GS_CONFIG_FILE, "w", encoding="utf-8") as f:
+                    json.dump(existing_gs, f, indent=2, ensure_ascii=False)
+            except Exception as e:
+                errors.append(f"grid_search_config.json 保存エラー: {e}")
+
+            if errors:
+                for err in errors:
+                    st.error(err)
+            else:
+                st.success(
+                    f"✅ 保存しました  "
+                    f"ペア: {', '.join(selected_symbols_form)}  /  "
+                    f"max_workers: {max_workers_val}"
+                )
+                with st.expander("保存内容を確認"):
+                    c_left, c_right = st.columns(2)
+                    with c_left:
+                        st.caption("backtest_config.json")
+                        st.json(load_config())
+                    with c_right:
+                        st.caption("grid_search_config.json")
+                        st.json(load_gs_config())
 
 
 # ==================== TAB 3: バックテスト実行 ====================
-
-BT_PROGRESS_FILE = os.path.join(BASE_DIR, "backtest_progress.json")
-BT_PID_FILE      = os.path.join(BASE_DIR, "backtest_pid.json")
 
 with tab_run:
     st.subheader("バックテスト実行")
     st_autorefresh(interval=3000, key="bt_refresh")
 
-    # ── 実行状態を PID ファイルで確認 ────────────────────────────────────
     bt_pid_data = _read_pid_file(BT_PID_FILE)
     bt_status   = bt_pid_data.get("status", "")
     bt_pid      = bt_pid_data.get("pid")
@@ -403,7 +486,6 @@ with tab_run:
         st.info(f"⏳ バックテスト実行中  (PID: {bt_pid}　開始: {bt_pid_data.get('started_at','')})")
         if st.button("⏹ 停止", key="bt_stop"):
             if bt_pid and _kill_pid(bt_pid):
-                # PID ファイルのステータスを更新
                 bt_pid_data["status"] = "stopped"
                 with open(BT_PID_FILE, "w", encoding="utf-8") as f:
                     json.dump(bt_pid_data, f, indent=2)
@@ -412,7 +494,6 @@ with tab_run:
                 st.error("プロセスの停止に失敗しました。")
     else:
         if st.button("▶ バックテスト開始", type="primary", key="bt_start"):
-            # PID ファイルを先に作成（起動中に runner.py が上書きするが、先に書いておく）
             try:
                 proc = _launch_detached(["python", "backtest.py"])
                 pid_data = {
@@ -422,17 +503,14 @@ with tab_run:
                 }
                 with open(BT_PID_FILE, "w", encoding="utf-8") as f:
                     json.dump(pid_data, f, indent=2)
-                # backtest_progress.json をリセット
                 if os.path.exists(BT_PROGRESS_FILE):
                     os.remove(BT_PROGRESS_FILE)
                 st.success(f"バックテストを起動しました (PID: {proc.pid})")
             except Exception as e:
                 st.error(f"起動失敗: {e}")
-
         st.caption("または、別のターミナルで:")
         st.code("python backtest.py", language="bash")
 
-    # ── 進捗表示 ─────────────────────────────────────────────────────────
     bt_prog = _read_progress_json(BT_PROGRESS_FILE)
     if bt_prog is not None:
         status = bt_prog.get("status", "running")
@@ -453,27 +531,18 @@ with tab_run:
         if logs:
             st.text_area("実行ログ（最新20件）",
                          value="\n".join(logs[-20:]),
-                         height=300,
-                         disabled=True,
-                         key="bt_log_area")
+                         height=300, disabled=True, key="bt_log_area")
     else:
         st.caption("`backtest_progress.json` がありません。実行開始後に進捗が表示されます。")
 
 
 # ==================== TAB 4: グリッドサーチ ====================
 
-GS_PROGRESS_FILE = os.path.join(BASE_DIR, "grid_search_progress.json")
-GS_RESULTS_FILE  = os.path.join(BASE_DIR, "grid_search_results.json")
-GS_CONFIG_FILE   = os.path.join(BASE_DIR, "grid_search_config.json")
-GS_PID_FILE      = os.path.join(BASE_DIR, "grid_search_pid.json")
-
 with tab_gs:
     st.subheader("グリッドサーチ")
-
-    # 3秒ごとに進捗エリアだけ自動更新
     st_autorefresh(interval=3000, key="gs_refresh")
 
-    # ── 実行状態を PID ファイルで確認 ────────────────────────────────────
+    # ── 実行制御 ──────────────────────────────────────────────────────────
     gs_pid_data = _read_pid_file(GS_PID_FILE)
     gs_status   = gs_pid_data.get("status", "")
     gs_pid      = gs_pid_data.get("pid")
@@ -490,10 +559,9 @@ with tab_gs:
             else:
                 st.error("プロセスの停止に失敗しました。")
     else:
-        if st.button("🔍 グリッドサーチ開始", type="primary", key="gs_start"):
+        if st.button("▶ 開始", type="primary", key="gs_start"):
             try:
                 proc = _launch_detached(["python", "grid_search_runner.py"])
-                # PID ファイルは grid_search_runner.py が書き込むが先に仮記録
                 _init_pid = {
                     "pid":        proc.pid,
                     "started_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -506,120 +574,10 @@ with tab_gs:
                 st.success(f"グリッドサーチを起動しました (PID: {proc.pid})")
             except Exception as e:
                 st.error(f"起動失敗: {e}")
-
         st.caption("または、別のターミナルで:")
         st.code("python grid_search_runner.py", language="bash")
 
-    # ── 探索範囲設定（backtest_config.json に保存） ───────────────────────
-    st.markdown("#### 探索範囲設定")
-    _range_cfg = load_config()
-
-    with st.form("gs_range_form"):
-        # BB期間
-        st.markdown("**BB期間 (bb_period)**")
-        r_bb_col1, r_bb_col2, r_bb_col3 = st.columns(3)
-        r_bb_min  = r_bb_col1.number_input("min",  value=int(_range_cfg.get("bb_period", {}).get("min",  10)), min_value=1, step=1, key="r_bb_min")
-        r_bb_max  = r_bb_col2.number_input("max",  value=int(_range_cfg.get("bb_period", {}).get("max",  30)), min_value=1, step=1, key="r_bb_max")
-        r_bb_step = r_bb_col3.number_input("step", value=int(_range_cfg.get("bb_period", {}).get("step",  5)), min_value=1, step=1, key="r_bb_step")
-
-        # BB標準偏差
-        r_bb_std = st.multiselect(
-            "BB標準偏差 (bb_std)",
-            options=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
-            default=_range_cfg.get("bb_std", [1.0, 1.5, 2.0, 2.5]),
-            key="r_bb_std",
-        )
-
-        # RSI upper
-        st.markdown("**RSI上限 (rsi_upper)**")
-        r_ru_col1, r_ru_col2, r_ru_col3 = st.columns(3)
-        r_rsi_upper_min  = r_ru_col1.number_input("min",  value=int(_range_cfg.get("rsi_upper", {}).get("min",  60)), min_value=50, max_value=95, step=5, key="r_ru_min")
-        r_rsi_upper_max  = r_ru_col2.number_input("max",  value=int(_range_cfg.get("rsi_upper", {}).get("max",  75)), min_value=50, max_value=95, step=5, key="r_ru_max")
-        r_rsi_upper_step = r_ru_col3.number_input("step", value=int(_range_cfg.get("rsi_upper", {}).get("step",  5)), min_value=1,  step=1,       key="r_ru_step")
-
-        # RSI lower
-        st.markdown("**RSI下限 (rsi_lower)**")
-        r_rl_col1, r_rl_col2, r_rl_col3 = st.columns(3)
-        r_rsi_lower_min  = r_rl_col1.number_input("min",  value=int(_range_cfg.get("rsi_lower", {}).get("min",  25)), min_value=5, max_value=50, step=5, key="r_rl_min")
-        r_rsi_lower_max  = r_rl_col2.number_input("max",  value=int(_range_cfg.get("rsi_lower", {}).get("max",  40)), min_value=5, max_value=50, step=5, key="r_rl_max")
-        r_rsi_lower_step = r_rl_col3.number_input("step", value=int(_range_cfg.get("rsi_lower", {}).get("step",  5)), min_value=1, step=1,       key="r_rl_step")
-
-        # ATR倍率
-        r_atr_sl = st.multiselect(
-            "ATR損切倍率 (atr_sl_mult)",
-            options=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
-            default=_range_cfg.get("atr_sl_mult", [1.5, 2.0]),
-            key="r_atr_sl",
-        )
-        r_atr_tp = st.multiselect(
-            "ATR利確倍率 (atr_tp_mult)",
-            options=[1.0, 1.5, 2.0, 2.5, 3.0, 4.0],
-            default=_range_cfg.get("atr_tp_mult", [2.0, 2.5]),
-            key="r_atr_tp",
-        )
-
-        range_submitted = st.form_submit_button("💾 探索範囲を保存")
-
-    if range_submitted:
-        _save_range_cfg = load_config()
-        _save_range_cfg.update({
-            "bb_period":   {"min": int(r_bb_min),  "max": int(r_bb_max),  "step": int(r_bb_step)},
-            "bb_std":      sorted(r_bb_std)  if r_bb_std  else [2.0],
-            "rsi_upper":   {"min": int(r_rsi_upper_min), "max": int(r_rsi_upper_max), "step": int(r_rsi_upper_step)},
-            "rsi_lower":   {"min": int(r_rsi_lower_min), "max": int(r_rsi_lower_max), "step": int(r_rsi_lower_step)},
-            "atr_sl_mult": sorted(r_atr_sl) if r_atr_sl else [1.5],
-            "atr_tp_mult": sorted(r_atr_tp) if r_atr_tp else [2.0],
-        })
-        try:
-            with open(CONFIG_FILE, "w", encoding="utf-8") as _f:
-                json.dump(_save_range_cfg, _f, indent=2, ensure_ascii=False)
-            st.success("✅ 探索範囲を backtest_config.json に保存しました。")
-        except Exception as e:
-            st.error(f"保存エラー: {e}")
-
-    # ── スコアリング重み（grid_search_config.json を保存するだけ） ────────
-    st.markdown("#### スコアリング重み設定（grid_search_config.json に保存）")
-
-    _gs_cfg_default = {"score_weights": {"wft_sharpe": 0.4, "is_sharpe": 0.2, "pf": 0.2, "trades": 0.2}}
-    if os.path.exists(GS_CONFIG_FILE):
-        try:
-            with open(GS_CONFIG_FILE, "r", encoding="utf-8") as f:
-                _gs_cfg_now = json.load(f)
-            _sw = _gs_cfg_now.get("score_weights") or _gs_cfg_now.get("weights", {})
-        except Exception:
-            _sw = _gs_cfg_default["score_weights"]
-    else:
-        _sw = _gs_cfg_default["score_weights"]
-
-    w_col1, w_col2, w_col3, w_col4 = st.columns(4)
-    wt_wft    = w_col1.slider("WFTシャープ", 0.0, 1.0, float(_sw.get("wft_sharpe", 0.4)), 0.05, key="wt_wft")
-    wt_is     = w_col2.slider("ISシャープ",  0.0, 1.0, float(_sw.get("is_sharpe",  0.2)), 0.05, key="wt_is")
-    wt_pf     = w_col3.slider("PF",          0.0, 1.0, float(_sw.get("pf",         0.2)), 0.05, key="wt_pf")
-    wt_trades = w_col4.slider("取引回数",    0.0, 1.0, float(_sw.get("trades",     0.2)), 0.05, key="wt_trades")
-
-    total_w = wt_wft + wt_is + wt_pf + wt_trades
-    st.caption(f"合計: **{total_w:.2f}**")
-    if total_w > 1.001:
-        st.warning(f"⚠️ 重みの合計が {total_w:.2f} です。1.0 を超えています。")
-
-    if st.button("💾 重み設定を保存"):
-        # 既存の grid_search_config.json を読み込んで score_weights だけ上書き（max_workers は保持）
-        _existing_gs_cfg: dict = {}
-        if os.path.exists(GS_CONFIG_FILE):
-            try:
-                with open(GS_CONFIG_FILE, "r", encoding="utf-8") as f:
-                    _existing_gs_cfg = json.load(f)
-            except Exception:
-                pass
-        _existing_gs_cfg["score_weights"] = {
-            "wft_sharpe": wt_wft, "is_sharpe": wt_is,
-            "pf": wt_pf, "trades": wt_trades,
-        }
-        with open(GS_CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(_existing_gs_cfg, f, indent=2, ensure_ascii=False)
-        st.success("grid_search_config.json を保存しました。")
-
-    # ── 進捗表示 ─────────────────────────────────────────────────────────
+    # ── 実行状況 ──────────────────────────────────────────────────────────
     st.markdown("#### 実行状況")
     gs_prog = _read_progress_json(GS_PROGRESS_FILE)
     if gs_prog is not None:
@@ -640,7 +598,7 @@ with tab_gs:
         else:
             st.progress(ratio)
             st.caption(
-                f"{cur} / {tot} 完了　"
+                f"{cur:,} / {tot:,} 完了　"
                 f"経過: {elapsed//60}分{elapsed%60}秒　"
                 f"残り: {remaining//60}分{remaining%60}秒"
             )
@@ -650,12 +608,12 @@ with tab_gs:
             with st.expander("現在のベストパラメータ"):
                 st.json(best_p)
 
-        # ── 完了済みペアの状況表示 ──────────────────────────────────────
-        completed      = gs_prog.get("completed_symbols", {})
-        cur_sym        = gs_prog.get("current_symbol", "")
-        sym_cur        = gs_prog.get("symbol_current", 0)
-        sym_tot        = gs_prog.get("symbol_total",   0)
-        cfg_syms       = load_config().get("symbols", [])
+        # ── ペア別進捗 ────────────────────────────────────────────────────
+        completed = gs_prog.get("completed_symbols", {})
+        cur_sym   = gs_prog.get("current_symbol", "")
+        sym_cur   = gs_prog.get("symbol_current", 0)
+        sym_tot   = gs_prog.get("symbol_total",   0)
+        cfg_syms  = load_config().get("symbols", [])
         if cfg_syms:
             st.markdown("**ペア別進捗**")
             for sym in cfg_syms:
@@ -679,13 +637,11 @@ with tab_gs:
         if logs:
             st.text_area("実行ログ（最新20件）",
                          value="\n".join(logs[-20:]),
-                         height=250,
-                         disabled=True,
-                         key="gs_log_area")
+                         height=250, disabled=True, key="gs_log_area")
     else:
         st.caption("`grid_search_progress.json` がありません。実行開始後に進捗が表示されます。")
 
-    # ── 結果テーブル ─────────────────────────────────────────────────────
+    # ── 検索結果テーブル ──────────────────────────────────────────────────
     if os.path.exists(GS_RESULTS_FILE):
         st.markdown("#### 検索結果（上位20件）")
         try:
@@ -693,13 +649,13 @@ with tab_gs:
                 gs_rows = json.load(f)
 
             df_gs = pd.DataFrame(gs_rows[:20])
-            display_gs_cols = [
+            display_cols = [
                 "symbol", "bb_period", "bb_std", "rsi_upper", "rsi_lower",
                 "atr_sl_mult", "atr_tp_mult", "n_trades", "pf",
                 "is_sharpe", "wft_sharpe", "score",
             ]
-            display_gs_cols = [c for c in display_gs_cols if c in df_gs.columns]
-            df_gs_display = df_gs[display_gs_cols].copy()
+            display_cols = [c for c in display_cols if c in df_gs.columns]
+            df_gs_display = df_gs[display_cols].copy()
 
             if not df_gs_display.empty and "score" in df_gs_display.columns:
                 best_idx = df_gs_display["score"].idxmax()
@@ -712,12 +668,12 @@ with tab_gs:
                 best_row = gs_rows[0]
                 st.markdown(f"**ベストスコア: {best_row['score']:.4f}** / 銘柄: {best_row.get('symbol','')}")
 
-                if st.button("✅ ベストパラメータを採用"):
+                if st.button("✅ ベストパラメータを採用", key="gs_adopt"):
                     symbol = best_row.get("symbol", "")
                     new_p  = {
                         k: best_row[k]
-                        for k in ["bb_period","bb_std","rsi_period","rsi_upper","rsi_lower",
-                                  "atr_period","atr_sl_mult","atr_tp_mult"]
+                        for k in ["bb_period", "bb_std", "rsi_period", "rsi_upper", "rsi_lower",
+                                  "atr_period", "atr_sl_mult", "atr_tp_mult"]
                         if k in best_row
                     }
                     params_data = load_params() or {}
