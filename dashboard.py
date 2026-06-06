@@ -384,7 +384,7 @@ with tab_config:
             min_value=1,
             max_value=_cpu_max,
             value=_saved_mw,
-            help=f"CPUコア数({os.cpu_count()})の上限-2={_cpu_max}まで設定可能。大きいほど速いが負荷も高い",
+            help=f"グリッドサーチ・バックテストの並列処理数。CPUコア数({os.cpu_count()})の上限-2={_cpu_max}まで設定可能。大きいほど速いが負荷も高い",
             key="gs_max_workers",
         )
 
