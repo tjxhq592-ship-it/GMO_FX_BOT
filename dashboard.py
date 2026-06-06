@@ -1,5 +1,8 @@
 # 起動: streamlit run dashboard.py
 
+import signal
+import subprocess
+import sys
 import streamlit as st
 import pandas as pd
 import re
@@ -12,6 +15,46 @@ PARAMS_FILE  = "params.json"
 RESULTS_FILE = "backtest_results.json"
 LOG_FILE     = "trade_log.txt"
 CONFIG_FILE  = "backtest_config.json"
+
+# スクリプトと同じディレクトリを作業ディレクトリとして使用
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def _launch_detached(cmd: list[str]) -> subprocess.Popen:
+    """OS に応じてデタッチドプロセスを起動する"""
+    if sys.platform == "win32":
+        return subprocess.Popen(
+            cmd,
+            creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
+            cwd=BASE_DIR,
+        )
+    else:
+        return subprocess.Popen(
+            cmd,
+            start_new_session=True,
+            cwd=BASE_DIR,
+        )
+
+
+def _kill_pid(pid: int) -> bool:
+    """PID を指定してプロセスを停止する。成功なら True"""
+    try:
+        if sys.platform == "win32":
+            subprocess.call(["taskkill", "/F", "/PID", str(pid)],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        else:
+            os.kill(pid, signal.SIGTERM)
+        return True
+    except Exception:
+        return False
+
+
+def _read_pid_file(path: str) -> dict:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
 
 st.set_page_config(page_title="GMO FX Bot Dashboard", layout="wide")
 st.title("GMO FX Bot ダッシュボード")
@@ -310,18 +353,50 @@ with tab_config:
 # ==================== TAB 3: バックテスト実行 ====================
 
 BT_PROGRESS_FILE = "backtest_progress.json"
+BT_PID_FILE      = "backtest_pid.json"
 
 with tab_run:
     st.subheader("バックテスト実行")
-
-    # 3秒ごとに進捗エリアだけ自動更新
     st_autorefresh(interval=3000, key="bt_refresh")
 
-    st.info(
-        "別のターミナルで以下を実行してください：\n\n"
-        "`python backtest.py`"
-    )
-    st.code("python backtest.py", language="bash")
+    # ── 実行状態を PID ファイルで確認 ────────────────────────────────────
+    bt_pid_data = _read_pid_file(BT_PID_FILE)
+    bt_status   = bt_pid_data.get("status", "")
+    bt_pid      = bt_pid_data.get("pid")
+    bt_running  = (bt_status == "running")
+
+    if bt_running:
+        st.info(f"⏳ バックテスト実行中  (PID: {bt_pid}　開始: {bt_pid_data.get('started_at','')})")
+        if st.button("⏹ 停止", key="bt_stop"):
+            if bt_pid and _kill_pid(bt_pid):
+                # PID ファイルのステータスを更新
+                bt_pid_data["status"] = "stopped"
+                with open(BT_PID_FILE, "w", encoding="utf-8") as f:
+                    json.dump(bt_pid_data, f, indent=2)
+                st.warning("バックテストを停止しました。")
+            else:
+                st.error("プロセスの停止に失敗しました。")
+    else:
+        if st.button("▶ バックテスト開始", type="primary", key="bt_start"):
+            # PID ファイルを先に作成（起動中に runner.py が上書きするが、先に書いておく）
+            try:
+                proc = _launch_detached(["python", "backtest.py"])
+                pid_data = {
+                    "pid":        proc.pid,
+                    "started_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "status":     "running",
+                }
+                with open(BT_PID_FILE, "w", encoding="utf-8") as f:
+                    json.dump(pid_data, f, indent=2)
+                # backtest_progress.json をリセット
+                if os.path.exists(BT_PROGRESS_FILE):
+                    os.remove(BT_PROGRESS_FILE)
+                st.success(f"バックテストを起動しました (PID: {proc.pid})")
+            except Exception as e:
+                st.error(f"起動失敗: {e}")
+
+        st.caption("または、別のターミナルで:")
+        st.code("python backtest.py", language="bash")
 
     # ── 進捗表示 ─────────────────────────────────────────────────────────
     if os.path.exists(BT_PROGRESS_FILE):
@@ -329,16 +404,15 @@ with tab_run:
             with open(BT_PROGRESS_FILE, "r", encoding="utf-8") as f:
                 bt_prog = json.load(f)
 
-            status  = bt_prog.get("status", "running")
-            cur     = bt_prog.get("current", 0)
-            tot     = bt_prog.get("total_symbols", 1)
-            symbol  = bt_prog.get("current_symbol", "")
-            ratio   = cur / tot if tot > 0 else 0.0
-            logs    = bt_prog.get("log", [])
+            status = bt_prog.get("status", "running")
+            cur    = bt_prog.get("current", 0)
+            tot    = bt_prog.get("total_symbols", 1)
+            symbol = bt_prog.get("current_symbol", "")
+            ratio  = cur / tot if tot > 0 else 0.0
+            logs   = bt_prog.get("log", [])
 
             if status == "completed":
                 st.success("✅ バックテスト完了！")
-                st.balloons()
             elif status == "error":
                 st.error("⚠️ エラーで終了しました。ログを確認してください。")
             else:
@@ -346,7 +420,7 @@ with tab_run:
                 st.caption(f"{cur} / {tot} 銘柄完了　現在処理中: {symbol}")
 
             if logs:
-                st.text_area("実行ログ（最新50件）",
+                st.text_area("実行ログ（最新20件）",
                              value="\n".join(logs[-20:]),
                              height=300,
                              disabled=True,
@@ -371,12 +445,42 @@ with tab_gs:
     # 3秒ごとに進捗エリアだけ自動更新
     st_autorefresh(interval=3000, key="gs_refresh")
 
-    # ── 起動コマンド案内 ─────────────────────────────────────────────────
-    st.info(
-        "別のターミナルで以下を実行してください：\n\n"
-        "`python grid_search_runner.py`"
-    )
-    st.code("python grid_search_runner.py", language="bash")
+    # ── 実行状態を PID ファイルで確認 ────────────────────────────────────
+    gs_pid_data = _read_pid_file(GS_PID_FILE)
+    gs_status   = gs_pid_data.get("status", "")
+    gs_pid      = gs_pid_data.get("pid")
+    gs_running  = (gs_status == "running")
+
+    if gs_running:
+        st.info(f"⏳ グリッドサーチ実行中  (PID: {gs_pid}　開始: {gs_pid_data.get('started_at','')})")
+        if st.button("⏹ 停止", key="gs_stop"):
+            if gs_pid and _kill_pid(gs_pid):
+                gs_pid_data["status"] = "stopped"
+                with open(GS_PID_FILE, "w", encoding="utf-8") as f:
+                    json.dump(gs_pid_data, f, indent=2)
+                st.warning("グリッドサーチを停止しました。")
+            else:
+                st.error("プロセスの停止に失敗しました。")
+    else:
+        if st.button("🔍 グリッドサーチ開始", type="primary", key="gs_start"):
+            try:
+                proc = _launch_detached(["python", "grid_search_runner.py"])
+                # PID ファイルは grid_search_runner.py が書き込むが先に仮記録
+                _init_pid = {
+                    "pid":        proc.pid,
+                    "started_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "status":     "running",
+                }
+                with open(GS_PID_FILE, "w", encoding="utf-8") as f:
+                    json.dump(_init_pid, f, indent=2)
+                if os.path.exists(GS_PROGRESS_FILE):
+                    os.remove(GS_PROGRESS_FILE)
+                st.success(f"グリッドサーチを起動しました (PID: {proc.pid})")
+            except Exception as e:
+                st.error(f"起動失敗: {e}")
+
+        st.caption("または、別のターミナルで:")
+        st.code("python grid_search_runner.py", language="bash")
 
     # ── スコアリング重み（grid_search_config.json を保存するだけ） ────────
     st.markdown("#### スコアリング重み設定（grid_search_config.json に保存）")
@@ -414,19 +518,8 @@ with tab_gs:
             json.dump(_new_gs_cfg, f, indent=2)
         st.success("grid_search_config.json を保存しました。")
 
-    # ── 実行状況 ─────────────────────────────────────────────────────────
+    # ── 進捗表示 ─────────────────────────────────────────────────────────
     st.markdown("#### 実行状況")
-    if os.path.exists(GS_PID_FILE):
-        try:
-            with open(GS_PID_FILE, "r", encoding="utf-8") as f:
-                pid_data = json.load(f)
-            pid    = pid_data.get("pid", "—")
-            st_txt = pid_data.get("status", "—")
-            s_at   = pid_data.get("started_at", "—")
-            st.caption(f"PID: {pid}　開始: {s_at}　ステータス: {st_txt}")
-        except Exception:
-            pass
-
     if os.path.exists(GS_PROGRESS_FILE):
         try:
             with open(GS_PROGRESS_FILE, "r", encoding="utf-8") as f:
