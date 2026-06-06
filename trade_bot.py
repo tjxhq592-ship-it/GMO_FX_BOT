@@ -16,7 +16,7 @@ from config import (
 )
 from gmo_client import GmoFxClient
 from utils import (
-    calculate_rsi, calculate_macd, calculate_bollinger,
+    calculate_rsi, calculate_macd, calculate_bollinger, calculate_atr,
     get_market_condition, calc_trade_size,
 )
 
@@ -70,6 +70,9 @@ def get_market_data(symbol: str, symbol_params: dict) -> object:
 
     bb = calculate_bollinger(bars["close"])
     bars["BB_mid"] = bb["mid"]
+
+    atr_period    = p.get("atr_period", 14)
+    bars["ATR"]   = calculate_atr(bars["high"], bars["low"], bars["close"], period=atr_period)
 
     return bars
 
@@ -177,24 +180,41 @@ def run_bot() -> None:
 
             logging.info(f"{symbol} 価格: {price}, 取引数量: {size}ロット, ポジション: {position}")
 
+            # ATRベースのSL/TP算出
+            atr          = float(bars.iloc[-1]["ATR"])
+            atr_sl_mult  = p.get("atr_sl_mult", 1.5)
+            atr_tp_mult  = p.get("atr_tp_mult", 2.5)
+            sl           = round(price - atr * atr_sl_mult, 5)
+            tp           = round(price + atr * atr_tp_mult, 5)
+
             if decision["action"] == "buy" and position is None and market == "bull":
                 result = gmo.place_order(symbol, "BUY", size)
-                logging.info(f"買い注文実行: {symbol} {size}ロット @ {price}")
+                logging.info(f"買い注文実行: {symbol} {size}ロット @ {price}  SL={sl}  TP={tp}")
 
-                tp = round(price * p.get("take_profit_pct", 1.01), 5)
-                sl = round(price * p.get("stop_loss_pct",  0.995), 5)
                 msg = (
                     f"📈 買い注文実行\n"
                     f"通貨ペア: {symbol}\n"
                     f"価格: {price:.5f}\n"
                     f"数量: {size}ロット\n"
-                    f"利確目安: {tp:.5f}\n"
-                    f"損切目安: {sl:.5f}\n"
+                    f"ATR: {atr:.5f}\n"
+                    f"利確ライン: {tp:.5f}\n"
+                    f"損切ライン: {sl:.5f}\n"
                     f"理由: {decision['reason']}"
                 )
                 send_line(msg)
                 buy_count += 1
-                summary_lines.append(f"  {symbol}: 買い {size}ロット @ {price:.5f}")
+                summary_lines.append(f"  {symbol}: 買い {size}ロット @ {price:.5f}  SL={sl}  TP={tp}")
+
+                # SL/TP監視: 現在価格がラインを超えたら即決済
+                current_price = float(gmo.get_klines_range(symbol, interval="1min", days=1).iloc[-1]["close"])
+                if current_price <= sl or current_price >= tp:
+                    pos = get_position(symbol)
+                    if pos:
+                        close_side = "SELL" if pos["side"] == "BUY" else "BUY"
+                        gmo.close_position(pos["positionId"], symbol, close_side, int(pos["size"]))
+                        trigger = "TP到達" if current_price >= tp else "SL到達"
+                        logging.info(f"即決済({trigger}): {symbol} @ {current_price:.5f}")
+                        send_line(f"🔔 {trigger}で即決済\n{symbol} @ {current_price:.5f}")
 
             elif decision["action"] == "sell" and position is not None:
                 pos_id   = position["positionId"]

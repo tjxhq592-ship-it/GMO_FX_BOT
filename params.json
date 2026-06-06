@@ -6,24 +6,27 @@
       "ma_long": 25,
       "rsi_upper": 70,
       "rsi_lower": 30,
-      "stop_loss_pct": 0.97,
-      "take_profit_pct": 1.06
+      "atr_period": 14,
+      "atr_sl_mult": 1.5,
+      "atr_tp_mult": 2.5
     },
     "AUD_NZD": {
       "ma_short": 9,
       "ma_long": 25,
       "rsi_upper": 70,
       "rsi_lower": 30,
-      "stop_loss_pct": 0.97,
-      "take_profit_pct": 1.06
+      "atr_period": 14,
+      "atr_sl_mult": 1.5,
+      "atr_tp_mult": 2.5
     },
     "EUR_CHF": {
       "ma_short": 9,
       "ma_long": 25,
       "rsi_upper": 70,
       "rsi_lower": 30,
-      "stop_loss_pct": 0.97,
-      "take_profit_pct": 1.06
+      "atr_period": 14,
+      "atr_sl_mult": 1.5,
+      "atr_tp_mult": 2.5
     }
   },
   "excluded": []

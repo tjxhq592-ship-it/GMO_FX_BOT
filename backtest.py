@@ -14,7 +14,7 @@ import pickle
 import json
 import time
 import yfinance as yf
-from utils import calculate_rsi as _calculate_rsi
+from utils import calculate_rsi as _calculate_rsi, calculate_atr as _calculate_atr
 
 # ログ・警告の抑制
 logging.getLogger("yfinance").setLevel(logging.CRITICAL)
@@ -24,6 +24,10 @@ warnings.filterwarnings("ignore")
 # backtesting.py が numpy 配列を期待するためラップ
 def calculate_rsi(prices, period=14):
     result = _calculate_rsi(pd.Series(prices), period=period)
+    return result.values if hasattr(result, "values") else result
+
+def calculate_atr(high, low, close, period=14):
+    result = _calculate_atr(pd.Series(high), pd.Series(low), pd.Series(close), period=period)
     return result.values if hasattr(result, "values") else result
 
 # === 設定 ===
@@ -103,16 +107,19 @@ def get_forward_data(symbol):
 
 # === 戦略 ===
 class ImprovedStrategy(Strategy):
-    ma_short = 13
-    ma_long = 15
-    rsi_upper = 75
-    rsi_lower = 25
-    stop_loss_pct = 0.98
-    take_profit_pct = 1.10
-    trade_size = 0.2
+    ma_short    = 13
+    ma_long     = 15
+    rsi_upper   = 75
+    rsi_lower   = 25
+    atr_period  = 14
+    atr_sl_mult = 1.5   # 損切 = 建値 - ATR × atr_sl_mult
+    atr_tp_mult = 2.5   # 利確 = 建値 + ATR × atr_tp_mult
+    trade_size  = 0.2
 
     def init(self):
         close = self.data.Close
+        high  = self.data.High
+        low   = self.data.Low
         self.ma_s = self.I(
             lambda x: pd.Series(x).ewm(span=self.ma_short, adjust=False).mean().values,
             close
@@ -122,11 +129,13 @@ class ImprovedStrategy(Strategy):
             close
         )
         self.rsi = self.I(calculate_rsi, close)
+        self.atr = self.I(calculate_atr, high, low, close, self.atr_period)
 
     def next(self):
         price = self.data.Close[-1]
-        sl = price * self.stop_loss_pct
-        tp = price * self.take_profit_pct
+        atr   = self.atr[-1]
+        sl    = price - atr * self.atr_sl_mult
+        tp    = price + atr * self.atr_tp_mult
 
         if crossover(self.ma_s, self.ma_l) and self.rsi[-1] < self.rsi_upper:
             if not self.position:
@@ -190,20 +199,22 @@ def optimize_symbol(symbol, idx, total, wft_cutoff, prev_params):
         ma_long=range(10, 60, 5),
         rsi_upper=range(60, 80, 5),
         rsi_lower=range(20, 40, 5),
-        stop_loss_pct=[0.95, 0.97, 0.98],
-        take_profit_pct=[1.04, 1.06, 1.08, 1.10],
+        atr_period=range(10, 20, 2),
+        atr_sl_mult=[1.0, 1.5, 2.0],
+        atr_tp_mult=[2.0, 2.5, 3.0],
         maximize="Sharpe Ratio",
         constraint=lambda p: p.ma_short < p.ma_long
     )
 
     p = stats._strategy
     params_dict = {
-        "ma_short":        int(p.ma_short),
-        "ma_long":         int(p.ma_long),
-        "rsi_upper":       int(p.rsi_upper),
-        "rsi_lower":       int(p.rsi_lower),
-        "stop_loss_pct":   float(p.stop_loss_pct),
-        "take_profit_pct": float(p.take_profit_pct),
+        "ma_short":    int(p.ma_short),
+        "ma_long":     int(p.ma_long),
+        "rsi_upper":   int(p.rsi_upper),
+        "rsi_lower":   int(p.rsi_lower),
+        "atr_period":  int(p.atr_period),
+        "atr_sl_mult": float(p.atr_sl_mult),
+        "atr_tp_mult": float(p.atr_tp_mult),
     }
 
     is_stats = _extract_stats(stats)
