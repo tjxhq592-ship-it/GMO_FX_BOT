@@ -16,12 +16,21 @@ import itertools
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-# Windows の DETACHED_PROCESS 起動では sys.stdout/stderr が None になる。
-# print() が失敗しないよう、None の場合は devnull にリダイレクト。
-if sys.stdout is None:
-    sys.stdout = open(os.devnull, "w", encoding="utf-8", errors="replace")
-if sys.stderr is None:
-    sys.stderr = open(os.devnull, "w", encoding="utf-8", errors="replace")
+# Windows の DETACHED_PROCESS 起動では sys.stdout/stderr が None または
+# 無効なハンドルになる。書き込みテストで有効性を確認し、失敗なら devnull へ。
+def _ensure_valid_stream(stream_name: str) -> None:
+    stream = getattr(sys, stream_name, None)
+    try:
+        if stream is None:
+            raise AttributeError("None")
+        stream.write("")
+        stream.flush()
+    except Exception:
+        devnull = open(os.devnull, "w", encoding="utf-8", errors="replace")
+        setattr(sys, stream_name, devnull)
+
+_ensure_valid_stream("stdout")
+_ensure_valid_stream("stderr")
 
 # backtest.py の関数・定数をインポート
 from backtest import (
@@ -86,6 +95,9 @@ def _run_single(train_data, data, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
     戻り値: (is_stats, wft_result, score, error_message)
     """
     # IS バックテスト
+    # bt.run() が内部で stdout/stderr を使うため、呼び出し前に有効性を再確認
+    _ensure_valid_stream("stdout")
+    _ensure_valid_stream("stderr")
     is_s: dict | None = None
     err_msg: str | None = None
     try:
@@ -96,6 +108,14 @@ def _run_single(train_data, data, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
         if debug:
             print(f"  IS 結果: 取引={is_s['n_trades']}  シャープ={is_s['sharpe']:.3f}"
                   f"  PF={is_s['pf']}  DD={is_s['max_dd']:.1f}%")
+    except (AttributeError, IOError, OSError) as e:
+        # stdout/stderr への書き込みエラー → ストリームを再修復して続行
+        _ensure_valid_stream("stdout")
+        _ensure_valid_stream("stderr")
+        err_msg = f"IS ストリームエラー(修復済み): {type(e).__name__}: {e}"
+        if debug:
+            print(f"  [WARN] {err_msg}")
+        return None, None, 0.0, err_msg
     except Exception as e:
         err_msg = f"IS バックテスト例外: {type(e).__name__}: {e}"
         if debug:
