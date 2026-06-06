@@ -1,11 +1,11 @@
 """
 グリッドサーチ独立実行スクリプト
 起動コマンド:
-  python grid_search_runner.py            # 通常実行
+  python grid_search_runner.py            # 通常実行（並列）
   python grid_search_runner.py --debug    # 最初の1パターンのみテスト実行
 
-dashboard.py とは完全に独立したプロセスとして動作する。
-進捗は grid_search_progress.json にリアルタイムで書き出す。
+各シンボルのコンボを ProcessPoolExecutor で並列実行。
+シンボル間は順次処理（シンボルをまたいで並列しない）。
 """
 import json
 import os
@@ -13,6 +13,9 @@ import sys
 import time
 import traceback
 import itertools
+import pickle
+import threading
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
@@ -50,6 +53,85 @@ RESULTS_FILE  = "grid_search_results.json"
 PARAMS_FILE   = "params.json"
 GS_CFG_FILE   = "grid_search_config.json"
 BT_CFG_FILE   = "backtest_config.json"
+
+# 進捗ファイル書き込みの排他制御
+_progress_lock = threading.Lock()
+
+# ── ワーカープロセス用グローバル変数 ─────────────────────────────────────
+# initializer で各ワーカープロセスに1回だけデータをロード（コピー最小化）
+_g_data:       object = None
+_g_train_data: object = None
+
+
+def _worker_initializer(data_pkl: bytes, train_pkl: bytes, cache_dir: str) -> None:
+    """各ワーカープロセスの起動時に1回だけ実行される初期化関数"""
+    global _g_data, _g_train_data
+    import yfinance as yf
+
+    # yfinance SQLite キャッシュをワーカーごとに分離してロック競合を回避
+    os.makedirs(cache_dir, exist_ok=True)
+    yf.set_tz_cache_location(cache_dir)
+
+    # stdout/stderr の安全化（デタッチドプロセス対応）
+    _ensure_valid_stream("stdout")
+    _ensure_valid_stream("stderr")
+
+    # ピクルス化されたデータをメモリに展開
+    _g_data       = pickle.loads(data_pkl)
+    _g_train_data = pickle.loads(train_pkl)
+
+
+def _worker_task(args: tuple) -> tuple:
+    """ワーカープロセスで実行する1コンボのバックテスト（モジュールレベル関数必須）"""
+    combo_idx, params_dict, wt_wft, wt_is, wt_pf, wt_trades = args
+
+    _ensure_valid_stream("stdout")
+    _ensure_valid_stream("stderr")
+
+    is_s: dict | None = None
+    err_msg: str | None = None
+
+    # IS バックテスト
+    try:
+        bt    = Backtest(_g_train_data, ImprovedStrategy,
+                         cash=INITIAL_CASH, commission=0.00002)
+        st_is = bt.run(**params_dict)
+        is_s  = _extract_stats(st_is)
+    except (AttributeError, IOError, OSError) as e:
+        _ensure_valid_stream("stdout")
+        _ensure_valid_stream("stderr")
+        err_msg = f"IS ストリームエラー(修復済み): {type(e).__name__}: {e}"
+        return combo_idx, params_dict, None, None, 0.0, err_msg
+    except Exception as e:
+        err_msg = f"IS 例外: {type(e).__name__}: {e}"
+        return combo_idx, params_dict, None, None, 0.0, err_msg
+
+    # WFT
+    wft_r: dict | None = None
+    try:
+        wft_r = walk_forward_test(_g_data, params_dict)
+    except Exception as e:
+        err_msg = f"WFT 例外: {type(e).__name__}: {e}"
+        wft_r = None
+
+    # スコアリング
+    score = 0.0
+    if is_s:
+        n          = is_s["n_trades"]
+        pf         = is_s["pf"] or 0.0
+        is_sharpe  = is_s["sharpe"]
+        wft_sharpe = wft_r["sharpe"] if wft_r else float("nan")
+        nan_check  = wft_sharpe != wft_sharpe
+
+        if n >= 50 and not nan_check and wft_sharpe >= 0:
+            score = (
+                wft_sharpe           * wt_wft +
+                max(is_sharpe, 0.0)  * wt_is  +
+                max(pf, 0.0)         * wt_pf  +
+                min(n / 200.0, 1.0)  * wt_trades
+            )
+
+    return combo_idx, params_dict, is_s, wft_r, round(score, 4), err_msg
 
 
 # ── ヘルパー ──────────────────────────────────────────────────────────────
@@ -95,8 +177,9 @@ def _write_progress(current, total, best_score, best_params,
         "symbol_current":    symbol_current,
         "symbol_total":      symbol_total,
     }
-    with open(PROGRESS_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False)
+    with _progress_lock:
+        with open(PROGRESS_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
 
 
 def _save_to_params(symbol: str, params_dict: dict, log_fn) -> None:
@@ -117,15 +200,11 @@ def _save_to_params(symbol: str, params_dict: dict, log_fn) -> None:
         log_fn(f"  [ERROR] params.json 保存失敗: {e}")
 
 
-# ── バックテスト1件実行 ───────────────────────────────────────────────────
+# ── シングルスレッド版（デバッグ・互換用） ──────────────────────────────
 
 def _run_single(train_data, data, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
-                debug: bool = False) -> tuple[dict | None, dict | None, float, str | None]:
-    """
-    1パラメータ組み合わせのバックテスト（IS + WFT）を実行してスコアを返す。
-    戻り値: (is_stats, wft_result, score, error_message)
-    """
-    # bt.run() が内部で stdout/stderr を使うため、呼び出し前に有効性を再確認
+                debug: bool = False) -> tuple:
+    """1パラメータ組み合わせのバックテスト（IS + WFT）"""
     _ensure_valid_stream("stdout")
     _ensure_valid_stream("stderr")
     is_s: dict | None = None
@@ -141,18 +220,17 @@ def _run_single(train_data, data, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
     except (AttributeError, IOError, OSError) as e:
         _ensure_valid_stream("stdout")
         _ensure_valid_stream("stderr")
-        err_msg = f"IS ストリームエラー(修復済み): {type(e).__name__}: {e}"
+        err_msg = f"IS ストリームエラー: {type(e).__name__}: {e}"
         if debug:
             print(f"  [WARN] {err_msg}")
         return None, None, 0.0, err_msg
     except Exception as e:
-        err_msg = f"IS バックテスト例外: {type(e).__name__}: {e}"
+        err_msg = f"IS 例外: {type(e).__name__}: {e}"
         if debug:
             print(f"  [ERROR] {err_msg}")
             traceback.print_exc()
         return None, None, 0.0, err_msg
 
-    # WFT
     wft_r: dict | None = None
     try:
         wft_r = walk_forward_test(data, params_dict)
@@ -166,18 +244,15 @@ def _run_single(train_data, data, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
         err_msg = f"WFT 例外: {type(e).__name__}: {e}"
         if debug:
             print(f"  [ERROR] {err_msg}")
-            traceback.print_exc()
         wft_r = None
 
-    # スコアリング
     score = 0.0
     if is_s:
         n          = is_s["n_trades"]
         pf         = is_s["pf"] or 0.0
         is_sharpe  = is_s["sharpe"]
         wft_sharpe = wft_r["sharpe"] if wft_r else float("nan")
-        nan_check  = wft_sharpe != wft_sharpe   # NaN 判定
-
+        nan_check  = wft_sharpe != wft_sharpe
         if n >= 50 and not nan_check and wft_sharpe >= 0:
             score = (
                 wft_sharpe           * wt_wft +
@@ -187,10 +262,8 @@ def _run_single(train_data, data, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
             )
         elif debug:
             reasons = []
-            if n < 50:
-                reasons.append(f"取引回数不足({n}<50)")
-            if nan_check:
-                reasons.append("WFTシャープNaN")
+            if n < 50:           reasons.append(f"取引回数不足({n}<50)")
+            if nan_check:        reasons.append("WFTシャープNaN")
             if not nan_check and wft_sharpe < 0:
                 reasons.append(f"WFTシャープマイナス({wft_sharpe:.3f})")
             print(f"  スコア0の理由: {', '.join(reasons)}")
@@ -206,7 +279,7 @@ def debug_run(config: dict, score_weights: dict) -> None:
     print("=== デバッグモード: 最初の1パターンのみ実行 ===")
     print("=" * 60)
 
-    symbols = config.get("symbols", SYMBOLS)
+    symbols  = config.get("symbols", SYMBOLS)
     bb_cfg   = config.get("bb_period", {"min": 10, "max": 30, "step": 5})
     bb_stds  = config.get("bb_std",    [1.0, 1.5, 2.0, 2.5])
     ru_cfg   = config.get("rsi_upper", {"min": 60, "max": 75, "step": 5})
@@ -214,22 +287,15 @@ def debug_run(config: dict, score_weights: dict) -> None:
     sl_mults = config.get("atr_sl_mult", [1.5, 2.0])
     tp_mults = config.get("atr_tp_mult", [2.0, 2.5])
 
-    bb_p  = bb_cfg["min"]
-    bb_s  = bb_stds[0]
-    rsi_u = ru_cfg["min"]
-    rsi_l = rl_cfg["min"]
-    sl_m  = sl_mults[0]
-    tp_m  = tp_mults[0]
-
     params_dict = {
-        "bb_period":   bb_p,
-        "bb_std":      bb_s,
+        "bb_period":   bb_cfg["min"],
+        "bb_std":      bb_stds[0],
         "rsi_period":  14,
-        "rsi_upper":   rsi_u,
-        "rsi_lower":   rsi_l,
+        "rsi_upper":   ru_cfg["min"],
+        "rsi_lower":   rl_cfg["min"],
         "atr_period":  14,
-        "atr_sl_mult": sl_m,
-        "atr_tp_mult": tp_m,
+        "atr_sl_mult": sl_mults[0],
+        "atr_tp_mult": tp_mults[0],
     }
 
     symbol     = symbols[0]
@@ -242,32 +308,27 @@ def debug_run(config: dict, score_weights: dict) -> None:
     print(f"スコア重み  : {score_weights}")
     print()
 
-    print(f"[1] データ取得中...")
+    print("[1] データ取得中...")
     try:
         data = get_historical_data(symbol)
-        print(f"  データ取得完了: {len(data)}件  ({data.index[0]} ~ {data.index[-1]})")
+        print(f"  完了: {len(data)}件  ({data.index[0]} ~ {data.index[-1]})")
     except Exception as e:
-        print(f"  [FATAL] データ取得失敗: {e}")
+        print(f"  [FATAL] {e}")
         traceback.print_exc()
         return
 
     train_data = data[data.index < wft_cutoff]
-    print(f"  学習データ: {len(train_data)}件")
-    print(f"  テストデータ: {len(data) - len(train_data)}件")
-
-    if len(train_data) < 50:
-        print(f"  [WARN] 学習データが少なすぎます({len(train_data)}件)")
+    print(f"  学習: {len(train_data)}件 / テスト: {len(data) - len(train_data)}件")
 
     wt_wft    = score_weights.get("wft_sharpe", 0.4)
     wt_is     = score_weights.get("is_sharpe",  0.2)
     wt_pf     = score_weights.get("pf",         0.2)
     wt_trades = score_weights.get("trades",      0.2)
 
-    print(f"\n[2] バックテスト実行中...")
+    print("\n[2] バックテスト実行中...")
     is_s, wft_r, score, err = _run_single(
         train_data, data, params_dict,
-        wt_wft, wt_is, wt_pf, wt_trades,
-        debug=True,
+        wt_wft, wt_is, wt_pf, wt_trades, debug=True,
     )
 
     print(f"\n[3] 最終結果")
@@ -276,7 +337,6 @@ def debug_run(config: dict, score_weights: dict) -> None:
     print(f"  score     : {score:.4f}")
     if err:
         print(f"  error     : {err}")
-
     print("\n=== デバッグ完了 ===")
 
 
@@ -296,7 +356,6 @@ def main(debug: bool = False) -> None:
         log_lines.append(msg)
 
     try:
-        # config 読み込み
         config = _cfg
         if os.path.exists(GS_CFG_FILE):
             with open(GS_CFG_FILE, "r", encoding="utf-8") as f:
@@ -339,20 +398,23 @@ def main(debug: bool = False) -> None:
 
         wft_cutoff = END_DATE - relativedelta(months=WF_TEST_MONTHS)
 
-        # 除外条件を config から読み込み
         min_trades     = int(config.get("min_trades",      100))
         min_pf         = float(config.get("min_pf",        1.2))
         min_wft_sharpe = float(config.get("min_wft_sharpe", 0.0))
 
-        log(f"=== グリッドサーチ開始 ===")
+        # 並列ワーカー数: max 14、OSとメインプロセス用に2コア残す
+        max_workers = min(14, max(1, (os.cpu_count() or 4) - 2))
+
+        log("=== グリッドサーチ開始 (並列実行) ===")
         log(f"対象ペア: {symbols}")
         log(f"組み合わせ数: {len(combos)} x {len(symbols)}銘柄 = {total} 件")
+        log(f"並列ワーカー数: {max_workers}")
         log(f"スコア重み: WFT={wt_wft} IS={wt_is} PF={wt_pf} 取引={wt_trades}")
         log(f"除外条件: 取引>={min_trades}  PF>={min_pf}  WFTシャープ>={min_wft_sharpe}")
         log("")
 
         error_count       = 0
-        completed_symbols: dict = {}   # {symbol: {"status": ..., ...}}
+        completed_symbols: dict = {}
 
         for symbol in symbols:
             log(f"[{symbol}] データ取得中...")
@@ -364,23 +426,27 @@ def main(debug: bool = False) -> None:
                 log(f"[{symbol}] データ取得失敗: {e}")
                 current += len(combos)
                 completed_symbols[symbol] = {
-                    "status":      "error",
-                    "reason":      f"データ取得失敗: {e}",
-                    "best_score":  0.0,
-                    "best_params": {},
+                    "status": "error", "reason": f"データ取得失敗: {e}",
+                    "best_score": 0.0, "best_params": {},
                 }
                 _write_progress(current, total, best_score, best_params,
                                 int(time.time() - start_t), 0, log_lines,
                                 completed_symbols=completed_symbols)
                 continue
 
+            # データをピクルス化してワーカーに渡す（initializer で1回だけ送信）
+            data_pkl  = pickle.dumps(data)
+            train_pkl = pickle.dumps(train_data)
+            cache_dir = f".cache/worker_{os.getpid()}"
+
             sym_best_score  = 0.0
             sym_best_row:    dict | None = None
             sym_best_params: dict        = {}
+            sym_done        = 0   # このシンボルで完了したコンボ数
 
-            for i, (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in enumerate(combos):
-                current += 1
-                params_dict = {
+            # タスクリスト生成
+            tasks = [
+                (i, {
                     "bb_period":   bb_p,
                     "bb_std":      bb_s,
                     "rsi_period":  14,
@@ -389,59 +455,75 @@ def main(debug: bool = False) -> None:
                     "atr_period":  14,
                     "atr_sl_mult": sl_m,
                     "atr_tp_mult": tp_m,
-                }
+                }, wt_wft, wt_is, wt_pf, wt_trades)
+                for i, (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in enumerate(combos)
+            ]
 
-                is_s, wft_r, score, err_msg = _run_single(
-                    train_data, data, params_dict,
-                    wt_wft, wt_is, wt_pf, wt_trades,
-                )
+            log(f"[{symbol}] 並列実行開始 ({len(tasks)} コンボ / {max_workers} ワーカー)")
 
-                if err_msg and error_count < 10:
-                    log(f"  ! {symbol} combo#{i}: {err_msg}")
-                    error_count += 1
+            with ProcessPoolExecutor(
+                max_workers=max_workers,
+                initializer=_worker_initializer,
+                initargs=(data_pkl, train_pkl, cache_dir),
+            ) as executor:
+                futures = {executor.submit(_worker_task, t): t[0] for t in tasks}
 
-                row = {
-                    "symbol":      symbol,
-                    "bb_period":   bb_p,
-                    "bb_std":      bb_s,
-                    "rsi_upper":   rsi_u,
-                    "rsi_lower":   rsi_l,
-                    "atr_sl_mult": sl_m,
-                    "atr_tp_mult": tp_m,
-                    "n_trades":    is_s["n_trades"]  if is_s else 0,
-                    "pf":          is_s["pf"]        if is_s else None,
-                    "is_sharpe":   is_s["sharpe"]    if is_s else None,
-                    "wft_sharpe":  wft_r["sharpe"]   if wft_r else None,
-                    "score":       round(score, 4),
-                }
-                results.append(row)
+                for future in as_completed(futures):
+                    try:
+                        combo_idx, params_dict, is_s, wft_r, score, err_msg = future.result()
+                    except Exception as e:
+                        err_msg = f"Future例外: {e}"
+                        combo_idx, params_dict, is_s, wft_r, score = 0, {}, None, None, 0.0
 
-                # グローバルベスト更新
-                if score > best_score:
-                    best_score  = score
-                    best_params = {**params_dict, "symbol": symbol}
-                    log(f"  * 新ベスト: score={best_score:.4f}  {symbol} bb={bb_p}/{bb_s}"
-                        f"  rsi={rsi_u}/{rsi_l}  sl={sl_m} tp={tp_m}"
-                        f"  取引={row['n_trades']} WFT={row['wft_sharpe']}")
+                    current  += 1
+                    sym_done += 1
 
-                # シンボル別ベスト更新
-                if score > sym_best_score:
-                    sym_best_score  = score
-                    sym_best_row    = row
-                    sym_best_params = params_dict
+                    if err_msg and error_count < 10:
+                        log(f"  ! {symbol} combo#{combo_idx}: {err_msg}")
+                        error_count += 1
 
-                if i % 100 == 0 and i > 0:
-                    elapsed = int(time.time() - start_t)
-                    log(f"  [{symbol}] {i}/{len(combos)} 完了  経過{elapsed}秒")
+                    row = {
+                        "symbol":      symbol,
+                        "bb_period":   params_dict.get("bb_period"),
+                        "bb_std":      params_dict.get("bb_std"),
+                        "rsi_upper":   params_dict.get("rsi_upper"),
+                        "rsi_lower":   params_dict.get("rsi_lower"),
+                        "atr_sl_mult": params_dict.get("atr_sl_mult"),
+                        "atr_tp_mult": params_dict.get("atr_tp_mult"),
+                        "n_trades":    is_s["n_trades"] if is_s else 0,
+                        "pf":          is_s["pf"]       if is_s else None,
+                        "is_sharpe":   is_s["sharpe"]   if is_s else None,
+                        "wft_sharpe":  wft_r["sharpe"]  if wft_r else None,
+                        "score":       score,
+                    }
+                    results.append(row)
 
-                elapsed   = int(time.time() - start_t)
-                remaining = int(elapsed / current * (total - current)) if current else 0
-                _write_progress(current, total, best_score, best_params,
-                                elapsed, remaining, log_lines,
-                                completed_symbols=completed_symbols,
-                                current_symbol=symbol,
-                                symbol_current=i + 1,
-                                symbol_total=len(combos))
+                    if score > best_score:
+                        best_score  = score
+                        best_params = {**params_dict, "symbol": symbol}
+                        log(f"  * 新ベスト: score={best_score:.4f}  {symbol}"
+                            f"  bb={params_dict.get('bb_period')}/{params_dict.get('bb_std')}"
+                            f"  rsi={params_dict.get('rsi_upper')}/{params_dict.get('rsi_lower')}"
+                            f"  取引={row['n_trades']} WFT={row['wft_sharpe']}")
+
+                    if score > sym_best_score:
+                        sym_best_score  = score
+                        sym_best_row    = row
+                        sym_best_params = params_dict
+
+                    # 1000件ごとにログ出力
+                    if sym_done % 1000 == 0:
+                        elapsed = int(time.time() - start_t)
+                        log(f"  [{symbol}] {sym_done}/{len(combos)} 完了  経過{elapsed}秒")
+
+                    elapsed   = int(time.time() - start_t)
+                    remaining = int(elapsed / current * (total - current)) if current else 0
+                    _write_progress(current, total, best_score, best_params,
+                                    elapsed, remaining, log_lines,
+                                    completed_symbols=completed_symbols,
+                                    current_symbol=symbol,
+                                    symbol_current=sym_done,
+                                    symbol_total=len(combos))
 
             # ── シンボル完了: 除外判定 ──────────────────────────────────────
             log(f"[{symbol}] 完了  ベストスコア={sym_best_score:.4f}")
@@ -484,7 +566,6 @@ def main(debug: bool = False) -> None:
         if error_count > 0:
             log(f"\n! バックテスト例外合計: {error_count} 件 (--debug で詳細確認)")
 
-        # スコア降順ソート・結果保存
         results.sort(key=lambda x: x["score"], reverse=True)
 
         with open(RESULTS_FILE, "w", encoding="utf-8") as f:
@@ -507,7 +588,13 @@ def main(debug: bool = False) -> None:
         sys.exit(1)
 
 
+# ── エントリーポイント ────────────────────────────────────────────────────
+
 if __name__ == "__main__":
+    # Windows の multiprocessing 対応（freeze_support は exe 化時に必要）
+    from multiprocessing import freeze_support
+    freeze_support()
+
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true",
