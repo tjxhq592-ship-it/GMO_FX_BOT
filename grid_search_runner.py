@@ -629,20 +629,8 @@ def main(debug: bool = False) -> None:
         symbols = valid_symbols
         total   = len(combos) * len(symbols)  # 有効シンボルで再計算
 
-        # ── spawn コンテキスト + HiddenPopen ────────────────────────────────
+        # ── spawn コンテキスト（Python 3.14対応: HiddenPopen削除済み） ──────────
         _ctx = multiprocessing.get_context("spawn")
-        if sys.platform == "win32":
-            _orig_popen = _ctx.Process._popen_class
-
-            class _HiddenPopen(_orig_popen):
-                def __init__(self, *_a, **_kw):
-                    _si = subprocess.STARTUPINFO()
-                    _si.dwFlags   |= subprocess.STARTF_USESHOWWINDOW
-                    _si.wShowWindow = subprocess.SW_HIDE
-                    _kw["startupinfo"] = _si
-                    super().__init__(*_a, **_kw)
-
-            _ctx.Process._popen_class = _HiddenPopen
 
         # ── ペア間並列: 1シンボル = 1タスク ─────────────────────────────────
         sym_workers = min(max_workers, len(symbols))  # ペア数以上には増やさない
