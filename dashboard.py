@@ -568,6 +568,26 @@ with tab_gs:
             with st.expander("現在のベストパラメータ"):
                 st.json(best_p)
 
+        # ── 完了済みペアの状況表示 ──────────────────────────────────────
+        completed = gs_prog.get("completed_symbols", {})
+        cfg_syms  = load_config().get("symbols", [])
+        if cfg_syms:
+            st.markdown("**ペア別進捗**")
+            for sym in cfg_syms:
+                if sym in completed:
+                    info = completed[sym]
+                    st_sym = info.get("status", "")
+                    sc     = info.get("best_score", 0)
+                    reason = info.get("reason", "")
+                    if st_sym == "saved":
+                        st.success(f"✅ {sym}: スコア {sc:.4f}  保存済み")
+                    elif st_sym == "excluded":
+                        st.error(f"❌ {sym}: 除外（{reason}）")
+                    elif st_sym == "error":
+                        st.warning(f"⚠️ {sym}: エラー（{reason}）")
+                else:
+                    st.info(f"⏳ {sym}: 待機中")
+
         if logs:
             st.text_area("実行ログ（最新20件）",
                          value="\n".join(logs[-20:]),

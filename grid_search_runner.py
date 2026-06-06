@@ -47,9 +47,12 @@ from backtesting import Backtest
 PID_FILE      = "grid_search_pid.json"
 PROGRESS_FILE = "grid_search_progress.json"
 RESULTS_FILE  = "grid_search_results.json"
+PARAMS_FILE   = "params.json"
 GS_CFG_FILE   = "grid_search_config.json"
 BT_CFG_FILE   = "backtest_config.json"
 
+
+# ── ヘルパー ──────────────────────────────────────────────────────────────
 
 def _write_pid(status: str) -> None:
     data = {
@@ -73,20 +76,42 @@ def _update_pid_status(status: str) -> None:
 
 
 def _write_progress(current, total, best_score, best_params,
-                    elapsed, remaining, log_lines, done=False) -> None:
+                    elapsed, remaining, log_lines, done=False,
+                    completed_symbols: dict | None = None) -> None:
     data = {
-        "current":     current,
-        "total":       total,
-        "best_score":  round(best_score, 4),
-        "best_params": best_params,
-        "elapsed":     elapsed,
-        "remaining":   remaining,
-        "status":      "completed" if done else "running",
-        "log":         log_lines[-50:],
+        "current":           current,
+        "total":             total,
+        "best_score":        round(best_score, 4),
+        "best_params":       best_params,
+        "elapsed":           elapsed,
+        "remaining":         remaining,
+        "status":            "completed" if done else "running",
+        "log":               log_lines[-50:],
+        "completed_symbols": completed_symbols or {},
     }
     with open(PROGRESS_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False)
 
+
+def _save_to_params(symbol: str, params_dict: dict, log_fn) -> None:
+    """ベストパラメータを params.json の該当シンボルに保存する"""
+    try:
+        if os.path.exists(PARAMS_FILE):
+            with open(PARAMS_FILE, "r", encoding="utf-8") as f:
+                params_data = json.load(f)
+        else:
+            params_data = {"params": {}, "excluded": []}
+
+        params_data.setdefault("params", {})[symbol] = params_dict
+        params_data["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        with open(PARAMS_FILE, "w", encoding="utf-8") as f:
+            json.dump(params_data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        log_fn(f"  [ERROR] params.json 保存失敗: {e}")
+
+
+# ── バックテスト1件実行 ───────────────────────────────────────────────────
 
 def _run_single(train_data, data, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
                 debug: bool = False) -> tuple[dict | None, dict | None, float, str | None]:
@@ -94,7 +119,6 @@ def _run_single(train_data, data, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
     1パラメータ組み合わせのバックテスト（IS + WFT）を実行してスコアを返す。
     戻り値: (is_stats, wft_result, score, error_message)
     """
-    # IS バックテスト
     # bt.run() が内部で stdout/stderr を使うため、呼び出し前に有効性を再確認
     _ensure_valid_stream("stdout")
     _ensure_valid_stream("stderr")
@@ -109,7 +133,6 @@ def _run_single(train_data, data, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
             print(f"  IS 結果: 取引={is_s['n_trades']}  シャープ={is_s['sharpe']:.3f}"
                   f"  PF={is_s['pf']}  DD={is_s['max_dd']:.1f}%")
     except (AttributeError, IOError, OSError) as e:
-        # stdout/stderr への書き込みエラー → ストリームを再修復して続行
         _ensure_valid_stream("stdout")
         _ensure_valid_stream("stderr")
         err_msg = f"IS ストリームエラー(修復済み): {type(e).__name__}: {e}"
@@ -169,6 +192,8 @@ def _run_single(train_data, data, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
     return is_s, wft_r, score, err_msg
 
 
+# ── デバッグモード ────────────────────────────────────────────────────────
+
 def debug_run(config: dict, score_weights: dict) -> None:
     """最初の1パターンのみ実行してデバッグ情報を詳細表示"""
     print("=" * 60)
@@ -201,12 +226,12 @@ def debug_run(config: dict, score_weights: dict) -> None:
         "atr_tp_mult": tp_m,
     }
 
-    symbol = symbols[0]
+    symbol     = symbols[0]
     wft_cutoff = END_DATE - relativedelta(months=WF_TEST_MONTHS)
 
     print(f"\n対象シンボル : {symbol}")
     print(f"テストパラメータ: {params_dict}")
-    print(f"データ期間  : {START_DATE.date()} 〜 {END_DATE.date()}")
+    print(f"データ期間  : {START_DATE.date()} ~ {END_DATE.date()}")
     print(f"WFT cutoff  : {wft_cutoff.date()}")
     print(f"スコア重み  : {score_weights}")
     print()
@@ -214,7 +239,7 @@ def debug_run(config: dict, score_weights: dict) -> None:
     print(f"[1] データ取得中...")
     try:
         data = get_historical_data(symbol)
-        print(f"  データ取得完了: {len(data)}件  ({data.index[0]} 〜 {data.index[-1]})")
+        print(f"  データ取得完了: {len(data)}件  ({data.index[0]} ~ {data.index[-1]})")
     except Exception as e:
         print(f"  [FATAL] データ取得失敗: {e}")
         traceback.print_exc()
@@ -248,6 +273,8 @@ def debug_run(config: dict, score_weights: dict) -> None:
 
     print("\n=== デバッグ完了 ===")
 
+
+# ── メイン ────────────────────────────────────────────────────────────────
 
 def main(debug: bool = False) -> None:
     if not debug:
@@ -306,13 +333,20 @@ def main(debug: bool = False) -> None:
 
         wft_cutoff = END_DATE - relativedelta(months=WF_TEST_MONTHS)
 
+        # 除外条件を config から読み込み
+        min_trades     = int(config.get("min_trades",      100))
+        min_pf         = float(config.get("min_pf",        1.2))
+        min_wft_sharpe = float(config.get("min_wft_sharpe", 0.0))
+
         log(f"=== グリッドサーチ開始 ===")
         log(f"対象ペア: {symbols}")
-        log(f"組み合わせ数: {len(combos)} × {len(symbols)}銘柄 = {total} 件")
+        log(f"組み合わせ数: {len(combos)} x {len(symbols)}銘柄 = {total} 件")
         log(f"スコア重み: WFT={wt_wft} IS={wt_is} PF={wt_pf} 取引={wt_trades}")
+        log(f"除外条件: 取引>={min_trades}  PF>={min_pf}  WFTシャープ>={min_wft_sharpe}")
         log("")
 
-        error_count = 0
+        error_count       = 0
+        completed_symbols: dict = {}   # {symbol: {"status": ..., ...}}
 
         for symbol in symbols:
             log(f"[{symbol}] データ取得中...")
@@ -323,9 +357,20 @@ def main(debug: bool = False) -> None:
             except Exception as e:
                 log(f"[{symbol}] データ取得失敗: {e}")
                 current += len(combos)
+                completed_symbols[symbol] = {
+                    "status":      "error",
+                    "reason":      f"データ取得失敗: {e}",
+                    "best_score":  0.0,
+                    "best_params": {},
+                }
                 _write_progress(current, total, best_score, best_params,
-                                int(time.time() - start_t), 0, log_lines)
+                                int(time.time() - start_t), 0, log_lines,
+                                completed_symbols=completed_symbols)
                 continue
+
+            sym_best_score  = 0.0
+            sym_best_row:    dict | None = None
+            sym_best_params: dict        = {}
 
             for i, (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in enumerate(combos):
                 current += 1
@@ -345,9 +390,8 @@ def main(debug: bool = False) -> None:
                     wt_wft, wt_is, wt_pf, wt_trades,
                 )
 
-                # エラー内容をログに記録（最初の10件まで）
                 if err_msg and error_count < 10:
-                    log(f"  ⚠️ {symbol} combo#{i}: {err_msg}")
+                    log(f"  ! {symbol} combo#{i}: {err_msg}")
                     error_count += 1
 
                 row = {
@@ -366,30 +410,72 @@ def main(debug: bool = False) -> None:
                 }
                 results.append(row)
 
+                # グローバルベスト更新
                 if score > best_score:
                     best_score  = score
                     best_params = {**params_dict, "symbol": symbol}
-                    log(f"  ★ 新ベスト: score={best_score:.4f}  {symbol} bb={bb_p}/{bb_s}"
+                    log(f"  * 新ベスト: score={best_score:.4f}  {symbol} bb={bb_p}/{bb_s}"
                         f"  rsi={rsi_u}/{rsi_l}  sl={sl_m} tp={tp_m}"
                         f"  取引={row['n_trades']} WFT={row['wft_sharpe']}")
 
-                # 100件ごとに進捗ログ
+                # シンボル別ベスト更新
+                if score > sym_best_score:
+                    sym_best_score  = score
+                    sym_best_row    = row
+                    sym_best_params = params_dict
+
                 if i % 100 == 0 and i > 0:
                     elapsed = int(time.time() - start_t)
                     log(f"  [{symbol}] {i}/{len(combos)} 完了  経過{elapsed}秒")
 
-                # 進捗書き出し
                 elapsed   = int(time.time() - start_t)
                 remaining = int(elapsed / current * (total - current)) if current else 0
                 _write_progress(current, total, best_score, best_params,
-                                elapsed, remaining, log_lines)
+                                elapsed, remaining, log_lines,
+                                completed_symbols=completed_symbols)
 
-            log(f"[{symbol}] 完了")
+            # ── シンボル完了: 除外判定 ──────────────────────────────────────
+            log(f"[{symbol}] 完了  ベストスコア={sym_best_score:.4f}")
+            exclude_reason: str | None = None
+
+            if sym_best_score <= 0.0 or sym_best_row is None:
+                exclude_reason = "全パターンでスコア0"
+            elif sym_best_row.get("n_trades", 0) < min_trades:
+                exclude_reason = (
+                    f"取引回数({sym_best_row['n_trades']}) < 最小値({min_trades})"
+                )
+            elif (sym_best_row.get("pf") is not None
+                  and sym_best_row["pf"] < min_pf):
+                exclude_reason = (
+                    f"PF({sym_best_row['pf']:.2f}) < 最小値({min_pf})"
+                )
+            elif (sym_best_row.get("wft_sharpe") is not None
+                  and sym_best_row["wft_sharpe"] < min_wft_sharpe):
+                exclude_reason = (
+                    f"WFTシャープ({sym_best_row['wft_sharpe']:.2f}) < 最小値({min_wft_sharpe})"
+                )
+
+            if exclude_reason:
+                log(f"  [EXCLUDED] {symbol}: {exclude_reason}")
+                completed_symbols[symbol] = {
+                    "status":      "excluded",
+                    "reason":      exclude_reason,
+                    "best_score":  round(sym_best_score, 4),
+                    "best_params": sym_best_params,
+                }
+            else:
+                _save_to_params(symbol, sym_best_params, log)
+                log(f"  [SAVED] {symbol} params.json に保存 (score={sym_best_score:.4f})")
+                completed_symbols[symbol] = {
+                    "status":      "saved",
+                    "best_score":  round(sym_best_score, 4),
+                    "best_params": sym_best_params,
+                }
 
         if error_count > 0:
-            log(f"\n⚠️ バックテスト例外合計: {error_count} 件（--debug で詳細確認）")
+            log(f"\n! バックテスト例外合計: {error_count} 件 (--debug で詳細確認)")
 
-        # スコア降順ソート
+        # スコア降順ソート・結果保存
         results.sort(key=lambda x: x["score"], reverse=True)
 
         with open(RESULTS_FILE, "w", encoding="utf-8") as f:
@@ -397,10 +483,10 @@ def main(debug: bool = False) -> None:
 
         elapsed = int(time.time() - start_t)
         log(f"\n=== 完了 ===  {total}件  ベストスコア={best_score:.4f}")
-        log(f"ベストパラメータ: {best_params}")
         log(f"結果を {RESULTS_FILE} に保存しました。")
 
-        _write_progress(total, total, best_score, best_params, elapsed, 0, log_lines, done=True)
+        _write_progress(total, total, best_score, best_params, elapsed, 0, log_lines,
+                        done=True, completed_symbols=completed_symbols)
         _update_pid_status("completed")
 
     except Exception as e:
