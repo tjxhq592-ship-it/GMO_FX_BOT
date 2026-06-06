@@ -194,11 +194,35 @@ def _write_progress(current, total, best_score, best_params,
             json.dump(data, f, ensure_ascii=False)
 
 
+def _update_active_symbols(symbol: str, adopt: bool, log_fn) -> None:
+    """backtest_config.json の active_symbols を更新する。
+    adopt=True で追加、False で除去。
+    """
+    try:
+        cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), BT_CFG_FILE)
+        if os.path.exists(cfg_path):
+            with open(cfg_path, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+        else:
+            cfg = {}
+        active = cfg.get("active_symbols", cfg.get("symbols", []))
+        if adopt:
+            if symbol not in active:
+                active.append(symbol)
+        else:
+            active = [s for s in active if s != symbol]
+        cfg["active_symbols"] = active
+        with open(cfg_path, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        log_fn(f"  [WARN] active_symbols 更新失敗: {e}")
+
+
 def _save_to_params(symbol: str, params_dict: dict | None, log_fn,
                     exclude_reason: str | None = None) -> None:
-    """params.json を更新する。
-    params_dict が None（除外）の場合は params[symbol] を削除し excluded に追加。
-    採用の場合は params[symbol] を保存し excluded から除去。
+    """params.json と backtest_config.json の active_symbols を更新する。
+    params_dict が None（除外）: params[symbol] を削除、active_symbols から除去。
+    採用: params[symbol] を保存、active_symbols に追加。
     """
     try:
         if os.path.exists(PARAMS_FILE):
@@ -211,22 +235,23 @@ def _save_to_params(symbol: str, params_dict: dict | None, log_fn,
         params_data.setdefault("excluded", [])
 
         if params_dict is not None:
-            # 採用: params に保存、excluded から除去
+            # 採用: params に保存、excluded から除去、active_symbols に追加
             params_data["params"][symbol] = params_dict
             params_data["excluded"] = [
                 e for e in params_data["excluded"]
                 if not (isinstance(e, str) and e.startswith(f"{symbol}("))
             ]
+            _update_active_symbols(symbol, adopt=True, log_fn=log_fn)
         else:
-            # 除外: params から削除、excluded に追加
+            # 除外: params から削除、excluded に追加、active_symbols から除去
             params_data["params"].pop(symbol, None)
-            # 既存エントリを除去してから追加（重複防止）
             params_data["excluded"] = [
                 e for e in params_data["excluded"]
                 if not (isinstance(e, str) and e.startswith(f"{symbol}("))
             ]
             entry = f"{symbol}({exclude_reason})" if exclude_reason else symbol
             params_data["excluded"].append(entry)
+            _update_active_symbols(symbol, adopt=False, log_fn=log_fn)
 
         params_data["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 

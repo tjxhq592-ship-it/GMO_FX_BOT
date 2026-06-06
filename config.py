@@ -35,8 +35,8 @@ def _load_bt_config() -> dict:
 
 _bt_cfg = _load_bt_config()
 
-# 取引通貨ペア（GMOコインFX対応ペア）
-SYMBOLS = _bt_cfg.get("symbols", ["EUR_GBP", "AUD_NZD", "EUR_CHF"])
+# 取引通貨ペア: active_symbols（グリッドサーチ採用済みでトレード対象）
+SYMBOLS = _bt_cfg.get("active_symbols", _bt_cfg.get("symbols", ["AUD_NZD"]))
 
 # 選択可能な全ペア一覧
 CANDIDATE_SYMBOLS = _bt_cfg.get("available_symbols", [

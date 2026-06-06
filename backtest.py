@@ -84,8 +84,8 @@ CACHE_TTL    = 3600
 PARAMS_FILE  = "params.json"
 RESULTS_FILE = "backtest_results.json"
 
-# 対象シンボル
-SYMBOLS = _cfg.get("symbols", ["EUR_GBP", "AUD_NZD", "EUR_CHF"])
+# 対象シンボル: active_symbols（グリッドサーチ採用済みでトレード対象）
+SYMBOLS = _cfg.get("active_symbols", _cfg.get("symbols", ["AUD_NZD"]))
 SYMBOL_MAP = {
     "USD_JPY": "USDJPY=X",
     "EUR_JPY": "EURJPY=X",

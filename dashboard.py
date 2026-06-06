@@ -101,7 +101,8 @@ def load_config() -> dict:
         "end_date": "auto",
         "wf_train_months": 12,
         "wf_test_months": 1,
-        "symbols": ["EUR_GBP", "AUD_NZD", "EUR_CHF"],
+        "symbols": ["AUD_NZD"],
+        "active_symbols": ["AUD_NZD"],
         "bb_period": {"min": 10, "max": 30, "step": 5},
         "bb_std": [1.0, 1.5, 2.0, 2.5],
         "rsi_upper": {"min": 60, "max": 75, "step": 5},
@@ -278,29 +279,45 @@ with tab_config:
         # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
         st.markdown("### 📌 共通設定")
 
-        available = cfg.get("available_symbols", [
+        available       = cfg.get("available_symbols", [
             "USD_JPY", "EUR_JPY", "GBP_JPY", "AUD_JPY",
             "NZD_JPY", "CAD_JPY", "CHF_JPY", "ZAR_JPY",
             "EUR_USD", "GBP_USD", "AUD_USD", "EUR_GBP",
             "AUD_NZD", "EUR_CHF", "GBP_CHF", "EUR_AUD",
         ])
-        current_symbols = cfg.get("symbols", [])
-        if "symbols_ms" not in st.session_state:
-            st.session_state["symbols_ms"] = [s for s in current_symbols if s in available]
+        active_symbols  = cfg.get("active_symbols", cfg.get("symbols", []))
+        _params_now     = load_params() or {}
+        adopted_symbols = list(_params_now.get("params", {}).keys())
 
         st.markdown("#### 取引通貨ペア")
-        selected_symbols_form = st.multiselect(
-            "通貨ペアを選択（複数可）",
-            options=available,
-            default=st.session_state["symbols_ms"],
-            key="symbols_ms",
+        st.info(
+            "✅ 採用済みペアのみ選択可能です。"
+            "新しいペアの追加はグリッドサーチから行ってください。"
         )
-        st.caption("選択中のペア:")
+        new_active: list[str] = []
         sym_cols = st.columns(4)
         for i, sym in enumerate(available):
+            is_adopted = sym in adopted_symbols
+            is_active  = sym in active_symbols
             with sym_cols[i % 4]:
-                checked = sym in selected_symbols_form
-                st.markdown(f"{'✅' if checked else '⬜'} {sym}", help=sym)
+                if is_adopted:
+                    checked = st.checkbox(
+                        sym,
+                        value=is_active,
+                        key=f"sym_{sym}",
+                    )
+                    if checked:
+                        new_active.append(sym)
+                else:
+                    st.checkbox(
+                        sym,
+                        value=False,
+                        disabled=True,
+                        key=f"sym_{sym}",
+                        help="グリッドサーチで採用されていません",
+                    )
+        # 保存ボタン用に選択値を保持
+        selected_symbols_form = new_active
 
         st.markdown("#### データ期間")
         d_col1, d_col2 = st.columns(2)
@@ -408,7 +425,7 @@ with tab_config:
 
     if submitted:
         if not selected_symbols_form:
-            st.warning("⚠️ 最低1つの通貨ペアを選択してください。")
+            st.warning("⚠️ 最低1つのアクティブペアを選択してください。")
         else:
             errors = []
 
@@ -421,7 +438,8 @@ with tab_config:
                 "end_date":          "auto",
                 "wf_train_months":   wf_train,
                 "wf_test_months":    wf_test,
-                "symbols":           selected_symbols_form,
+                "active_symbols":    selected_symbols_form,
+                "symbols":           selected_symbols_form,  # 後方互換
                 "bb_period":         {"min": int(bb_min),  "max": int(bb_max),  "step": int(bb_step)},
                 "bb_std":            sorted(bb_std)  if bb_std  else [2.0],
                 "rsi_upper":         {"min": int(rsi_upper_min), "max": int(rsi_upper_max), "step": int(rsi_upper_step)},
@@ -435,7 +453,6 @@ with tab_config:
             try:
                 with open(CONFIG_FILE, "w", encoding="utf-8") as f:
                     json.dump(new_cfg, f, indent=2, ensure_ascii=False)
-                st.session_state["symbols_ms"] = selected_symbols_form
             except Exception as e:
                 errors.append(f"backtest_config.json 保存エラー: {e}")
 
@@ -458,7 +475,7 @@ with tab_config:
             else:
                 st.success(
                     f"✅ 保存しました  "
-                    f"ペア: {', '.join(selected_symbols_form)}  /  "
+                    f"アクティブペア: {', '.join(selected_symbols_form)}  /  "
                     f"max_workers: {max_workers_val}"
                 )
                 with st.expander("保存内容を確認"):

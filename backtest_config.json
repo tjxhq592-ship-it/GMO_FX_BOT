@@ -22,10 +22,9 @@
   "wf_train_months": 12,
   "wf_test_months": 1,
   "symbols": [
-    "USD_JPY",
-    "EUR_USD",
-    "GBP_USD",
-    "AUD_USD"
+    "EUR_GBP",
+    "AUD_NZD",
+    "EUR_CHF"
   ],
   "bb_period": {
     "min": 10,
@@ -63,5 +62,8 @@
   ],
   "min_trades": 100,
   "min_pf": 1.2,
-  "min_wft_sharpe": -0.3
+  "min_wft_sharpe": -0.3,
+  "active_symbols": [
+    "AUD_NZD"
+  ]
 }
