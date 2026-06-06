@@ -2,3 +2,7 @@ anthropic
 requests
 pandas
 python-dotenv
+streamlit
+yfinance
+backtesting
+python-dateutil
