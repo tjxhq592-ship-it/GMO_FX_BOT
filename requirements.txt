@@ -10,3 +10,4 @@ tqdm
 schedule
 websocket-client
 streamlit-autorefresh
+loky
