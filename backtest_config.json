@@ -1,0 +1,16 @@
+{
+  "start_date": "2024-06-16",
+  "end_date": "auto",
+  "wf_train_months": 12,
+  "wf_test_months": 1,
+  "symbols": ["EUR_GBP", "AUD_NZD", "EUR_CHF"],
+  "bb_period": {"min": 10, "max": 30, "step": 5},
+  "bb_std": [1.0, 1.5, 2.0, 2.5],
+  "rsi_upper": {"min": 60, "max": 75, "step": 5},
+  "rsi_lower": {"min": 25, "max": 40, "step": 5},
+  "atr_sl_mult": [1.5, 2.0],
+  "atr_tp_mult": [2.0, 2.5],
+  "min_trades": 200,
+  "min_pf": 1.2,
+  "min_wft_sharpe": 0.0
+}

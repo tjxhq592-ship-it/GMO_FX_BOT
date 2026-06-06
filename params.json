@@ -1,39 +1,9 @@
 {
-  "updated_at": "2026-06-06 00:00:00",
-  "params": {
-    "EUR_GBP": {
-      "bb_period": 20,
-      "bb_std": 2.0,
-      "rsi_period": 14,
-      "rsi_upper": 70,
-      "rsi_lower": 30,
-      "atr_period": 14,
-      "atr_sl_mult": 1.5,
-      "atr_tp_mult": 2.0,
-      "atr_range_mult": 1.0
-    },
-    "AUD_NZD": {
-      "bb_period": 20,
-      "bb_std": 2.0,
-      "rsi_period": 14,
-      "rsi_upper": 70,
-      "rsi_lower": 30,
-      "atr_period": 14,
-      "atr_sl_mult": 1.5,
-      "atr_tp_mult": 2.0,
-      "atr_range_mult": 1.0
-    },
-    "EUR_CHF": {
-      "bb_period": 20,
-      "bb_std": 2.0,
-      "rsi_period": 14,
-      "rsi_upper": 70,
-      "rsi_lower": 30,
-      "atr_period": 14,
-      "atr_sl_mult": 1.5,
-      "atr_tp_mult": 2.0,
-      "atr_range_mult": 1.0
-    }
-  },
-  "excluded": []
+  "updated_at": "2026-06-06 16:45:04",
+  "params": {},
+  "excluded": [
+    "EUR_GBP(WFTシャープ:-0.94)",
+    "AUD_NZD(WFTシャープ:-1.36)",
+    "EUR_CHF(取引回数:51回 < 200回)"
+  ]
 }

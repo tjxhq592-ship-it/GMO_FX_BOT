@@ -45,27 +45,42 @@ def _bb_lower(close, period, std_mult):
     bb = _calculate_bollinger(pd.Series(close), period=period, std_mult=std_mult)
     return bb["lower"].values
 
-# === 設定 ===
-# yfinance 1h足は直近730日分のみ取得可能
-START_DATE    = datetime.now() - timedelta(days=720)
-END_DATE      = datetime.now() - timedelta(days=1)
+# === backtest_config.json から設定を読み込む ===
+CONFIG_FILE = "backtest_config.json"
+
+def _load_config() -> dict:
+    if not os.path.exists(CONFIG_FILE):
+        raise FileNotFoundError(f"{CONFIG_FILE} が見つかりません。")
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+_cfg = _load_config()
+
+# 日付
+_start_str = _cfg.get("start_date", "2024-06-16")
+START_DATE  = datetime.strptime(_start_str, "%Y-%m-%d")
+END_DATE    = datetime.now() - timedelta(days=1)   # end_date="auto"
+
 FW_START_DATE = datetime.now() - timedelta(days=90)
 FW_END_DATE   = datetime.now() - timedelta(days=1)
 
-INITIAL_CASH    = 1_000_000  # 円
-WF_TRAIN_MONTHS = 12         # 学習期間
-WF_TEST_MONTHS  = 3          # 検証期間
-MIN_TRADES      = 200        # バックテスト期間の最低取引回数
-PF_THRESHOLD    = 1.2        # 最低 Profit Factor
-SHARPE_THRESHOLD = 1.0
+# WF 期間
+WF_TRAIN_MONTHS = int(_cfg.get("wf_train_months", 12))
+WF_TEST_MONTHS  = int(_cfg.get("wf_test_months",  1))
 
-CACHE_DIR  = ".cache"
-CACHE_TTL  = 3600  # 1時間足用（1時間）
+# 除外条件
+MIN_TRADES       = int(_cfg.get("min_trades",     200))
+PF_THRESHOLD     = float(_cfg.get("min_pf",       1.2))
+SHARPE_THRESHOLD = float(_cfg.get("min_wft_sharpe", 0.0))
+
+INITIAL_CASH = 1_000_000  # 円（固定）
+CACHE_DIR    = ".cache"
+CACHE_TTL    = 3600
 PARAMS_FILE  = "params.json"
 RESULTS_FILE = "backtest_results.json"
 
-# FXシンボルマッピング（GMO FX → Yahoo Finance）
-SYMBOLS = ["EUR_GBP", "AUD_NZD", "EUR_CHF"]
+# 対象シンボル
+SYMBOLS = _cfg.get("symbols", ["EUR_GBP", "AUD_NZD", "EUR_CHF"])
 SYMBOL_MAP = {
     "EUR_GBP": "EURGBP=X",
     "AUD_NZD": "AUDNZD=X",
@@ -224,15 +239,26 @@ def optimize_symbol(symbol, idx, total, wft_cutoff, prev_params):
 
     bt = Backtest(train_data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
     stats = bt.optimize(
-        bb_period=range(10, 30, 5),      # 4通り
-        bb_std=[1.0, 1.5, 2.0, 2.5],    # 4通り
-        rsi_period=[14],                 # 1通り（固定）
-        rsi_upper=[60, 65, 70, 75],      # 4通り
-        rsi_lower=[25, 30, 35, 40],      # 4通り
-        atr_period=[14],                 # 1通り（固定）
-        atr_sl_mult=[1.5, 2.0],          # 2通り
-        atr_tp_mult=[2.0, 2.5],          # 2通り
-        # 合計: 4×4×1×4×4×1×2×2 = 1,024パターン
+        bb_period=range(
+            _cfg["bb_period"]["min"],
+            _cfg["bb_period"]["max"] + 1,
+            _cfg["bb_period"]["step"],
+        ),
+        bb_std=_cfg.get("bb_std", [1.0, 1.5, 2.0, 2.5]),
+        rsi_period=[14],
+        rsi_upper=list(range(
+            _cfg["rsi_upper"]["min"],
+            _cfg["rsi_upper"]["max"] + 1,
+            _cfg["rsi_upper"].get("step", 5),
+        )),
+        rsi_lower=list(range(
+            _cfg["rsi_lower"]["min"],
+            _cfg["rsi_lower"]["max"] + 1,
+            _cfg["rsi_lower"].get("step", 5),
+        )),
+        atr_period=[14],
+        atr_sl_mult=_cfg.get("atr_sl_mult", [1.5, 2.0]),
+        atr_tp_mult=_cfg.get("atr_tp_mult", [2.0, 2.5]),
         maximize="Sharpe Ratio",
     )
 
@@ -448,8 +474,8 @@ if __name__ == "__main__":
         pf         = is_s["pf"]
         n_trades   = is_s["n_trades"]
 
-        if wft_sharpe is not None and wft_sharpe < 0:
-            reason = f"WFTシャープ:{wft_sharpe:.2f}"
+        if wft_sharpe is not None and wft_sharpe < SHARPE_THRESHOLD:
+            reason = f"WFTシャープ:{wft_sharpe:.2f} < {SHARPE_THRESHOLD}"
             excluded.append(f"{symbol}({reason})")
             continue
 
@@ -463,7 +489,7 @@ if __name__ == "__main__":
             excluded.append(f"{symbol}({reason})")
             continue
 
-        if is_s["sharpe"] >= SHARPE_THRESHOLD:
+        if is_s["sharpe"] >= 1.0:
             adjusted_p = check_param_change(symbol, new_p, prev_params)
             params_out[symbol] = adjusted_p
         else:
