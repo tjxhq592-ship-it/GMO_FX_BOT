@@ -44,6 +44,7 @@ from backtest import (
     _cfg,
     SYMBOLS, START_DATE, END_DATE, FW_START_DATE, FW_END_DATE,
     WF_TEST_MONTHS, INITIAL_CASH,
+    SPREAD_PIPS, calc_commission,
     get_historical_data,
     walk_forward_test,
     _extract_stats,
@@ -95,7 +96,7 @@ def _worker_initializer(data_pkl: bytes, train_pkl: bytes, cache_dir: str) -> No
 
 def _worker_task(args: tuple) -> tuple:
     """ワーカープロセスで実行する1コンボのバックテスト（モジュールレベル関数必須）"""
-    combo_idx, params_dict, wt_wft, wt_is, wt_pf, wt_trades = args
+    combo_idx, params_dict, wt_wft, wt_is, wt_pf, wt_trades, symbol = args
 
     _ensure_valid_stream("stdout")
     _ensure_valid_stream("stderr")
@@ -105,8 +106,9 @@ def _worker_task(args: tuple) -> tuple:
 
     # IS バックテスト
     try:
+        _price = float(_g_train_data["Close"].iloc[-1])
         bt    = Backtest(_g_train_data, ImprovedStrategy,
-                         cash=INITIAL_CASH, commission=0.00002)
+                         cash=INITIAL_CASH, commission=calc_commission(symbol, _price))
         st_is = bt.run(**params_dict)
         is_s  = _extract_stats(st_is)
     except (AttributeError, IOError, OSError) as e:
@@ -121,7 +123,7 @@ def _worker_task(args: tuple) -> tuple:
     # WFT
     wft_r: dict | None = None
     try:
-        wft_r = walk_forward_test(_g_data, params_dict)
+        wft_r = walk_forward_test(_g_data, params_dict, symbol=symbol)
     except Exception as e:
         err_msg = f"WFT 例外: {type(e).__name__}: {e}"
         wft_r = None
@@ -266,15 +268,16 @@ def _save_to_params(symbol: str, params_dict: dict | None, log_fn,
 # ── シングルスレッド版（デバッグ・互換用） ──────────────────────────────
 
 def _run_single(train_data, data, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
-                debug: bool = False) -> tuple:
+                debug: bool = False, symbol: str = "") -> tuple:
     """1パラメータ組み合わせのバックテスト（IS + WFT）"""
     _ensure_valid_stream("stdout")
     _ensure_valid_stream("stderr")
     is_s: dict | None = None
     err_msg: str | None = None
     try:
+        _price = float(train_data["Close"].iloc[-1])
         bt    = Backtest(train_data, ImprovedStrategy,
-                         cash=INITIAL_CASH, commission=0.00002)
+                         cash=INITIAL_CASH, commission=calc_commission(symbol, _price))
         st_is = bt.run(**params_dict)
         is_s  = _extract_stats(st_is)
         if debug:
@@ -296,7 +299,7 @@ def _run_single(train_data, data, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
 
     wft_r: dict | None = None
     try:
-        wft_r = walk_forward_test(data, params_dict)
+        wft_r = walk_forward_test(data, params_dict, symbol=symbol)
         if debug:
             if wft_r:
                 print(f"  WFT結果: シャープ={wft_r['sharpe']:.3f}  PF={wft_r['pf']}"
@@ -391,7 +394,7 @@ def debug_run(config: dict, score_weights: dict) -> None:
     print("\n[2] バックテスト実行中...")
     is_s, wft_r, score, err = _run_single(
         train_data, data, params_dict,
-        wt_wft, wt_is, wt_pf, wt_trades, debug=True,
+        wt_wft, wt_is, wt_pf, wt_trades, debug=True, symbol=symbol,
     )
 
     print(f"\n[3] 最終結果")
@@ -522,7 +525,7 @@ def main(debug: bool = False) -> None:
                     "atr_period":  14,
                     "atr_sl_mult": sl_m,
                     "atr_tp_mult": tp_m,
-                }, wt_wft, wt_is, wt_pf, wt_trades)
+                }, wt_wft, wt_is, wt_pf, wt_trades, symbol)
                 for i, (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in enumerate(combos)
             ]
 
