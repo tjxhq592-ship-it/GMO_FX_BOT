@@ -353,8 +353,13 @@ BT_PROGRESS_FILE     = "backtest_progress.json"
 _bt_log_lines: list = []
 
 def _bt_log(msg: str) -> None:
-    """print しつつ backtest_progress.json 用のログバッファに追記"""
-    print(msg, flush=True)
+    """print しつつ backtest_progress.json 用のログバッファに追記。
+    デタッチドプロセス等で sys.stdout が None の場合は print をスキップ。"""
+    try:
+        if sys.stdout is not None:
+            print(msg, flush=True)
+    except Exception:
+        pass
     _bt_log_lines.append(msg)
 
 def _write_bt_progress(current: int, total: int, symbol: str, status: str) -> None:

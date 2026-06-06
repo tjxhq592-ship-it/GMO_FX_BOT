@@ -16,6 +16,13 @@ import itertools
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
+# Windows の DETACHED_PROCESS 起動では sys.stdout/stderr が None になる。
+# print() が失敗しないよう、None の場合は devnull にリダイレクト。
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w", encoding="utf-8", errors="replace")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w", encoding="utf-8", errors="replace")
+
 # backtest.py の関数・定数をインポート
 from backtest import (
     _cfg,
@@ -228,7 +235,11 @@ def main(debug: bool = False) -> None:
     log_lines: list[str] = []
 
     def log(msg: str) -> None:
-        print(msg, flush=True)
+        try:
+            if sys.stdout is not None:
+                print(msg, flush=True)
+        except Exception:
+            pass
         log_lines.append(msg)
 
     try:
