@@ -1,11 +1,12 @@
+import matplotlib
+matplotlib.use("Agg")  # 他のimportより前に設定しないと効かない
+
 from backtesting import Backtest, Strategy
 from backtesting.lib import crossover
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import hashlib
 import logging
-import matplotlib
-matplotlib.use("Agg")
 import os
 import warnings
 import pandas as pd
@@ -273,19 +274,19 @@ if __name__ == "__main__":
     raw_results = {}
     errors      = {}
 
-    with tqdm(SYMBOLS, desc="Optimizing", unit="pair") as pbar:
-        for symbol in pbar:
-            pbar.set_description(f"Optimizing [{symbol}]")
-            try:
-                raw_results[symbol] = optimize_symbol(symbol, wft_cutoff, prev_params)
-            except Exception as e:
-                errors[symbol] = str(e)
+    pbar = tqdm(SYMBOLS, ncols=60)
+    for symbol in pbar:
+        pbar.set_description(f"[{symbol}]")
+        try:
+            raw_results[symbol] = optimize_symbol(symbol, wft_cutoff, prev_params)
+        except Exception as e:
+            errors[symbol] = str(e)
 
     fw_results = {}
-    with tqdm(list(raw_results), desc="ForwardTest", unit="pair") as pbar:
-        for symbol in pbar:
-            pbar.set_description(f"ForwardTest  [{symbol}]")
-            fw_results[symbol] = run_forward_test(symbol, raw_results[symbol]["params_dict"])
+    pbar = tqdm(list(raw_results), ncols=60)
+    for symbol in pbar:
+        pbar.set_description(f"[{symbol}] FW")
+        fw_results[symbol] = run_forward_test(symbol, raw_results[symbol]["params_dict"])
 
     if errors:
         print()
