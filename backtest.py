@@ -348,6 +348,25 @@ def check_param_change(symbol, new_params, prev_params):
 
 GRID_PROGRESS_FILE   = "grid_search_progress.json"
 GRID_SEARCH_CFG_FILE = "grid_search_config.json"
+BT_PROGRESS_FILE     = "backtest_progress.json"
+
+_bt_log_lines: list = []
+
+def _bt_log(msg: str) -> None:
+    """print しつつ backtest_progress.json 用のログバッファに追記"""
+    print(msg, flush=True)
+    _bt_log_lines.append(msg)
+
+def _write_bt_progress(current: int, total: int, symbol: str, status: str) -> None:
+    data = {
+        "current":        current,
+        "total_symbols":  total,
+        "current_symbol": symbol,
+        "status":         status,
+        "log":            _bt_log_lines[-50:],
+    }
+    with open(BT_PROGRESS_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False)
 
 # === グリッドサーチジョブ ===
 def grid_search_job(config: dict, score_weights: dict) -> list:
@@ -535,47 +554,52 @@ if __name__ == "__main__":
         prev_params = load_prev_params()
         wft_cutoff  = END_DATE - relativedelta(months=WF_TEST_MONTHS)
 
-        print(f"バックテスト期間 : {START_DATE.date()} 〜 {END_DATE.date()}")
-        print(f"最適化 / WFT     : 〜 {wft_cutoff.date()} / {wft_cutoff.date()} 〜 {END_DATE.date()}")
-        print(f"フォワードテスト : {FW_START_DATE.date()} 〜 {FW_END_DATE.date()}")
-        print()
+        _bt_log(f"バックテスト期間 : {START_DATE.date()} 〜 {END_DATE.date()}")
+        _bt_log(f"最適化 / WFT     : 〜 {wft_cutoff.date()} / {wft_cutoff.date()} 〜 {END_DATE.date()}")
+        _bt_log(f"フォワードテスト : {FW_START_DATE.date()} 〜 {FW_END_DATE.date()}")
+        _bt_log("")
 
         raw_results = {}
         errors      = {}
         total       = len(SYMBOLS)
+        _write_bt_progress(0, total, "", "running")
 
         for idx, symbol in enumerate(SYMBOLS, 1):
-            print(f"\n{'='*50}")
+            _bt_log(f"\n{'='*50}")
+            _write_bt_progress(idx - 1, total, symbol, "running")
             try:
                 raw_results[symbol] = optimize_symbol(symbol, idx, total, wft_cutoff, prev_params)
+                _write_bt_progress(idx, total, symbol, "running")
             except Exception as e:
                 errors[symbol] = str(e)
-                print(f"[{idx}/{total}] {symbol} エラー: {e}")
+                _bt_log(f"[{idx}/{total}] {symbol} エラー: {e}")
+                _write_bt_progress(idx, total, symbol, "running")
 
         fw_results = {}
-        print(f"\n{'='*50}")
-        print("フォワードテスト開始")
+        _bt_log(f"\n{'='*50}")
+        _bt_log("フォワードテスト開始")
         for idx, symbol in enumerate(raw_results, 1):
-            print(f"[{idx}/{len(raw_results)}] {symbol} フォワードテスト中...")
+            _bt_log(f"[{idx}/{len(raw_results)}] {symbol} フォワードテスト中...")
             fw_results[symbol] = run_forward_test(symbol, raw_results[symbol]["params_dict"])
             fw = fw_results[symbol]
             if fw:
                 pf_str = f"{fw['pf']:.2f}" if fw["pf"] is not None else "N/A"
-                print(
+                _bt_log(
                     f"  完了 — シャープ={fw['sharpe']:.2f}  PF={pf_str}"
                     f"  最大DD={fw['max_dd']:.1f}%  勝率={fw['win_rate']:.1f}%  取引={fw['n_trades']}回"
                 )
             else:
-                print("  データ不足のためスキップ")
+                _bt_log("  データ不足のためスキップ")
 
         if errors:
-            print()
+            _bt_log("")
             for sym, msg in errors.items():
-                print(f"  ⚠️ {sym} エラー: {msg}")
+                _bt_log(f"  ⚠️ {sym} エラー: {msg}")
 
         # === 結果集計 ===
         if not raw_results:
-            print("\n全銘柄でエラーが発生しました。処理を終了します。")
+            _bt_log("\n全銘柄でエラーが発生しました。処理を終了します。")
+            _write_bt_progress(total, total, "", "error")
             raise SystemExit(1)
 
         results       = []
@@ -675,16 +699,16 @@ if __name__ == "__main__":
             json.dump(output, f, indent=2, ensure_ascii=False)
 
         if excluded:
-            print("\n=== 除外ペア ===")
+            _bt_log("\n=== 除外ペア ===")
             for e in excluded:
-                print(f"  ⚠️ {e}")
+                _bt_log(f"  ⚠️ {e}")
 
         if _param_change_log:
-            print("\n=== パラメータ急変チェック ===")
+            _bt_log("\n=== パラメータ急変チェック ===")
             for line in _param_change_log:
-                print(f"  ⚠️ {line}")
+                _bt_log(f"  ⚠️ {line}")
 
-        print(f"\nparams.json に保存しました。")
+        _bt_log(f"\nparams.json に保存しました。")
 
         # === backtest_results.json 保存 ===
         bt_results = {}
@@ -716,4 +740,5 @@ if __name__ == "__main__":
 
         with open(RESULTS_FILE, "w", encoding="utf-8") as f:
             json.dump(bt_results, f, indent=2, ensure_ascii=False)
-        print(f"backtest_results.json に保存しました。")
+        _bt_log(f"backtest_results.json に保存しました。")
+        _write_bt_progress(total, total, "", "completed")

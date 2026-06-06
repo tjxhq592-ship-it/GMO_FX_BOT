@@ -1,0 +1,1 @@
+{"current": 18, "total": 60480, "best_score": 2.1547, "best_params": {"bb_period": 10, "bb_std": 1.0, "rsi_period": 14, "rsi_upper": 55, "rsi_lower": 20, "atr_period": 14, "atr_sl_mult": 2.5, "atr_tp_mult": 2.0, "symbol": "EUR_GBP"}, "elapsed": 5, "remaining": 16795}

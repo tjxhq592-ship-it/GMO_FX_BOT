@@ -1,8 +1,8 @@
 {
-  "weights": {
-    "wft_sharpe": 0.5,
+  "score_weights": {
+    "wft_sharpe": 0.4,
     "is_sharpe": 0.2,
     "pf": 0.2,
-    "trades": 0.1
+    "trades": 0.2
   }
 }
