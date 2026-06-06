@@ -1,5 +1,7 @@
+import os
+os.environ["TQDM_DISABLE"] = "1"
 import matplotlib
-matplotlib.use("Agg")  # 他のimportより前に設定しないと効かない
+matplotlib.use("Agg")
 
 from backtesting import Backtest, Strategy
 from backtesting.lib import crossover
@@ -7,7 +9,6 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import hashlib
 import logging
-import os
 import warnings
 import pandas as pd
 import pickle
