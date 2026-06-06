@@ -217,65 +217,70 @@ def run_bot() -> None:
 
             logging.info(f"{symbol} 価格: {price}, 取引数量: {size}ロット, ポジション: {position}")
 
-            # ATRベースのSL/TP算出
+            # ATRベースのSL/TP算出（ロング・ショートで上下反転）
             atr         = float(bars.iloc[-1]["ATR"])
             atr_sl_mult = p.get("atr_sl_mult", 1.5)
             atr_tp_mult = p.get("atr_tp_mult", 2.5)
-            sl          = round(price - atr * atr_sl_mult, 5)
-            tp          = round(price + atr * atr_tp_mult, 5)
+            long_sl  = round(price - atr * atr_sl_mult, 5)
+            long_tp  = round(price + atr * atr_tp_mult, 5)
+            short_sl = round(price + atr * atr_sl_mult, 5)
+            short_tp = round(price - atr * atr_tp_mult, 5)
 
+            pos_side = position["side"] if position else None
+
+            # ── 新規ロング ──────────────────────────────────────────────
             if decision["action"] == "buy" and position is None and market == "bull":
-                # Polymarketリスクブロック
                 if should_block_entry(poly_signal):
-                    logging.info(f"{symbol} Polymarketリスクブロック: エントリースキップ")
+                    logging.info(f"{symbol} Polymarketリスクブロック: ロングスキップ")
                     summary_lines.append(f"  {symbol}: Polymarketリスクブロックでスキップ")
                     continue
-                result = gmo.place_order(symbol, "BUY", size)
-                logging.info(f"買い注文実行: {symbol} {size}ロット @ {price}  SL={sl}  TP={tp}")
 
-                msg = (
-                    f"📈 買い注文実行\n"
-                    f"通貨ペア: {symbol}\n"
-                    f"価格: {price:.5f}\n"
-                    f"数量: {size}ロット\n"
-                    f"ATR: {atr:.5f}\n"
-                    f"利確ライン: {tp:.5f}\n"
-                    f"損切ライン: {sl:.5f}\n"
-                    f"理由: {decision['reason']}"
+                gmo.place_order(symbol, "BUY", size)
+                logging.info(f"買い注文実行: {symbol} {size}ロット @ {price}  SL={long_sl}  TP={long_tp}")
+                send_line(
+                    f"📈 新規ロング\n通貨ペア: {symbol}\n価格: {price:.5f}\n"
+                    f"数量: {size}ロット\nATR: {atr:.5f}\n"
+                    f"利確: {long_tp:.5f}  損切: {long_sl:.5f}\n理由: {decision['reason']}"
                 )
-                send_line(msg)
                 buy_count += 1
-                summary_lines.append(f"  {symbol}: 買い {size}ロット @ {price:.5f}  SL={sl}  TP={tp}")
+                summary_lines.append(f"  {symbol}: ロング {size}ロット @ {price:.5f}")
 
-                # SL/TP監視: 現在価格がラインを超えたら即決済
-                current_price = float(gmo.get_klines_range(symbol, interval="1min", days=1).iloc[-1]["close"])
-                if current_price <= sl or current_price >= tp:
-                    pos = get_position(symbol)
-                    if pos:
-                        close_side = "SELL" if pos["side"] == "BUY" else "BUY"
-                        gmo.close_position(pos["positionId"], symbol, close_side, int(pos["size"]))
-                        trigger = "TP到達" if current_price >= tp else "SL到達"
-                        logging.info(f"即決済({trigger}): {symbol} @ {current_price:.5f}")
-                        send_line(f"🔔 {trigger}で即決済\n{symbol} @ {current_price:.5f}")
+            # ── 新規ショート ────────────────────────────────────────────
+            elif decision["action"] == "sell" and position is None and market == "bear":
+                if should_block_entry(poly_signal):
+                    logging.info(f"{symbol} Polymarketリスクブロック: ショートスキップ")
+                    summary_lines.append(f"  {symbol}: Polymarketリスクブロックでスキップ")
+                    continue
 
-            elif decision["action"] == "sell" and position is not None:
-                pos_id   = position["positionId"]
-                pos_size = int(position["size"])
-                # 建玉の逆サイドで決済
-                close_side = "SELL" if position["side"] == "BUY" else "BUY"
-                gmo.close_position(pos_id, symbol, close_side, pos_size)
-                logging.info(f"決済注文実行: {symbol} {pos_size}ロット")
-
-                msg = (
-                    f"📉 決済注文実行\n"
-                    f"通貨ペア: {symbol}\n"
-                    f"価格: {price:.5f}\n"
-                    f"数量: {pos_size}ロット\n"
-                    f"理由: {decision['reason']}"
+                gmo.place_order(symbol, "SELL", size)
+                logging.info(f"新規ショート: {symbol} {size}ロット @ {price}  SL={short_sl}  TP={short_tp}")
+                send_line(
+                    f"📉 新規ショート\n通貨ペア: {symbol}\n価格: {price:.5f}\n"
+                    f"数量: {size}ロット\nATR: {atr:.5f}\n"
+                    f"利確: {short_tp:.5f}  損切: {short_sl:.5f}\n理由: {decision['reason']}"
                 )
-                send_line(msg)
                 sell_count += 1
-                summary_lines.append(f"  {symbol}: 決済 {pos_size}ロット @ {price:.5f}")
+                summary_lines.append(f"  {symbol}: ショート {size}ロット @ {price:.5f}")
+
+            # ── ロング決済（Claudeがsell判断 かつ ロング保有中）──────────
+            elif decision["action"] == "sell" and pos_side == "BUY":
+                gmo.close_position(position["positionId"], symbol, "SELL", int(position["size"]))
+                logging.info(f"ロング決済: {symbol} {position['size']}ロット @ {price:.5f}")
+                send_line(
+                    f"✅ ロング決済\n通貨ペア: {symbol}\n価格: {price:.5f}\n理由: {decision['reason']}"
+                )
+                sell_count += 1
+                summary_lines.append(f"  {symbol}: ロング決済 @ {price:.5f}")
+
+            # ── ショート決済（Claudeがbuy判断 かつ ショート保有中）────────
+            elif decision["action"] == "buy" and pos_side == "SELL":
+                gmo.close_position(position["positionId"], symbol, "BUY", int(position["size"]))
+                logging.info(f"ショート決済: {symbol} {position['size']}ロット @ {price:.5f}")
+                send_line(
+                    f"✅ ショート決済\n通貨ペア: {symbol}\n価格: {price:.5f}\n理由: {decision['reason']}"
+                )
+                buy_count += 1
+                summary_lines.append(f"  {symbol}: ショート決済 @ {price:.5f}")
 
             else:
                 logging.info(f"{symbol} 待機中")

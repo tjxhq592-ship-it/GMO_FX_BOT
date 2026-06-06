@@ -134,16 +134,27 @@ class ImprovedStrategy(Strategy):
     def next(self):
         price = self.data.Close[-1]
         atr   = self.atr[-1]
-        sl    = price - atr * self.atr_sl_mult
-        tp    = price + atr * self.atr_tp_mult
 
+        # ロング用 SL/TP
+        long_sl = price - atr * self.atr_sl_mult
+        long_tp = price + atr * self.atr_tp_mult
+        # ショート用 SL/TP（上下反転）
+        short_sl = price + atr * self.atr_sl_mult
+        short_tp = price - atr * self.atr_tp_mult
+
+        # ゴールデンクロス: ロングエントリー（ショートがあれば先に決済）
         if crossover(self.ma_s, self.ma_l) and self.rsi[-1] < self.rsi_upper:
-            if not self.position:
-                self.buy(size=self.trade_size, sl=sl, tp=tp)
-
-        elif crossover(self.ma_l, self.ma_s) and self.rsi[-1] > self.rsi_lower:
-            if self.position:
+            if self.position.is_short:
                 self.position.close()
+            if not self.position:
+                self.buy(size=self.trade_size, sl=long_sl, tp=long_tp)
+
+        # デッドクロス: ショートエントリー（ロングがあれば先に決済）
+        elif crossover(self.ma_l, self.ma_s) and self.rsi[-1] > self.rsi_lower:
+            if self.position.is_long:
+                self.position.close()
+            if not self.position:
+                self.sell(size=self.trade_size, sl=short_sl, tp=short_tp)
 
 def _extract_stats(stats):
     """backtesting Stats オブジェクトから必要な指標を dict で返す"""
