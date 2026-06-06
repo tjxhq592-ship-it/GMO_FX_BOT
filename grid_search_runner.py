@@ -194,8 +194,12 @@ def _write_progress(current, total, best_score, best_params,
             json.dump(data, f, ensure_ascii=False)
 
 
-def _save_to_params(symbol: str, params_dict: dict, log_fn) -> None:
-    """ベストパラメータを params.json の該当シンボルに保存する"""
+def _save_to_params(symbol: str, params_dict: dict | None, log_fn,
+                    exclude_reason: str | None = None) -> None:
+    """params.json を更新する。
+    params_dict が None（除外）の場合は params[symbol] を削除し excluded に追加。
+    採用の場合は params[symbol] を保存し excluded から除去。
+    """
     try:
         if os.path.exists(PARAMS_FILE):
             with open(PARAMS_FILE, "r", encoding="utf-8") as f:
@@ -203,7 +207,27 @@ def _save_to_params(symbol: str, params_dict: dict, log_fn) -> None:
         else:
             params_data = {"params": {}, "excluded": []}
 
-        params_data.setdefault("params", {})[symbol] = params_dict
+        params_data.setdefault("params", {})
+        params_data.setdefault("excluded", [])
+
+        if params_dict is not None:
+            # 採用: params に保存、excluded から除去
+            params_data["params"][symbol] = params_dict
+            params_data["excluded"] = [
+                e for e in params_data["excluded"]
+                if not (isinstance(e, str) and e.startswith(f"{symbol}("))
+            ]
+        else:
+            # 除外: params から削除、excluded に追加
+            params_data["params"].pop(symbol, None)
+            # 既存エントリを除去してから追加（重複防止）
+            params_data["excluded"] = [
+                e for e in params_data["excluded"]
+                if not (isinstance(e, str) and e.startswith(f"{symbol}("))
+            ]
+            entry = f"{symbol}({exclude_reason})" if exclude_reason else symbol
+            params_data["excluded"].append(entry)
+
         params_data["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         with open(PARAMS_FILE, "w", encoding="utf-8") as f:
@@ -586,6 +610,7 @@ def main(debug: bool = False) -> None:
 
             if exclude_reason:
                 log(f"  [EXCLUDED] {symbol}: {exclude_reason}")
+                _save_to_params(symbol, None, log, exclude_reason=exclude_reason)
                 completed_symbols[symbol] = {
                     "status":      "excluded",
                     "reason":      exclude_reason,

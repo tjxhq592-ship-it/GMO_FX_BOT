@@ -1,18 +1,16 @@
 {
-  "updated_at": "2026-06-06 17:47:44",
+  "updated_at": "2026-06-06 22:18:49",
   "params": {
-    "EUR_GBP": {
+    "AUD_NZD": {
       "bb_period": 10,
-      "bb_std": 1.0,
-      "rsi_upper": 55,
+      "bb_std": 2.0,
+      "rsi_period": 14,
+      "rsi_upper": 70,
       "rsi_lower": 20,
+      "atr_period": 14,
       "atr_sl_mult": 1.0,
       "atr_tp_mult": 1.5
     }
   },
-  "excluded": [
-    "EUR_GBP(WFTシャープ:-0.84)",
-    "AUD_NZD(WFTシャープ:-3.21)",
-    "EUR_CHF(取引回数:55回 < 200回)"
-  ]
+  "excluded": []
 }
