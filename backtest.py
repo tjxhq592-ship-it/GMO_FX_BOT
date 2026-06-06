@@ -28,20 +28,21 @@ def calculate_rsi(prices, period=14):
     return result.values if hasattr(result, "values") else result
 
 # === 設定 ===
-START_DATE    = datetime(2015, 1, 1)   # 10年バックテスト
-END_DATE      = datetime(2024, 12, 31) # バックテスト終了
-FW_START_DATE = datetime(2025, 1, 1)   # フォワードテスト開始
+# yfinance 1h足は直近730日分のみ取得可能
+START_DATE    = datetime.now() - timedelta(days=720)
+END_DATE      = datetime.now() - timedelta(days=1)
+FW_START_DATE = datetime.now() - timedelta(days=90)
 FW_END_DATE   = datetime.now() - timedelta(days=1)
 
 INITIAL_CASH    = 1_000_000  # 円
-WF_TRAIN_MONTHS = 24         # 学習期間
-WF_TEST_MONTHS  = 6          # 検証期間
-MIN_TRADES      = 200        # 10年間の最低取引回数
+WF_TRAIN_MONTHS = 12         # 学習期間
+WF_TEST_MONTHS  = 3          # 検証期間
+MIN_TRADES      = 200        # バックテスト期間の最低取引回数
 PF_THRESHOLD    = 1.2        # 最低 Profit Factor
 SHARPE_THRESHOLD = 1.0
 
 CACHE_DIR  = ".cache"
-CACHE_TTL  = 12 * 3600
+CACHE_TTL  = 3600  # 1時間足用（1時間）
 PARAMS_FILE  = "params.json"
 RESULTS_FILE = "backtest_results.json"
 
@@ -65,7 +66,7 @@ def _download(symbol, start, end):
         yf_symbol,
         start=start.strftime("%Y-%m-%d"),
         end=end.strftime("%Y-%m-%d"),
-        interval="1d",
+        interval="1h",
         auto_adjust=True,
         progress=False,
     )
@@ -73,7 +74,8 @@ def _download(symbol, start, end):
         raise ValueError(f"{symbol} ({yf_symbol}): データ取得失敗")
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.get_level_values(0)
-    df.index = pd.to_datetime(df.index).tz_localize(None)
+    idx = pd.to_datetime(df.index)
+    df.index = idx.tz_convert(None) if idx.tz is not None else idx.tz_localize(None)
     return df[["Open", "High", "Low", "Close", "Volume"]].dropna()
 
 def get_historical_data(symbol):
@@ -179,8 +181,8 @@ def optimize_symbol(symbol, wft_cutoff, prev_params):
 
     bt = Backtest(train_data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
     stats = bt.optimize(
-        ma_short=range(3, 15, 2),
-        ma_long=range(10, 50, 5),
+        ma_short=range(3, 20, 2),
+        ma_long=range(10, 60, 5),
         rsi_upper=range(60, 80, 5),
         rsi_lower=range(20, 40, 5),
         stop_loss_pct=[0.95, 0.97, 0.98],
