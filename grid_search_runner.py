@@ -77,7 +77,10 @@ def _update_pid_status(status: str) -> None:
 
 def _write_progress(current, total, best_score, best_params,
                     elapsed, remaining, log_lines, done=False,
-                    completed_symbols: dict | None = None) -> None:
+                    completed_symbols: dict | None = None,
+                    current_symbol: str = "",
+                    symbol_current: int = 0,
+                    symbol_total: int = 0) -> None:
     data = {
         "current":           current,
         "total":             total,
@@ -88,6 +91,9 @@ def _write_progress(current, total, best_score, best_params,
         "status":            "completed" if done else "running",
         "log":               log_lines[-50:],
         "completed_symbols": completed_symbols or {},
+        "current_symbol":    current_symbol,
+        "symbol_current":    symbol_current,
+        "symbol_total":      symbol_total,
     }
     with open(PROGRESS_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False)
@@ -432,7 +438,10 @@ def main(debug: bool = False) -> None:
                 remaining = int(elapsed / current * (total - current)) if current else 0
                 _write_progress(current, total, best_score, best_params,
                                 elapsed, remaining, log_lines,
-                                completed_symbols=completed_symbols)
+                                completed_symbols=completed_symbols,
+                                current_symbol=symbol,
+                                symbol_current=i + 1,
+                                symbol_total=len(combos))
 
             # ── シンボル完了: 除外判定 ──────────────────────────────────────
             log(f"[{symbol}] 完了  ベストスコア={sym_best_score:.4f}")

@@ -591,13 +591,16 @@ with tab_gs:
                 st.json(best_p)
 
         # ── 完了済みペアの状況表示 ──────────────────────────────────────
-        completed = gs_prog.get("completed_symbols", {})
-        cfg_syms  = load_config().get("symbols", [])
+        completed      = gs_prog.get("completed_symbols", {})
+        cur_sym        = gs_prog.get("current_symbol", "")
+        sym_cur        = gs_prog.get("symbol_current", 0)
+        sym_tot        = gs_prog.get("symbol_total",   0)
+        cfg_syms       = load_config().get("symbols", [])
         if cfg_syms:
             st.markdown("**ペア別進捗**")
             for sym in cfg_syms:
                 if sym in completed:
-                    info = completed[sym]
+                    info   = completed[sym]
                     st_sym = info.get("status", "")
                     sc     = info.get("best_score", 0)
                     reason = info.get("reason", "")
@@ -607,6 +610,9 @@ with tab_gs:
                         st.error(f"❌ {sym}: 除外（{reason}）")
                     elif st_sym == "error":
                         st.warning(f"⚠️ {sym}: エラー（{reason}）")
+                elif sym == cur_sym and sym_tot > 0:
+                    pct = sym_cur / sym_tot
+                    st.info(f"🔄 {sym}: 処理中  {sym_cur:,} / {sym_tot:,}  ({pct:.0%})")
                 else:
                     st.info(f"⏳ {sym}: 待機中")
 
