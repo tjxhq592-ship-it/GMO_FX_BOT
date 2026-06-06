@@ -435,7 +435,7 @@ def _write_bt_progress(current: int, total: int, symbol: str, status: str) -> No
         "log":            _bt_log_lines[-50:],
     }
     with open(BT_PROGRESS_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False)
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 # === グリッドサーチジョブ ===
 def grid_search_job(config: dict, score_weights: dict) -> list:
@@ -664,50 +664,66 @@ if __name__ == "__main__":
             for idx, symbol in enumerate(TARGET_SYMBOLS, 1)
         ]
 
-        _ctx = multiprocessing.get_context("spawn")
-
-        # Windows: ワーカー起動時のコンソールウィンドウを完全に非表示
-        if sys.platform == "win32":
-            _orig_popen = _ctx.Process._popen_class
-
-            class _HiddenPopen(_orig_popen):
-                def __init__(self, *args, **kwargs):
-                    si = subprocess.STARTUPINFO()
-                    si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                    si.wShowWindow = subprocess.SW_HIDE
-                    kwargs["startupinfo"] = si
-                    super().__init__(*args, **kwargs)
-
-            _ctx.Process._popen_class = _HiddenPopen
-
-        _executor = ProcessPoolExecutor(
-            max_workers=max_workers,
-            mp_context=_ctx,
-            initializer=_bt_worker_initializer,
-            initargs=(_cache_dir,),
-        )
-        _completed = 0
-        try:
-            _futures = {_executor.submit(_bt_worker, t): t[0] for t in _tasks}
-            for _future in as_completed(_futures):
-                symbol = _futures[_future]
-                _completed += 1
+        if max_workers <= 1:
+            # ── シングルスレッド実行（ProcessPoolExecutor を使わない） ─────
+            _bt_log("シングルスレッドモードで実行中...")
+            for _idx, _task in enumerate(_tasks, 1):
+                _sym, _i, _tot, _wft_c, _prev = _task
+                _write_bt_progress(_idx - 1, total, _sym, "running")
                 try:
-                    sym_ret, result, err = _future.result()
-                except Exception as e:
-                    err = str(e)
-                    result = None
-                    sym_ret = symbol
+                    _result = optimize_symbol(_sym, _i, _tot, _wft_c, _prev)
+                    raw_results[_sym] = _result
+                    _bt_log(f"[{_idx}/{total}] {_sym} 完了")
+                except Exception as _e:
+                    errors[_sym] = str(_e)
+                    _bt_log(f"[{_idx}/{total}] {_sym} エラー: {str(_e).splitlines()[0]}")
+                _write_bt_progress(_idx, total, _sym, "running")
+        else:
+            # ── 並列実行（ProcessPoolExecutor） ───────────────────────────
+            _ctx = multiprocessing.get_context("spawn")
 
-                if err:
-                    errors[sym_ret] = err
-                    _bt_log(f"[{_completed}/{total}] {sym_ret} エラー: {err.splitlines()[0]}")
-                else:
-                    raw_results[sym_ret] = result
-                    _bt_log(f"[{_completed}/{total}] {sym_ret} 完了")
-                _write_bt_progress(_completed, total, sym_ret, "running")
-        finally:
-            _executor.shutdown(wait=True)
+            # Windows: ワーカー起動時のコンソールウィンドウを完全に非表示
+            if sys.platform == "win32":
+                _orig_popen = _ctx.Process._popen_class
+
+                class _HiddenPopen(_orig_popen):
+                    def __init__(self, *args, **kwargs):
+                        si = subprocess.STARTUPINFO()
+                        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                        si.wShowWindow = subprocess.SW_HIDE
+                        kwargs["startupinfo"] = si
+                        super().__init__(*args, **kwargs)
+
+                _ctx.Process._popen_class = _HiddenPopen
+
+            _executor = ProcessPoolExecutor(
+                max_workers=max_workers,
+                mp_context=_ctx,
+                initializer=_bt_worker_initializer,
+                initargs=(_cache_dir,),
+            )
+            _completed = 0
+            try:
+                _futures = {_executor.submit(_bt_worker, t): t[0] for t in _tasks}
+                for _future in as_completed(_futures):
+                    symbol = _futures[_future]
+                    _completed += 1
+                    try:
+                        sym_ret, result, err = _future.result()
+                    except Exception as e:
+                        err = str(e)
+                        result = None
+                        sym_ret = symbol
+
+                    if err:
+                        errors[sym_ret] = err
+                        _bt_log(f"[{_completed}/{total}] {sym_ret} エラー: {err.splitlines()[0]}")
+                    else:
+                        raw_results[sym_ret] = result
+                        _bt_log(f"[{_completed}/{total}] {sym_ret} 完了")
+                    _write_bt_progress(_completed, total, sym_ret, "running")
+            finally:
+                _executor.shutdown(wait=True)
 
         fw_results = {}
         _bt_log(f"\n{'='*50}")
