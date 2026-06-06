@@ -1,5 +1,3 @@
-import os
-os.environ["TQDM_DISABLE"] = "1"
 import matplotlib
 matplotlib.use("Agg")
 
@@ -15,7 +13,6 @@ import pickle
 import json
 import time
 import yfinance as yf
-from tqdm import tqdm
 from utils import calculate_rsi as _calculate_rsi
 
 # ログ・警告の抑制
@@ -176,9 +173,15 @@ def run_forward_test(symbol, params_dict):
     return _extract_stats(stats)
 
 # === 1銘柄分の最適化処理 ===
-def optimize_symbol(symbol, wft_cutoff, prev_params):
+def optimize_symbol(symbol, idx, total, wft_cutoff, prev_params):
+    tag = f"[{idx}/{total}] {symbol}"
+
+    print(f"{tag} データ取得中...")
     data = get_historical_data(symbol)
+    print(f"  データ: {len(data)}件 ({data.index[0]} 〜 {data.index[-1]})")
+
     train_data = data[data.index < wft_cutoff]
+    print(f"{tag} 最適化中... (学習データ: {len(train_data)}件)")
 
     bt = Backtest(train_data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
     stats = bt.optimize(
@@ -202,15 +205,24 @@ def optimize_symbol(symbol, wft_cutoff, prev_params):
         "take_profit_pct": float(p.take_profit_pct),
     }
 
-    is_stats   = _extract_stats(stats)
+    is_stats = _extract_stats(stats)
+    print(f"{tag} WFTテスト中...")
     wft_result = walk_forward_test(data, params_dict)
 
     # エクイティカーブ（全バックテスト期間）
+    print(f"{tag} エクイティカーブ生成中...")
     bt_full = Backtest(data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
     stats_full = bt_full.run(**params_dict)
     equity_curve  = stats_full["_equity_curve"]["Equity"]
     equity_dates  = equity_curve.index.strftime("%Y-%m-%d").tolist()
     equity_values = equity_curve.tolist()
+
+    pf_str  = f"{is_stats['pf']:.2f}"           if is_stats["pf"]           is not None else "N/A"
+    wft_str = f"{wft_result['sharpe']:.2f}"     if wft_result               is not None else "N/A"
+    print(
+        f"{tag} 完了 — シャープ(IS)={is_stats['sharpe']:.2f}"
+        f"  PF={pf_str}  WFT={wft_str}  取引={is_stats['n_trades']}回"
+    )
 
     return {
         "symbol":        symbol,
@@ -276,20 +288,31 @@ if __name__ == "__main__":
 
     raw_results = {}
     errors      = {}
+    total       = len(SYMBOLS)
 
-    pbar = tqdm(SYMBOLS, ncols=60)
-    for symbol in pbar:
-        pbar.set_description(f"[{symbol}]")
+    for idx, symbol in enumerate(SYMBOLS, 1):
+        print(f"\n{'='*50}")
         try:
-            raw_results[symbol] = optimize_symbol(symbol, wft_cutoff, prev_params)
+            raw_results[symbol] = optimize_symbol(symbol, idx, total, wft_cutoff, prev_params)
         except Exception as e:
             errors[symbol] = str(e)
+            print(f"[{idx}/{total}] {symbol} エラー: {e}")
 
     fw_results = {}
-    pbar = tqdm(list(raw_results), ncols=60)
-    for symbol in pbar:
-        pbar.set_description(f"[{symbol}] FW")
+    print(f"\n{'='*50}")
+    print("フォワードテスト開始")
+    for idx, symbol in enumerate(raw_results, 1):
+        print(f"[{idx}/{len(raw_results)}] {symbol} フォワードテスト中...")
         fw_results[symbol] = run_forward_test(symbol, raw_results[symbol]["params_dict"])
+        fw = fw_results[symbol]
+        if fw:
+            pf_str = f"{fw['pf']:.2f}" if fw["pf"] is not None else "N/A"
+            print(
+                f"  完了 — シャープ={fw['sharpe']:.2f}  PF={pf_str}"
+                f"  最大DD={fw['max_dd']:.1f}%  勝率={fw['win_rate']:.1f}%  取引={fw['n_trades']}回"
+            )
+        else:
+            print("  データ不足のためスキップ")
 
     if errors:
         print()
