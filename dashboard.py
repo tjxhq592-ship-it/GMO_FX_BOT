@@ -4,6 +4,7 @@ import signal
 import subprocess
 import sys
 import time
+import psutil
 import streamlit as st
 import pandas as pd
 import re
@@ -521,10 +522,16 @@ with tab_run:
     st.subheader("バックテスト実行")
     st_autorefresh(interval=3000, key="bt_refresh")
 
-    bt_pid_data = _read_pid_file(BT_PID_FILE)
-    bt_status   = bt_pid_data.get("status", "")
-    bt_pid      = bt_pid_data.get("pid")
-    bt_running  = (bt_status == "running")
+    bt_pid_data  = _read_pid_file(BT_PID_FILE)
+    bt_pid       = bt_pid_data.get("pid")
+    bt_status    = bt_pid_data.get("status", "")
+    _bt_alive    = bool(bt_pid and psutil.pid_exists(int(bt_pid)))
+    bt_running   = (bt_status == "running") and _bt_alive
+
+    if bt_status == "running" and not _bt_alive and os.path.exists(BT_PID_FILE):
+        bt_pid_data["status"] = "stopped"
+        with open(BT_PID_FILE, "w", encoding="utf-8") as f:
+            json.dump(bt_pid_data, f, indent=2)
 
     if bt_running:
         st.info(f"⏳ バックテスト実行中  (PID: {bt_pid}　開始: {bt_pid_data.get('started_at','')})")
@@ -587,10 +594,18 @@ with tab_gs:
     st_autorefresh(interval=3000, key="gs_refresh")
 
     # ── 実行制御 ──────────────────────────────────────────────────────────
+    # PIDファイルを読み込み、プロセスが実際に生きているか psutil で確認
     gs_pid_data = _read_pid_file(GS_PID_FILE)
-    gs_status   = gs_pid_data.get("status", "")
     gs_pid      = gs_pid_data.get("pid")
-    gs_running  = (gs_status == "running")
+    gs_status   = gs_pid_data.get("status", "")
+    _proc_alive = bool(gs_pid and psutil.pid_exists(int(gs_pid)))
+    gs_running  = (gs_status == "running") and _proc_alive
+
+    # PIDファイルが "running" でもプロセスが死んでいれば自動修正
+    if gs_status == "running" and not _proc_alive and os.path.exists(GS_PID_FILE):
+        gs_pid_data["status"] = "stopped"
+        with open(GS_PID_FILE, "w", encoding="utf-8") as f:
+            json.dump(gs_pid_data, f, indent=2)
 
     if gs_running:
         st.info(f"⏳ グリッドサーチ実行中  (PID: {gs_pid}　開始: {gs_pid_data.get('started_at','')})")
@@ -615,7 +630,18 @@ with tab_gs:
                     json.dump(_init_pid, f, indent=2)
                 if os.path.exists(GS_PROGRESS_FILE):
                     os.remove(GS_PROGRESS_FILE)
-                st.success(f"グリッドサーチを起動しました (PID: {proc.pid})")
+
+                # PIDファイルが正常に書かれるまで最大5秒待機
+                for _ in range(10):
+                    time.sleep(0.5)
+                    _check = _read_pid_file(GS_PID_FILE)
+                    if (_check.get("status") == "running"
+                            and psutil.pid_exists(int(_check.get("pid", 0)))):
+                        st.success(f"グリッドサーチを起動しました (PID: {proc.pid})")
+                        st.rerun()
+                        break
+                else:
+                    st.success(f"グリッドサーチを起動しました (PID: {proc.pid})")
             except Exception as e:
                 st.error(f"起動失敗: {e}")
         st.caption("または、別のターミナルで:")
