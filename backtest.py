@@ -257,70 +257,42 @@ def run_forward_test(symbol, params_dict):
     stats = bt.run(**params_dict)
     return _extract_stats(stats)
 
-# === 1銘柄分の最適化処理 ===
-def optimize_symbol(symbol, idx, total, wft_cutoff, prev_params):
+# === 1銘柄分のバックテスト（params.json の保存済みパラメータを使用） ===
+def optimize_symbol(symbol, idx, total, wft_cutoff, saved_params):
+    """
+    最適化は行わず、saved_params（params.json）に保存済みのパラメータで
+    Backtest.run() を1回だけ実行する。
+    """
     _ensure_valid_stream("stdout")
     _ensure_valid_stream("stderr")
     tag = f"[{idx}/{total}] {symbol}"
+
+    if symbol not in saved_params:
+        raise ValueError(f"{symbol} のパラメータが params.json に存在しません")
+
+    params_dict = saved_params[symbol]
 
     print(f"{tag} データ取得中...")
     data = get_historical_data(symbol)
     print(f"  データ: {len(data)}件 ({data.index[0]} 〜 {data.index[-1]})")
 
-    train_data = data[data.index < wft_cutoff]
-    print(f"{tag} 最適化中... (学習データ: {len(train_data)}件)")
-
-    bt = Backtest(train_data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
-    stats = bt.optimize(
-        bb_period=range(
-            _cfg["bb_period"]["min"],
-            _cfg["bb_period"]["max"] + 1,
-            _cfg["bb_period"]["step"],
-        ),
-        bb_std=_cfg.get("bb_std", [1.0, 1.5, 2.0, 2.5]),
-        rsi_period=[14],
-        rsi_upper=list(range(
-            _cfg["rsi_upper"]["min"],
-            _cfg["rsi_upper"]["max"] + 1,
-            _cfg["rsi_upper"].get("step", 5),
-        )),
-        rsi_lower=list(range(
-            _cfg["rsi_lower"]["min"],
-            _cfg["rsi_lower"]["max"] + 1,
-            _cfg["rsi_lower"].get("step", 5),
-        )),
-        atr_period=[14],
-        atr_sl_mult=_cfg.get("atr_sl_mult", [1.5, 2.0]),
-        atr_tp_mult=_cfg.get("atr_tp_mult", [2.0, 2.5]),
-        maximize="Sharpe Ratio",
-    )
-
-    p = stats._strategy
-    params_dict = {
-        "bb_period":   int(p.bb_period),
-        "bb_std":      float(p.bb_std),
-        "rsi_period":  int(p.rsi_period),
-        "rsi_upper":   int(p.rsi_upper),
-        "rsi_lower":   int(p.rsi_lower),
-        "atr_period":  int(p.atr_period),
-        "atr_sl_mult": float(p.atr_sl_mult),
-        "atr_tp_mult": float(p.atr_tp_mult),
-    }
-
-    is_stats = _extract_stats(stats)
-    print(f"{tag} WFTテスト中...")
-    wft_result = walk_forward_test(data, params_dict)
-
-    # エクイティカーブ（全バックテスト期間）
-    print(f"{tag} エクイティカーブ生成中...")
+    # IS バックテスト（全期間データで run）
+    print(f"{tag} バックテスト実行中...")
     bt_full = Backtest(data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
     stats_full = bt_full.run(**params_dict)
+    is_stats = _extract_stats(stats_full)
+
+    # エクイティカーブ
     equity_curve  = stats_full["_equity_curve"]["Equity"]
     equity_dates  = equity_curve.index.strftime("%Y-%m-%d").tolist()
     equity_values = equity_curve.tolist()
 
-    pf_str  = f"{is_stats['pf']:.2f}"           if is_stats["pf"]           is not None else "N/A"
-    wft_str = f"{wft_result['sharpe']:.2f}"     if wft_result               is not None else "N/A"
+    # WFT（直近 WF_TEST_MONTHS だけで run）
+    print(f"{tag} WFTテスト中...")
+    wft_result = walk_forward_test(data, params_dict)
+
+    pf_str  = f"{is_stats['pf']:.2f}"       if is_stats["pf"] is not None else "N/A"
+    wft_str = f"{wft_result['sharpe']:.2f}" if wft_result is not None     else "N/A"
     print(
         f"{tag} 完了 — シャープ(IS)={is_stats['sharpe']:.2f}"
         f"  PF={pf_str}  WFT={wft_str}  取引={is_stats['n_trades']}回"
@@ -588,22 +560,29 @@ if __name__ == "__main__":
             }
         grid_search_job(_cfg, score_weights)
     else:
-        # ── 通常バックテスト ────────────────────────────────────────────────
-        prev_params = load_prev_params()
+        # ── 通常バックテスト（params.json の保存済みパラメータで run のみ実行） ──
         wft_cutoff  = END_DATE - relativedelta(months=WF_TEST_MONTHS)
 
-        # 対象シンボル: params.json に保存済みのペア優先、初回は backtest_config.json を使用
+        # params.json から保存済みパラメータを読み込む
         try:
             with open(PARAMS_FILE, "r", encoding="utf-8") as _f:
-                _saved = json.load(_f).get("params", {})
-            TARGET_SYMBOLS = [s for s in SYMBOLS if s in _saved] if _saved else SYMBOLS
+                saved_params = json.load(_f).get("params", {})
         except Exception:
-            TARGET_SYMBOLS = SYMBOLS
+            saved_params = {}
+
+        if not saved_params:
+            _bt_log("params.json にパラメータがありません。グリッドサーチを先に実行してください。")
+            _write_bt_progress(0, 0, "", "error")
+            raise SystemExit(1)
+
+        # active_symbols との積集合をバックテスト対象とする
+        TARGET_SYMBOLS = [s for s in SYMBOLS if s in saved_params] or list(saved_params.keys())
 
         _bt_log(f"バックテスト期間 : {START_DATE.date()} 〜 {END_DATE.date()}")
-        _bt_log(f"最適化 / WFT     : 〜 {wft_cutoff.date()} / {wft_cutoff.date()} 〜 {END_DATE.date()}")
+        _bt_log(f"WFT cutoff       : {wft_cutoff.date()}")
         _bt_log(f"フォワードテスト : {FW_START_DATE.date()} 〜 {FW_END_DATE.date()}")
         _bt_log(f"対象ペア         : {TARGET_SYMBOLS}")
+        _bt_log("（最適化なし: params.json のパラメータで直接 run）")
         _bt_log("")
 
         raw_results = {}
@@ -618,7 +597,7 @@ if __name__ == "__main__":
             _ensure_valid_stream("stdout")
             _ensure_valid_stream("stderr")
             try:
-                raw_results[symbol] = optimize_symbol(symbol, idx, total, wft_cutoff, prev_params)
+                raw_results[symbol] = optimize_symbol(symbol, idx, total, wft_cutoff, saved_params)
                 _bt_log(f"[{idx}/{total}] {symbol} 完了")
             except Exception as e:
                 errors[symbol] = str(e)
@@ -680,7 +659,7 @@ if __name__ == "__main__":
             })
 
         # === 結果表示 ===
-        print("\n=== 全銘柄最適化バックテスト結果 ===")
+        print("\n=== 全銘柄バックテスト結果 ===")
         print(f"初期資金（各銘柄）: ¥{INITIAL_CASH:,}")
         print()
         display_cols = ["銘柄", "最終資産", "総リターン", "年率リターン", "最大DD", "勝率",
@@ -696,69 +675,12 @@ if __name__ == "__main__":
             print(f"最終資産合計: ¥{total_final:,.0f}")
             print(f"総合リターン: {(total_final - total_initial) / total_initial * 100:.1f}%")
 
-        print("\n=== 銘柄別最適パラメータ一覧 ===")
+        print("\n=== 銘柄別パラメータ一覧 ===")
         for symbol in TARGET_SYMBOLS:
             if symbol in raw_results:
                 print(f"{symbol}: {raw_results[symbol]['params_dict']}")
 
-        # === 除外判定・params.json 保存 ===
-        results_dict = {r["銘柄"]: r for r in results}
-        params_out   = {}
-        excluded     = []
-
-        for symbol in TARGET_SYMBOLS:
-            if symbol not in raw_results:
-                continue
-            r     = results_dict[symbol]
-            is_s  = r["_is_stats"]
-            wft_r = r["_wft_result"]
-            new_p = raw_results[symbol]["params_dict"]
-
-            wft_sharpe = wft_r["sharpe"] if wft_r else None
-            pf         = is_s["pf"]
-            n_trades   = is_s["n_trades"]
-
-            if wft_sharpe is not None and wft_sharpe < SHARPE_THRESHOLD:
-                reason = f"WFTシャープ:{wft_sharpe:.2f} < {SHARPE_THRESHOLD}"
-                excluded.append(f"{symbol}({reason})")
-                continue
-
-            if pf is not None and pf < PF_THRESHOLD:
-                reason = f"PF:{pf:.2f} < {PF_THRESHOLD}"
-                excluded.append(f"{symbol}({reason})")
-                continue
-
-            if n_trades < MIN_TRADES:
-                reason = f"取引回数:{n_trades}回 < {MIN_TRADES}回"
-                excluded.append(f"{symbol}({reason})")
-                continue
-
-            if is_s["sharpe"] >= 1.0:
-                adjusted_p = check_param_change(symbol, new_p, prev_params)
-                params_out[symbol] = adjusted_p
-            else:
-                reason = f"シャープ:{is_s['sharpe']:.2f}"
-                excluded.append(f"{symbol}({reason})")
-
-        output = {
-            "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "params":     params_out,
-            "excluded":   excluded,
-        }
-        with open(PARAMS_FILE, "w", encoding="utf-8") as f:
-            json.dump(output, f, indent=2, ensure_ascii=False)
-
-        if excluded:
-            _bt_log("\n=== 除外ペア ===")
-            for e in excluded:
-                _bt_log(f"  ⚠️ {e}")
-
-        if _param_change_log:
-            _bt_log("\n=== パラメータ急変チェック ===")
-            for line in _param_change_log:
-                _bt_log(f"  ⚠️ {line}")
-
-        _bt_log(f"\nparams.json に保存しました。")
+        # params.json は変更しない（グリッドサーチが管理するため）
 
         # === backtest_results.json 保存 ===
         bt_results = {}
