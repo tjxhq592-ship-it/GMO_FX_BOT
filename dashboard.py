@@ -3,6 +3,7 @@
 import signal
 import subprocess
 import sys
+import time
 import streamlit as st
 import pandas as pd
 import re
@@ -55,6 +56,30 @@ def _read_pid_file(path: str) -> dict:
             return json.load(f)
     except Exception:
         return {}
+
+
+def _read_progress_json(path: str, retries: int = 3, delay: float = 0.1) -> dict | None:
+    """
+    進捗 JSON ファイルを安全に読み込む。
+    - ファイルサイズが 0 の場合はスキップ（None を返す）
+    - JSON パースエラーは 0.1 秒待ってリトライ（最大 retries 回）
+    - 全リトライ失敗時は None を返し、呼び出し元で前回表示を維持させる
+    """
+    if not os.path.exists(path):
+        return None
+    if os.path.getsize(path) == 0:
+        return None
+    for attempt in range(retries):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, ValueError):
+            if attempt < retries - 1:
+                time.sleep(delay)
+        except Exception:
+            return None
+    return None
+
 
 st.set_page_config(page_title="GMO FX Bot Dashboard", layout="wide")
 st.title("GMO FX Bot ダッシュボード")
@@ -399,35 +424,29 @@ with tab_run:
         st.code("python backtest.py", language="bash")
 
     # ── 進捗表示 ─────────────────────────────────────────────────────────
-    if os.path.exists(BT_PROGRESS_FILE):
-        try:
-            with open(BT_PROGRESS_FILE, "r", encoding="utf-8") as f:
-                bt_prog = json.load(f)
+    bt_prog = _read_progress_json(BT_PROGRESS_FILE)
+    if bt_prog is not None:
+        status = bt_prog.get("status", "running")
+        cur    = bt_prog.get("current", 0)
+        tot    = bt_prog.get("total_symbols", 1)
+        symbol = bt_prog.get("current_symbol", "")
+        ratio  = cur / tot if tot > 0 else 0.0
+        logs   = bt_prog.get("log", [])
 
-            status = bt_prog.get("status", "running")
-            cur    = bt_prog.get("current", 0)
-            tot    = bt_prog.get("total_symbols", 1)
-            symbol = bt_prog.get("current_symbol", "")
-            ratio  = cur / tot if tot > 0 else 0.0
-            logs   = bt_prog.get("log", [])
+        if status == "completed":
+            st.success("✅ バックテスト完了！")
+        elif status == "error":
+            st.error("⚠️ エラーで終了しました。ログを確認してください。")
+        else:
+            st.progress(ratio)
+            st.caption(f"{cur} / {tot} 銘柄完了　現在処理中: {symbol}")
 
-            if status == "completed":
-                st.success("✅ バックテスト完了！")
-            elif status == "error":
-                st.error("⚠️ エラーで終了しました。ログを確認してください。")
-            else:
-                st.progress(ratio)
-                st.caption(f"{cur} / {tot} 銘柄完了　現在処理中: {symbol}")
-
-            if logs:
-                st.text_area("実行ログ（最新20件）",
-                             value="\n".join(logs[-20:]),
-                             height=300,
-                             disabled=True,
-                             key="bt_log_area")
-
-        except Exception as e:
-            st.warning(f"進捗ファイル読み込みエラー: {e}")
+        if logs:
+            st.text_area("実行ログ（最新20件）",
+                         value="\n".join(logs[-20:]),
+                         height=300,
+                         disabled=True,
+                         key="bt_log_area")
     else:
         st.caption("`backtest_progress.json` がありません。実行開始後に進捗が表示されます。")
 
@@ -520,47 +539,41 @@ with tab_gs:
 
     # ── 進捗表示 ─────────────────────────────────────────────────────────
     st.markdown("#### 実行状況")
-    if os.path.exists(GS_PROGRESS_FILE):
-        try:
-            with open(GS_PROGRESS_FILE, "r", encoding="utf-8") as f:
-                prog = json.load(f)
+    gs_prog = _read_progress_json(GS_PROGRESS_FILE)
+    if gs_prog is not None:
+        status    = gs_prog.get("status", "running")
+        cur       = gs_prog.get("current", 0)
+        tot       = gs_prog.get("total",   1)
+        ratio     = cur / tot if tot > 0 else 0.0
+        elapsed   = gs_prog.get("elapsed",   0)
+        remaining = gs_prog.get("remaining", 0)
+        best_s    = gs_prog.get("best_score",  0)
+        best_p    = gs_prog.get("best_params", {})
+        logs      = gs_prog.get("log", [])
 
-            status    = prog.get("status", "running")
-            cur       = prog.get("current", 0)
-            tot       = prog.get("total",   1)
-            ratio     = cur / tot if tot > 0 else 0.0
-            elapsed   = prog.get("elapsed",   0)
-            remaining = prog.get("remaining", 0)
-            best_s    = prog.get("best_score",  0)
-            best_p    = prog.get("best_params", {})
-            logs      = prog.get("log", [])
+        if status == "completed":
+            st.success("✅ グリッドサーチ完了！")
+        elif status == "error":
+            st.error("⚠️ エラーで終了しました。")
+        else:
+            st.progress(ratio)
+            st.caption(
+                f"{cur} / {tot} 完了　"
+                f"経過: {elapsed//60}分{elapsed%60}秒　"
+                f"残り: {remaining//60}分{remaining%60}秒"
+            )
 
-            if status == "completed":
-                st.success("✅ グリッドサーチ完了！")
-            elif status == "error":
-                st.error("⚠️ エラーで終了しました。")
-            else:
-                st.progress(ratio)
-                st.caption(
-                    f"{cur} / {tot} 完了　"
-                    f"経過: {elapsed//60}分{elapsed%60}秒　"
-                    f"残り: {remaining//60}分{remaining%60}秒"
-                )
+        st.metric("現在ベストスコア", f"{best_s:.4f}")
+        if best_p:
+            with st.expander("現在のベストパラメータ"):
+                st.json(best_p)
 
-            st.metric("現在ベストスコア", f"{best_s:.4f}")
-            if best_p:
-                with st.expander("現在のベストパラメータ"):
-                    st.json(best_p)
-
-            if logs:
-                st.text_area("実行ログ（最新20件）",
-                             value="\n".join(logs[-20:]),
-                             height=250,
-                             disabled=True,
-                             key="gs_log_area")
-
-        except Exception as e:
-            st.warning(f"進捗ファイル読み込みエラー: {e}")
+        if logs:
+            st.text_area("実行ログ（最新20件）",
+                         value="\n".join(logs[-20:]),
+                         height=250,
+                         disabled=True,
+                         key="gs_log_area")
     else:
         st.caption("`grid_search_progress.json` がありません。実行開始後に進捗が表示されます。")
 
