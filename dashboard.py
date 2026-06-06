@@ -268,16 +268,24 @@ with tab_config:
             "EUR_USD", "GBP_USD", "AUD_USD", "EUR_GBP",
             "AUD_NZD", "EUR_CHF", "GBP_CHF", "EUR_AUD",
         ])
-        current_symbols = set(cfg.get("symbols", []))
-        # 4列グリッドでチェックボックスを表示
-        symbol_checks: dict[str, bool] = {}
+        current_symbols = cfg.get("symbols", [])
+
+        # multiselect で選択（form 内で key なしで使うことで競合を回避）
+        selected_symbols_form = st.multiselect(
+            "通貨ペアを選択（複数可）",
+            options=available,
+            default=[s for s in current_symbols if s in available],
+        )
+
+        # 4列グリッドでチェック状態を視覚的に表示（読み取り専用プレビュー）
+        st.caption("選択中のペア:")
         cols = st.columns(4)
         for i, sym in enumerate(available):
             with cols[i % 4]:
-                symbol_checks[sym] = st.checkbox(
-                    sym,
-                    value=(sym in current_symbols),
-                    key=f"sym_{sym}",
+                checked = sym in selected_symbols_form
+                st.markdown(
+                    f"{'✅' if checked else '⬜'} {sym}",
+                    help=sym,
                 )
 
         st.markdown("#### 基本設定")
@@ -347,7 +355,8 @@ with tab_config:
         submitted = st.form_submit_button("💾 設定を保存")
 
     if submitted:
-        selected_symbols = [s for s, checked in symbol_checks.items() if checked]
+        # multiselect の値を使用（form 内で確実にキャプチャされる）
+        selected_symbols = selected_symbols_form
 
         if not selected_symbols:
             st.warning("⚠️ 最低1つの通貨ペアを選択してください。")
@@ -369,10 +378,17 @@ with tab_config:
                 "min_pf":            float(min_pf),
                 "min_wft_sharpe":    float(min_wft_sharpe),
             }
-            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-                json.dump(new_cfg, f, indent=2, ensure_ascii=False)
-            st.success(f"✅ 設定を保存しました（選択ペア: {', '.join(selected_symbols)}）")
-            st.json(new_cfg)
+            try:
+                with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                    json.dump(new_cfg, f, indent=2, ensure_ascii=False)
+
+                # 保存後に再読み込みして保存内容を確認表示
+                saved = load_config()
+                st.success(f"✅ 保存しました: {', '.join(saved.get('symbols', []))}")
+                with st.expander("保存された設定を確認"):
+                    st.json(saved)
+            except Exception as e:
+                st.error(f"保存エラー: {e}")
 
 
 # ==================== TAB 3: バックテスト実行 ====================
