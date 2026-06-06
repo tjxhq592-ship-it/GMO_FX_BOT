@@ -4,10 +4,12 @@
   python grid_search_runner.py            # 通常実行（並列）
   python grid_search_runner.py --debug    # 最初の1パターンのみテスト実行
 
-各シンボルのコンボを ThreadPoolExecutor で並列実行。
+各シンボルのコンボを ProcessPoolExecutor (spawn) で真の並列実行。
+Windows でコンソールウィンドウを開かないよう initializer で FreeConsole を呼ぶ。
 シンボル間は順次処理（シンボルをまたいで並列しない）。
 """
 import json
+import multiprocessing
 import os
 import sys
 import time
@@ -16,7 +18,7 @@ import itertools
 import ctypes
 import pickle
 import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
@@ -472,8 +474,12 @@ def main(debug: bool = False) -> None:
 
             log(f"[{symbol}] 並列実行開始 ({len(tasks)} コンボ / {max_workers} ワーカー)")
 
-            executor = ThreadPoolExecutor(
+            # spawn コンテキストで ProcessPoolExecutor を起動
+            # → GIL の影響なく真の並列処理、Windows でコンソールウィンドウも非表示
+            _ctx = multiprocessing.get_context("spawn")
+            executor = ProcessPoolExecutor(
                 max_workers=max_workers,
+                mp_context=_ctx,
                 initializer=_worker_initializer,
                 initargs=(data_pkl, train_pkl, cache_dir),
             )
@@ -539,7 +545,7 @@ def main(debug: bool = False) -> None:
                                     symbol_total=len(combos))
 
             finally:
-                executor.shutdown(wait=False)
+                executor.shutdown(wait=True)
 
             # ── シンボル完了: 除外判定 ──────────────────────────────────────
             log(f"[{symbol}] 完了  ベストスコア={sym_best_score:.4f}")
