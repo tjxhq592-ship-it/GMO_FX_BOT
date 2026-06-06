@@ -1,6 +1,15 @@
 {
-  "updated_at": "2026-06-06 16:58:56",
-  "params": {},
+  "updated_at": "2026-06-06 17:47:44",
+  "params": {
+    "EUR_GBP": {
+      "bb_period": 10,
+      "bb_std": 1.0,
+      "rsi_upper": 55,
+      "rsi_lower": 20,
+      "atr_sl_mult": 1.0,
+      "atr_tp_mult": 1.5
+    }
+  },
   "excluded": [
     "EUR_GBP(WFTシャープ:-0.84)",
     "AUD_NZD(WFTシャープ:-3.21)",
