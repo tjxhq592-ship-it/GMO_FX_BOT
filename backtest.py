@@ -259,6 +259,8 @@ def run_forward_test(symbol, params_dict):
 
 # === 1銘柄分の最適化処理 ===
 def optimize_symbol(symbol, idx, total, wft_cutoff, prev_params):
+    _ensure_valid_stream("stdout")
+    _ensure_valid_stream("stderr")
     tag = f"[{idx}/{total}] {symbol}"
 
     print(f"{tag} データ取得中...")
