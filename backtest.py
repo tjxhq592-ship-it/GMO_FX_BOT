@@ -82,9 +82,22 @@ RESULTS_FILE = "backtest_results.json"
 # 対象シンボル
 SYMBOLS = _cfg.get("symbols", ["EUR_GBP", "AUD_NZD", "EUR_CHF"])
 SYMBOL_MAP = {
+    "USD_JPY": "USDJPY=X",
+    "EUR_JPY": "EURJPY=X",
+    "GBP_JPY": "GBPJPY=X",
+    "AUD_JPY": "AUDJPY=X",
+    "NZD_JPY": "NZDJPY=X",
+    "CAD_JPY": "CADJPY=X",
+    "CHF_JPY": "CHFJPY=X",
+    "ZAR_JPY": "ZARJPY=X",
+    "EUR_USD": "EURUSD=X",
+    "GBP_USD": "GBPUSD=X",
+    "AUD_USD": "AUDUSD=X",
     "EUR_GBP": "EURGBP=X",
     "AUD_NZD": "AUDNZD=X",
     "EUR_CHF": "EURCHF=X",
+    "GBP_CHF": "GBPCHF=X",
+    "EUR_AUD": "EURAUD=X",
 }
 
 # === データキャッシュ ===

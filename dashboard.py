@@ -270,11 +270,16 @@ with tab_config:
         ])
         current_symbols = cfg.get("symbols", [])
 
-        # multiselect で選択（form 内で key なしで使うことで競合を回避）
+        # multiselect で選択。key= を付けて session_state に保持させる。
+        # session_state に未登録の場合のみ config から初期値を設定。
+        if "symbols_ms" not in st.session_state:
+            st.session_state["symbols_ms"] = [s for s in current_symbols if s in available]
+
         selected_symbols_form = st.multiselect(
             "通貨ペアを選択（複数可）",
             options=available,
-            default=[s for s in current_symbols if s in available],
+            default=st.session_state["symbols_ms"],
+            key="symbols_ms",
         )
 
         # 4列グリッドでチェック状態を視覚的に表示（読み取り専用プレビュー）
@@ -382,7 +387,8 @@ with tab_config:
                 with open(CONFIG_FILE, "w", encoding="utf-8") as f:
                     json.dump(new_cfg, f, indent=2, ensure_ascii=False)
 
-                # 保存後に再読み込みして保存内容を確認表示
+                # 保存後に session_state を更新し再読み込みして確認表示
+                st.session_state["symbols_ms"] = selected_symbols
                 saved = load_config()
                 st.success(f"✅ 保存しました: {', '.join(saved.get('symbols', []))}")
                 with st.expander("保存された設定を確認"):
