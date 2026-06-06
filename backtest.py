@@ -3,13 +3,21 @@ from backtesting.lib import crossover
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import hashlib
+import logging
 import os
+import warnings
 import pandas as pd
 import pickle
 import json
 import time
 import yfinance as yf
+from tqdm import tqdm
 from utils import calculate_rsi as _calculate_rsi
+
+# ログ・警告の抑制
+logging.getLogger("yfinance").setLevel(logging.CRITICAL)
+logging.getLogger("peewee").setLevel(logging.CRITICAL)
+warnings.filterwarnings("ignore")
 
 # backtesting.py が numpy 配列を期待するためラップ
 def calculate_rsi(prices, period=14):
@@ -71,7 +79,6 @@ def get_historical_data(symbol):
     path = _cache_path(symbol, START_DATE, END_DATE)
     if os.path.exists(path) and time.time() - os.path.getmtime(path) < CACHE_TTL:
         with open(path, "rb") as f:
-            print(f"  {symbol} キャッシュから読み込み (BT)")
             return pickle.load(f)
     df = _download(symbol, START_DATE, END_DATE)
     with open(path, "wb") as f:
@@ -84,7 +91,6 @@ def get_forward_data(symbol):
     path = _cache_path(symbol, FW_START_DATE, FW_END_DATE)
     if os.path.exists(path) and time.time() - os.path.getmtime(path) < CACHE_TTL:
         with open(path, "rb") as f:
-            print(f"  {symbol} キャッシュから読み込み (FW)")
             return pickle.load(f)
     df = _download(symbol, FW_START_DATE, FW_END_DATE)
     with open(path, "wb") as f:
@@ -141,14 +147,11 @@ def _extract_stats(stats):
     }
 
 # === ウォークフォワードテスト ===
-def walk_forward_test(symbol, data, params_dict):
+def walk_forward_test(data, params_dict):
     wft_start = END_DATE - relativedelta(months=WF_TEST_MONTHS)
     test_data = data[data.index >= wft_start]
-
     if len(test_data) < 20:
-        print(f"  {symbol} WFT: テストデータ不足({len(test_data)}件)")
         return None
-
     bt = Backtest(test_data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
     stats = bt.run(**params_dict)
     return _extract_stats(stats)
@@ -158,25 +161,13 @@ def run_forward_test(symbol, params_dict):
     """FW_START_DATE〜FW_END_DATE で最適パラメータをそのまま適用"""
     try:
         fw_data = get_forward_data(symbol)
-    except Exception as e:
-        print(f"  {symbol} FW: データ取得失敗 ({e})")
+    except Exception:
         return None
-
     if len(fw_data) < 20:
-        print(f"  {symbol} FW: データ不足({len(fw_data)}件)")
         return None
-
     bt = Backtest(fw_data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
     stats = bt.run(**params_dict)
-    result = _extract_stats(stats)
-
-    pf_str = f"{result['pf']:.2f}" if result['pf'] is not None else "N/A"
-    print(
-        f"  {symbol} FW: シャープ={result['sharpe']:.2f}  PF={pf_str}"
-        f"  最大DD={result['max_dd']:.1f}%  勝率={result['win_rate']:.1f}%"
-        f"  取引={result['n_trades']}回"
-    )
-    return result
+    return _extract_stats(stats)
 
 # === 1銘柄分の最適化処理 ===
 def optimize_symbol(symbol, wft_cutoff, prev_params):
@@ -205,13 +196,8 @@ def optimize_symbol(symbol, wft_cutoff, prev_params):
         "take_profit_pct": float(p.take_profit_pct),
     }
 
-    is_stats = _extract_stats(stats)
-
-    # 取引回数が少ない場合の警告
-    if is_stats["n_trades"] < MIN_TRADES:
-        print(f"  ⚠️ {symbol}: 取引回数{is_stats['n_trades']}回 < {MIN_TRADES}回（10年間）")
-
-    wft_result = walk_forward_test(symbol, data, params_dict)
+    is_stats   = _extract_stats(stats)
+    wft_result = walk_forward_test(data, params_dict)
 
     # エクイティカーブ（全バックテスト期間）
     bt_full = Backtest(data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
@@ -248,6 +234,8 @@ PARAM_LIMITS = {
     "take_profit_pct": 0.10,
 }
 
+_param_change_log: list = []
+
 def check_param_change(symbol, new_params, prev_params):
     if symbol not in prev_params:
         return new_params
@@ -264,8 +252,8 @@ def check_param_change(symbol, new_params, prev_params):
             continue
         change_rate = abs(new_val - prev_val) / abs(prev_val)
         if change_rate > limit:
-            print(f"  ⚠️ {key}: {prev_val} → {new_val} (変化率{change_rate*100:.1f}% > {limit*100:.0f}%) → 前回値を維持")
             adjusted[key] = prev_val
+            _param_change_log.append(f"  {key}: {prev_val} → {new_val} (変化率{change_rate*100:.1f}% > {limit*100:.0f}%) → 前回値を維持")
 
     return adjusted
 
@@ -275,36 +263,28 @@ if __name__ == "__main__":
     prev_params = load_prev_params()
     wft_cutoff  = END_DATE - relativedelta(months=WF_TEST_MONTHS)
 
-    print(f"バックテスト期間: {START_DATE.date()} 〜 {END_DATE.date()}")
-    print(f"最適化期間: 〜 {wft_cutoff.date()}  WFT期間: {wft_cutoff.date()} 〜 {END_DATE.date()}")
-    print(f"フォワードテスト期間: {FW_START_DATE.date()} 〜 {FW_END_DATE.date()}")
-    print(f"順次処理開始: {len(SYMBOLS)}銘柄\n")
+    print(f"バックテスト期間 : {START_DATE.date()} 〜 {END_DATE.date()}")
+    print(f"最適化 / WFT     : 〜 {wft_cutoff.date()} / {wft_cutoff.date()} 〜 {END_DATE.date()}")
+    print(f"フォワードテスト : {FW_START_DATE.date()} 〜 {FW_END_DATE.date()}")
+    print()
 
     raw_results = {}
+    errors      = {}
 
-    for symbol in SYMBOLS:
-        print(f"--- {symbol} ---")
+    for symbol in tqdm(SYMBOLS, desc="最適化中", unit="ペア"):
         try:
-            result = optimize_symbol(symbol, wft_cutoff, prev_params)
-            raw_results[symbol] = result
-            is_s  = result["is_stats"]
-            wft_r = result["wft_result"]
-            pf_str  = f"{is_s['pf']:.2f}"        if is_s["pf"]            is not None else "N/A"
-            wft_str = f"{wft_r['sharpe']:.2f}"   if wft_r                  is not None else "N/A"
-            print(
-                f"  {symbol} 完了: シャープ(IS)={is_s['sharpe']:.2f}"
-                f"  PF={pf_str}  WFT={wft_str}  取引={is_s['n_trades']}回"
-            )
+            raw_results[symbol] = optimize_symbol(symbol, wft_cutoff, prev_params)
         except Exception as e:
-            print(f"  {symbol} エラー: {e}")
+            errors[symbol] = str(e)
 
-    # === フォワードテスト ===
-    print("\n=== フォワードテスト ===")
     fw_results = {}
-    for symbol in SYMBOLS:
-        if symbol not in raw_results:
-            continue
+    for symbol in tqdm(raw_results, desc="フォワードテスト中", unit="ペア"):
         fw_results[symbol] = run_forward_test(symbol, raw_results[symbol]["params_dict"])
+
+    if errors:
+        print()
+        for sym, msg in errors.items():
+            print(f"  ⚠️ {sym} エラー: {msg}")
 
     # === 結果集計 ===
     results      = []
@@ -376,29 +356,24 @@ if __name__ == "__main__":
         if wft_sharpe is not None and wft_sharpe < 0:
             reason = f"WFTシャープ:{wft_sharpe:.2f}"
             excluded.append(f"{symbol}({reason})")
-            print(f"⚠️ {symbol} 除外 — {reason}")
             continue
 
         if pf is not None and pf < PF_THRESHOLD:
             reason = f"PF:{pf:.2f} < {PF_THRESHOLD}"
             excluded.append(f"{symbol}({reason})")
-            print(f"⚠️ {symbol} 除外 — {reason}")
             continue
 
         if n_trades < MIN_TRADES:
             reason = f"取引回数:{n_trades}回 < {MIN_TRADES}回"
             excluded.append(f"{symbol}({reason})")
-            print(f"⚠️ {symbol} 除外 — {reason}")
             continue
 
         if is_s["sharpe"] >= SHARPE_THRESHOLD:
-            print(f"{symbol} パラメータ急変チェック中...")
             adjusted_p = check_param_change(symbol, new_p, prev_params)
             params_out[symbol] = adjusted_p
         else:
             reason = f"シャープ:{is_s['sharpe']:.2f}"
             excluded.append(f"{symbol}({reason})")
-            print(f"⚠️ {symbol} 除外 — {reason}")
 
     output = {
         "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -407,6 +382,17 @@ if __name__ == "__main__":
     }
     with open(PARAMS_FILE, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2, ensure_ascii=False)
+
+    if excluded:
+        print("\n=== 除外ペア ===")
+        for e in excluded:
+            print(f"  ⚠️ {e}")
+
+    if _param_change_log:
+        print("\n=== パラメータ急変チェック ===")
+        for line in _param_change_log:
+            print(f"  ⚠️ {line}")
+
     print(f"\nparams.json に保存しました。")
 
     # === backtest_results.json 保存 ===

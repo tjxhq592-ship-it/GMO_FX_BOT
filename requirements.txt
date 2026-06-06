@@ -6,3 +6,4 @@ streamlit
 yfinance
 backtesting
 python-dateutil
+tqdm
