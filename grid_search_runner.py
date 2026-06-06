@@ -654,32 +654,61 @@ def main(debug: bool = False) -> None:
             for a in sym_task_args
         }
 
-        # 1ペアあたりのタイムアウト: コンボ数 × 推定秒数（余裕を持って設定）
-        _sym_timeout = max(3600, len(combos) * 2)  # 最低1時間、コンボ2秒換算
-        log(f"タイムアウト設定: {_sym_timeout // 60}分/ペア")
+        # タイムアウト: 1ペアあたり5分（300秒）固定
+        _sym_timeout = 300
+        log(f"タイムアウト設定: {_sym_timeout}秒/ペア")
+
+        # 処理開始ログを即座に書き出し
+        for sym in symbols:
+            log(f"[{sym}] 開始...")
+        _write_progress(current, total, best_score, best_params,
+                        int(time.time() - start_t), 0, log_lines,
+                        completed_symbols=completed_symbols)
 
         completed_syms_count = 0
         try:
-            for future in as_completed(sym_futures, timeout=_sym_timeout * len(symbols)):
+            for future in as_completed(sym_futures, timeout=_sym_timeout * len(symbols) + 60):
                 symbol = sym_futures[future]
                 completed_syms_count += 1
+                log(f"[{symbol}] 結果受信中... ({completed_syms_count}/{len(symbols)})")
+                # 受信中ログを即時書き出し
+                elapsed = int(time.time() - start_t)
+                _write_progress(current, total, best_score, best_params,
+                                elapsed, 0, log_lines,
+                                completed_symbols=completed_symbols,
+                                current_symbol=symbol)
                 try:
                     sym_result = future.result(timeout=_sym_timeout)
                 except TimeoutError:
-                    sym_result = {
-                        "symbol": symbol,
-                        "error": f"タイムアウト（{_sym_timeout // 60}分超過）",
-                        "rows": [], "best_score": 0.0,
-                        "best_params": {}, "best_row": None,
+                    log(f"[{symbol}] タイムアウト（{_sym_timeout}秒超過）: スキップ")
+                    completed_symbols[symbol] = {
+                        "status": "error",
+                        "reason": f"タイムアウト（{_sym_timeout}秒）",
+                        "best_score": 0.0, "best_params": {},
                     }
+                    current += len(combos)
+                    error_count += 1
+                    elapsed = int(time.time() - start_t)
+                    _write_progress(current, total, best_score, best_params,
+                                    elapsed, 0, log_lines,
+                                    completed_symbols=completed_symbols)
+                    continue
                 except Exception as e:
-                    sym_result = {
-                        "symbol": symbol, "error": str(e),
-                        "rows": [], "best_score": 0.0,
-                        "best_params": {}, "best_row": None,
+                    log(f"[{symbol}] エラー: {e}")
+                    completed_symbols[symbol] = {
+                        "status": "error",
+                        "reason": str(e).splitlines()[0],
+                        "best_score": 0.0, "best_params": {},
                     }
+                    current += len(combos)
+                    error_count += 1
+                    elapsed = int(time.time() - start_t)
+                    _write_progress(current, total, best_score, best_params,
+                                    elapsed, 0, log_lines,
+                                    completed_symbols=completed_symbols)
+                    continue
 
-                if sym_result["error"]:
+                if sym_result.get("error"):
                     log(f"[{symbol}] エラー: {sym_result['error'].splitlines()[0]}")
                     error_count += 1
                     completed_symbols[symbol] = {
@@ -692,7 +721,6 @@ def main(debug: bool = False) -> None:
                     sym_rows        = sym_result["rows"]
                     sym_best_score  = sym_result["best_score"]
                     sym_best_params = sym_result["best_params"]
-                    sym_best_row    = sym_result["best_row"]
 
                     results.extend(sym_rows)
                     current += len(combos)
@@ -704,7 +732,6 @@ def main(debug: bool = False) -> None:
                     log(f"[{symbol}] 完了 ({completed_syms_count}/{len(symbols)})  "
                         f"ベスト={sym_best_score:.4f}  コンボ={len(sym_rows)}")
 
-                    # 除外判定は後段 top_N で行うため "pending" で登録
                     completed_symbols[symbol] = {
                         "status":      "pending",
                         "reason":      "",
@@ -714,26 +741,29 @@ def main(debug: bool = False) -> None:
 
                 elapsed   = int(time.time() - start_t)
                 done_ratio = completed_syms_count / len(symbols) if symbols else 1
-                remaining = int(elapsed / done_ratio * (1 - done_ratio)) if done_ratio else 0
+                remaining = int(elapsed / done_ratio * (1 - done_ratio)) if done_ratio > 0 else 0
                 _write_progress(current, total, best_score, best_params,
                                 elapsed, remaining, log_lines,
                                 completed_symbols=completed_symbols,
                                 current_symbol=symbol,
                                 symbol_current=len(combos),
                                 symbol_total=len(combos))
+
         except TimeoutError:
-            # as_completed 全体のタイムアウト: 未完了ペアをエラー扱いにして続行
-            for future, symbol in sym_futures.items():
-                if symbol not in completed_symbols:
-                    log(f"[{symbol}] タイムアウト（スキップ）")
-                    completed_symbols[symbol] = {
+            # as_completed 全体タイムアウト: 未完了ペアをスキップして続行
+            log("⚠️ 全体タイムアウト: 未完了ペアをスキップします")
+            for fut, sym in sym_futures.items():
+                if sym not in completed_symbols:
+                    log(f"[{sym}] タイムアウト（スキップ）")
+                    completed_symbols[sym] = {
                         "status": "error",
-                        "reason": "タイムアウト",
+                        "reason": "タイムアウト（全体）",
                         "best_score": 0.0, "best_params": {},
                     }
                     current += len(combos)
         finally:
-            sym_executor.shutdown(wait=False)  # ハングしたワーカーを強制終了
+            # ハングしたワーカーを強制終了
+            sym_executor.shutdown(wait=False, cancel_futures=True)
 
         # ── 旧コードとの互換: シンボル完了情報を整形 ─────────────────────────
         # top_N 判定処理に渡すためにシンボルごとのベスト情報を取り出す
