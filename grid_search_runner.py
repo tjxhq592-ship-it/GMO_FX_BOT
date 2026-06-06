@@ -11,6 +11,7 @@ Windows でコンソールウィンドウを開かないよう initializer で F
 import json
 import multiprocessing
 import os
+import subprocess
 import sys
 import time
 import traceback
@@ -475,8 +476,23 @@ def main(debug: bool = False) -> None:
             log(f"[{symbol}] 並列実行開始 ({len(tasks)} コンボ / {max_workers} ワーカー)")
 
             # spawn コンテキストで ProcessPoolExecutor を起動
-            # → GIL の影響なく真の並列処理、Windows でコンソールウィンドウも非表示
+            # → GIL の影響なく真の並列処理
             _ctx = multiprocessing.get_context("spawn")
+
+            # Windows: ワーカー起動時に一瞬表示されるコンソールウィンドウを完全に非表示
+            if sys.platform == "win32":
+                _orig_popen = _ctx.Process._popen_class
+
+                class _HiddenPopen(_orig_popen):
+                    def __init__(self, *args, **kwargs):
+                        si = subprocess.STARTUPINFO()
+                        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                        si.wShowWindow = subprocess.SW_HIDE
+                        kwargs["startupinfo"] = si
+                        super().__init__(*args, **kwargs)
+
+                _ctx.Process._popen_class = _HiddenPopen
+
             executor = ProcessPoolExecutor(
                 max_workers=max_workers,
                 mp_context=_ctx,
