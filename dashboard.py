@@ -692,10 +692,15 @@ with tab_gs:
         cur_sym   = gs_prog.get("current_symbol", "")
         sym_cur   = gs_prog.get("symbol_current", 0)
         sym_tot   = gs_prog.get("symbol_total",   0)
-        cfg_syms  = load_config().get("symbols", [])
-        if cfg_syms:
+
+        # 表示対象: completed_symbols の全キー ∪ grid_search_symbols（設定値）
+        _cfg_now  = load_config()
+        _gs_syms  = _cfg_now.get("grid_search_symbols") or _cfg_now.get("symbols", [])
+        _all_syms = list(dict.fromkeys(list(_gs_syms) + list(completed.keys())))
+
+        if _all_syms:
             st.markdown("**ペア別進捗**")
-            for sym in cfg_syms:
+            for sym in _all_syms:
                 if sym in completed:
                     info   = completed[sym]
                     st_sym = info.get("status", "")
@@ -707,6 +712,10 @@ with tab_gs:
                         st.error(f"❌ {sym}: 除外（{reason}）")
                     elif st_sym == "error":
                         st.warning(f"⚠️ {sym}: エラー（{reason}）")
+                    elif st_sym == "pending":
+                        st.info(f"🔄 {sym}: 処理完了（採用判定中）スコア {sc:.4f}")
+                    else:
+                        st.info(f"⏳ {sym}: 待機中")
                 elif sym == cur_sym and sym_tot > 0:
                     pct = sym_cur / sym_tot
                     st.info(f"🔄 {sym}: 処理中  {sym_cur:,} / {sym_tot:,}  ({pct:.0%})")

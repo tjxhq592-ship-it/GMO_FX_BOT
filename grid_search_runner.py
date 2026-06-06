@@ -304,7 +304,7 @@ def _write_progress(current, total, best_score, best_params,
     }
     with _progress_lock:
         with open(PROGRESS_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False)
+            json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 def _update_active_symbols(symbol: str, adopt: bool, log_fn) -> None:
@@ -757,8 +757,13 @@ def main(debug: bool = False) -> None:
             key=lambda x: x["best_score"],
             reverse=True,
         )
-        adopted_set  = {r["symbol"] for r in ranked[:top_n]}
-        excluded_set = {r["symbol"] for r in ranked[top_n:]}
+        # スコア0は採用対象外（有効なパラメータが見つからなかったペア）
+        ranked_valid = [r for r in ranked if r["best_score"] > 0]
+        adopted_set  = {r["symbol"] for r in ranked_valid[:top_n]}
+        excluded_set = {r["symbol"] for r in ranked if r["symbol"] not in adopted_set}
+
+        if not adopted_set:
+            log("⚠️ 有効なパラメータが見つかりませんでした。探索範囲や除外条件を緩和してください。")
 
         log(f"\n=== top_N={top_n} 採用判定 ===")
         ranking_out: list[dict] = []

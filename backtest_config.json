@@ -62,7 +62,9 @@
   "min_pf": 1.2,
   "min_wft_sharpe": -0.3,
   "active_symbols": [
-    "AUD_NZD"
+    "EUR_AUD",
+    "GBP_CHF",
+    "USD_JPY"
   ],
   "grid_search_symbols": [
     "USD_JPY",
