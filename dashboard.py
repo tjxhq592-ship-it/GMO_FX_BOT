@@ -312,46 +312,6 @@ with tab_config:
             wf_test  = st.slider("WFT検証期間（ヶ月）", 1, 6,
                                   value=int(cfg.get("wf_test_months", 1)))
 
-        st.markdown("#### 最適化パラメータ範囲")
-
-        # BB期間
-        st.markdown("**BB期間 (bb_period)**")
-        bb_col1, bb_col2, bb_col3 = st.columns(3)
-        bb_min  = bb_col1.number_input("min", value=int(cfg["bb_period"]["min"]),  min_value=1,  step=1, key="bb_min")
-        bb_max  = bb_col2.number_input("max", value=int(cfg["bb_period"]["max"]),  min_value=1,  step=1, key="bb_max")
-        bb_step = bb_col3.number_input("step", value=int(cfg["bb_period"]["step"]), min_value=1, step=1, key="bb_step")
-
-        # BB標準偏差
-        bb_std = st.multiselect(
-            "BB標準偏差 (bb_std)",
-            options=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
-            default=cfg.get("bb_std", [1.0, 1.5, 2.0, 2.5]),
-        )
-
-        # RSI upper
-        st.markdown("**RSI上限 (rsi_upper)**")
-        ru_col1, ru_col2 = st.columns(2)
-        rsi_upper_min = ru_col1.number_input("min", value=int(cfg["rsi_upper"]["min"]), min_value=50, max_value=95, step=5, key="ru_min")
-        rsi_upper_max = ru_col2.number_input("max", value=int(cfg["rsi_upper"]["max"]), min_value=50, max_value=95, step=5, key="ru_max")
-
-        # RSI lower
-        st.markdown("**RSI下限 (rsi_lower)**")
-        rl_col1, rl_col2 = st.columns(2)
-        rsi_lower_min = rl_col1.number_input("min", value=int(cfg["rsi_lower"]["min"]), min_value=5, max_value=50, step=5, key="rl_min")
-        rsi_lower_max = rl_col2.number_input("max", value=int(cfg["rsi_lower"]["max"]), min_value=5, max_value=50, step=5, key="rl_max")
-
-        # ATR倍率
-        atr_sl = st.multiselect(
-            "ATR損切倍率 (atr_sl_mult)",
-            options=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
-            default=cfg.get("atr_sl_mult", [1.5, 2.0]),
-        )
-        atr_tp = st.multiselect(
-            "ATR利確倍率 (atr_tp_mult)",
-            options=[1.0, 1.5, 2.0, 2.5, 3.0, 4.0],
-            default=cfg.get("atr_tp_mult", [2.0, 2.5]),
-        )
-
         st.markdown("#### 除外条件")
         ex_col1, ex_col2, ex_col3 = st.columns(3)
         min_trades    = ex_col1.number_input("最低取引回数",        value=int(cfg.get("min_trades",     200)), min_value=0)
@@ -367,19 +327,16 @@ with tab_config:
         if not selected_symbols:
             st.warning("⚠️ 最低1つの通貨ペアを選択してください。")
         else:
+            # 既存設定を読み込んでパラメータ範囲（グリッドサーチタブで管理）を保持
+            existing_cfg = load_config()
             new_cfg = {
+                **existing_cfg,
                 "available_symbols": available,
                 "start_date":        start_date.isoformat(),
                 "end_date":          "auto",
                 "wf_train_months":   wf_train,
                 "wf_test_months":    wf_test,
                 "symbols":           selected_symbols,
-                "bb_period":         {"min": int(bb_min), "max": int(bb_max), "step": int(bb_step)},
-                "bb_std":            sorted(bb_std) if bb_std else [2.0],
-                "rsi_upper":         {"min": int(rsi_upper_min), "max": int(rsi_upper_max), "step": 5},
-                "rsi_lower":         {"min": int(rsi_lower_min), "max": int(rsi_lower_max), "step": 5},
-                "atr_sl_mult":       sorted(atr_sl) if atr_sl else [1.5],
-                "atr_tp_mult":       sorted(atr_tp) if atr_tp else [2.0],
                 "min_trades":        int(min_trades),
                 "min_pf":            float(min_pf),
                 "min_wft_sharpe":    float(min_wft_sharpe),
@@ -552,6 +509,73 @@ with tab_gs:
 
         st.caption("または、別のターミナルで:")
         st.code("python grid_search_runner.py", language="bash")
+
+    # ── 探索範囲設定（backtest_config.json に保存） ───────────────────────
+    st.markdown("#### 探索範囲設定")
+    _range_cfg = load_config()
+
+    with st.form("gs_range_form"):
+        # BB期間
+        st.markdown("**BB期間 (bb_period)**")
+        r_bb_col1, r_bb_col2, r_bb_col3 = st.columns(3)
+        r_bb_min  = r_bb_col1.number_input("min",  value=int(_range_cfg.get("bb_period", {}).get("min",  10)), min_value=1, step=1, key="r_bb_min")
+        r_bb_max  = r_bb_col2.number_input("max",  value=int(_range_cfg.get("bb_period", {}).get("max",  30)), min_value=1, step=1, key="r_bb_max")
+        r_bb_step = r_bb_col3.number_input("step", value=int(_range_cfg.get("bb_period", {}).get("step",  5)), min_value=1, step=1, key="r_bb_step")
+
+        # BB標準偏差
+        r_bb_std = st.multiselect(
+            "BB標準偏差 (bb_std)",
+            options=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
+            default=_range_cfg.get("bb_std", [1.0, 1.5, 2.0, 2.5]),
+            key="r_bb_std",
+        )
+
+        # RSI upper
+        st.markdown("**RSI上限 (rsi_upper)**")
+        r_ru_col1, r_ru_col2, r_ru_col3 = st.columns(3)
+        r_rsi_upper_min  = r_ru_col1.number_input("min",  value=int(_range_cfg.get("rsi_upper", {}).get("min",  60)), min_value=50, max_value=95, step=5, key="r_ru_min")
+        r_rsi_upper_max  = r_ru_col2.number_input("max",  value=int(_range_cfg.get("rsi_upper", {}).get("max",  75)), min_value=50, max_value=95, step=5, key="r_ru_max")
+        r_rsi_upper_step = r_ru_col3.number_input("step", value=int(_range_cfg.get("rsi_upper", {}).get("step",  5)), min_value=1,  step=1,       key="r_ru_step")
+
+        # RSI lower
+        st.markdown("**RSI下限 (rsi_lower)**")
+        r_rl_col1, r_rl_col2, r_rl_col3 = st.columns(3)
+        r_rsi_lower_min  = r_rl_col1.number_input("min",  value=int(_range_cfg.get("rsi_lower", {}).get("min",  25)), min_value=5, max_value=50, step=5, key="r_rl_min")
+        r_rsi_lower_max  = r_rl_col2.number_input("max",  value=int(_range_cfg.get("rsi_lower", {}).get("max",  40)), min_value=5, max_value=50, step=5, key="r_rl_max")
+        r_rsi_lower_step = r_rl_col3.number_input("step", value=int(_range_cfg.get("rsi_lower", {}).get("step",  5)), min_value=1, step=1,       key="r_rl_step")
+
+        # ATR倍率
+        r_atr_sl = st.multiselect(
+            "ATR損切倍率 (atr_sl_mult)",
+            options=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0],
+            default=_range_cfg.get("atr_sl_mult", [1.5, 2.0]),
+            key="r_atr_sl",
+        )
+        r_atr_tp = st.multiselect(
+            "ATR利確倍率 (atr_tp_mult)",
+            options=[1.0, 1.5, 2.0, 2.5, 3.0, 4.0],
+            default=_range_cfg.get("atr_tp_mult", [2.0, 2.5]),
+            key="r_atr_tp",
+        )
+
+        range_submitted = st.form_submit_button("💾 探索範囲を保存")
+
+    if range_submitted:
+        _save_range_cfg = load_config()
+        _save_range_cfg.update({
+            "bb_period":   {"min": int(r_bb_min),  "max": int(r_bb_max),  "step": int(r_bb_step)},
+            "bb_std":      sorted(r_bb_std)  if r_bb_std  else [2.0],
+            "rsi_upper":   {"min": int(r_rsi_upper_min), "max": int(r_rsi_upper_max), "step": int(r_rsi_upper_step)},
+            "rsi_lower":   {"min": int(r_rsi_lower_min), "max": int(r_rsi_lower_max), "step": int(r_rsi_lower_step)},
+            "atr_sl_mult": sorted(r_atr_sl) if r_atr_sl else [1.5],
+            "atr_tp_mult": sorted(r_atr_tp) if r_atr_tp else [2.0],
+        })
+        try:
+            with open(CONFIG_FILE, "w", encoding="utf-8") as _f:
+                json.dump(_save_range_cfg, _f, indent=2, ensure_ascii=False)
+            st.success("✅ 探索範囲を backtest_config.json に保存しました。")
+        except Exception as e:
+            st.error(f"保存エラー: {e}")
 
     # ── スコアリング重み（grid_search_config.json を保存するだけ） ────────
     st.markdown("#### スコアリング重み設定（grid_search_config.json に保存）")
