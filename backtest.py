@@ -97,6 +97,34 @@ CACHE_TTL    = 3600
 PARAMS_FILE  = "params.json"
 RESULTS_FILE = "backtest_results.json"
 
+# ── ペア別スプレッド設定 ────────────────────────────────────────────────────
+SPREAD_PIPS = {
+    # 円ペア（単位: 銭 → 実行時に price で割って率に変換）
+    "USD_JPY": 0.002,    # 0.2銭
+    "EUR_JPY": 0.004,    # 0.4銭
+    "GBP_JPY": 0.007,    # 0.7銭
+    "AUD_JPY": 0.004,    # 0.4銭
+    "NZD_JPY": 0.007,    # 0.7銭
+    "CAD_JPY": 0.004,    # 0.4銭
+    "CHF_JPY": 0.007,    # 0.7銭
+    "ZAR_JPY": 0.030,    # 3.0銭（流動性低い）
+    # クロスドル・クロス（単位: pips → 実行時に price で割って率に変換）
+    "EUR_USD": 0.00010,  # 1.0pip
+    "GBP_USD": 0.00013,  # 1.3pips
+    "AUD_USD": 0.00013,  # 1.3pips
+    "EUR_GBP": 0.00010,  # 1.0pip
+    "AUD_NZD": 0.00030,  # 3.0pips
+    "EUR_CHF": 0.00020,  # 2.0pips
+    "GBP_CHF": 0.00030,  # 3.0pips
+    "EUR_AUD": 0.00020,  # 2.0pips
+}
+
+def calc_commission(symbol: str, price: float) -> float:
+    """手数料（固定） + スプレッド（価格比率）を合算して返す。"""
+    spread = SPREAD_PIPS.get(symbol, 0.0003)
+    spread_rate = spread / price if price > 0 else 0.0
+    return 0.00002 + spread_rate
+
 # 対象シンボル: active_symbols（グリッドサーチ採用済みでトレード対象）
 SYMBOLS = _cfg.get("active_symbols", _cfg.get("symbols", ["AUD_NZD"]))
 SYMBOL_MAP = {
@@ -235,12 +263,14 @@ def _extract_stats(stats):
     }
 
 # === ウォークフォワードテスト ===
-def walk_forward_test(data, params_dict):
+def walk_forward_test(data, params_dict, symbol: str = ""):
     wft_start = END_DATE - relativedelta(months=WF_TEST_MONTHS)
     test_data = data[data.index >= wft_start]
     if len(test_data) < 20:
         return None
-    bt = Backtest(test_data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
+    _price = float(test_data["Close"].iloc[-1])
+    bt = Backtest(test_data, ImprovedStrategy, cash=INITIAL_CASH,
+                  commission=calc_commission(symbol, _price))
     stats = bt.run(**params_dict)
     return _extract_stats(stats)
 
@@ -253,7 +283,9 @@ def run_forward_test(symbol, params_dict):
         return None
     if len(fw_data) < 20:
         return None
-    bt = Backtest(fw_data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
+    _price = float(fw_data["Close"].iloc[-1])
+    bt = Backtest(fw_data, ImprovedStrategy, cash=INITIAL_CASH,
+                  commission=calc_commission(symbol, _price))
     stats = bt.run(**params_dict)
     return _extract_stats(stats)
 
@@ -278,7 +310,9 @@ def optimize_symbol(symbol, idx, total, wft_cutoff, saved_params):
 
     # IS バックテスト（全期間データで run）
     print(f"{tag} バックテスト実行中...")
-    bt_full = Backtest(data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
+    _price = float(data["Close"].iloc[-1])
+    bt_full = Backtest(data, ImprovedStrategy, cash=INITIAL_CASH,
+                       commission=calc_commission(symbol, _price))
     stats_full = bt_full.run(**params_dict)
     is_stats = _extract_stats(stats_full)
 
@@ -289,7 +323,7 @@ def optimize_symbol(symbol, idx, total, wft_cutoff, saved_params):
 
     # WFT（直近 WF_TEST_MONTHS だけで run）
     print(f"{tag} WFTテスト中...")
-    wft_result = walk_forward_test(data, params_dict)
+    wft_result = walk_forward_test(data, params_dict, symbol=symbol)
 
     pf_str  = f"{is_stats['pf']:.2f}"       if is_stats["pf"] is not None else "N/A"
     wft_str = f"{wft_result['sharpe']:.2f}" if wft_result is not None     else "N/A"
@@ -441,15 +475,17 @@ def grid_search_job(config: dict, score_weights: dict) -> list:
 
             # IS バックテスト
             try:
+                _price = float(train_data["Close"].iloc[-1])
                 bt  = Backtest(train_data, ImprovedStrategy,
-                               cash=INITIAL_CASH, commission=0.00002)
+                               cash=INITIAL_CASH,
+                               commission=calc_commission(symbol, _price))
                 st_is = bt.run(**params_dict)
                 is_s  = _extract_stats(st_is)
             except Exception:
                 is_s = None
 
             # WFT
-            wft_r = walk_forward_test(data, params_dict) if is_s else None
+            wft_r = walk_forward_test(data, params_dict, symbol=symbol) if is_s else None
 
             # スコアリング
             score = 0.0
