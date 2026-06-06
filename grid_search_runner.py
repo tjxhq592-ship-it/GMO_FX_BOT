@@ -4,7 +4,7 @@
   python grid_search_runner.py            # 通常実行（並列）
   python grid_search_runner.py --debug    # 最初の1パターンのみテスト実行
 
-各シンボルのコンボを ProcessPoolExecutor で並列実行。
+各シンボルのコンボを ThreadPoolExecutor で並列実行。
 シンボル間は順次処理（シンボルをまたいで並列しない）。
 """
 import json
@@ -13,9 +13,10 @@ import sys
 import time
 import traceback
 import itertools
+import ctypes
 import pickle
 import threading
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
@@ -66,6 +67,14 @@ _g_train_data: object = None
 def _worker_initializer(data_pkl: bytes, train_pkl: bytes, cache_dir: str) -> None:
     """各ワーカープロセスの起動時に1回だけ実行される初期化関数"""
     global _g_data, _g_train_data
+
+    # Windows でコンソールウィンドウを非表示（FreeConsole でデタッチ）
+    if hasattr(ctypes, "windll"):
+        try:
+            ctypes.windll.kernel32.FreeConsole()
+        except Exception:
+            pass
+
     import yfinance as yf
 
     # yfinance SQLite キャッシュをワーカーごとに分離してロック競合を回避
@@ -402,13 +411,17 @@ def main(debug: bool = False) -> None:
         min_pf         = float(config.get("min_pf",        1.2))
         min_wft_sharpe = float(config.get("min_wft_sharpe", 0.0))
 
-        # 並列ワーカー数: max 14、OSとメインプロセス用に2コア残す
-        max_workers = min(14, max(1, (os.cpu_count() or 4) - 2))
+        # ThreadPoolExecutor + backtesting の安定性検証中のため max_workers=1 で実行
+        # 動作確認後: 2 → 4 → 8 → 14 と段階的に増やす
+        max_workers = 1
 
         log("=== グリッドサーチ開始 (並列実行) ===")
         log(f"対象ペア: {symbols}")
         log(f"組み合わせ数: {len(combos)} x {len(symbols)}銘柄 = {total} 件")
         log(f"並列ワーカー数: {max_workers}")
+
+        # 起動直後に progress ファイルを初期化（ダッシュボードが即座に「running」を検知できるよう）
+        _write_progress(0, total, 0.0, {}, 0, 0, ["グリッドサーチ開始..."])
         log(f"スコア重み: WFT={wt_wft} IS={wt_is} PF={wt_pf} 取引={wt_trades}")
         log(f"除外条件: 取引>={min_trades}  PF>={min_pf}  WFTシャープ>={min_wft_sharpe}")
         log("")
@@ -461,11 +474,13 @@ def main(debug: bool = False) -> None:
 
             log(f"[{symbol}] 並列実行開始 ({len(tasks)} コンボ / {max_workers} ワーカー)")
 
-            with ProcessPoolExecutor(
+            executor = ThreadPoolExecutor(
                 max_workers=max_workers,
                 initializer=_worker_initializer,
                 initargs=(data_pkl, train_pkl, cache_dir),
-            ) as executor:
+            )
+
+            try:
                 futures = {executor.submit(_worker_task, t): t[0] for t in tasks}
 
                 for future in as_completed(futures):
@@ -524,6 +539,9 @@ def main(debug: bool = False) -> None:
                                     current_symbol=symbol,
                                     symbol_current=sym_done,
                                     symbol_total=len(combos))
+
+            finally:
+                executor.shutdown(wait=False)
 
             # ── シンボル完了: 除外判定 ──────────────────────────────────────
             log(f"[{symbol}] 完了  ベストスコア={sym_best_score:.4f}")
