@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -24,15 +25,26 @@ LOG_FILE    = BASE_DIR / "trade_log.txt"
 # 取引設定
 TRADE_AMOUNT = 10000  # 円建て（GMO FXは円単位）
 
-# 取引通貨ペア（GMOコインFX対応ペア）
-SYMBOLS = ["EUR_GBP", "AUD_NZD", "EUR_CHF"]
+# 取引通貨ペアと候補リストを backtest_config.json から読み込む
+def _load_bt_config() -> dict:
+    _path = BASE_DIR / "backtest_config.json"
+    if _path.exists():
+        with open(_path, "r", encoding="utf-8") as _f:
+            return json.load(_f)
+    return {}
 
-CANDIDATE_SYMBOLS = [
-    "USD_JPY", "EUR_JPY", "GBP_JPY",
-    "AUD_JPY", "NZD_JPY", "CAD_JPY",
-    "CHF_JPY", "ZAR_JPY", "EUR_USD",
-    "GBP_USD", "AUD_USD",
-]
+_bt_cfg = _load_bt_config()
+
+# 取引通貨ペア（GMOコインFX対応ペア）
+SYMBOLS = _bt_cfg.get("symbols", ["EUR_GBP", "AUD_NZD", "EUR_CHF"])
+
+# 選択可能な全ペア一覧
+CANDIDATE_SYMBOLS = _bt_cfg.get("available_symbols", [
+    "USD_JPY", "EUR_JPY", "GBP_JPY", "AUD_JPY",
+    "NZD_JPY", "CAD_JPY", "CHF_JPY", "ZAR_JPY",
+    "EUR_USD", "GBP_USD", "AUD_USD", "EUR_GBP",
+    "AUD_NZD", "EUR_CHF", "GBP_CHF", "EUR_AUD",
+])
 
 _REQUIRED_KEYS = {
     "GMO_API_KEY":        GMO_API_KEY,

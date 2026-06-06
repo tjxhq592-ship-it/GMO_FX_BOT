@@ -191,6 +191,26 @@ with tab_config:
     cfg = load_config()
 
     with st.form("config_form"):
+        # ── 通貨ペア選択 ──────────────────────────────────────────────────
+        st.markdown("#### 取引通貨ペア")
+        available = cfg.get("available_symbols", [
+            "USD_JPY", "EUR_JPY", "GBP_JPY", "AUD_JPY",
+            "NZD_JPY", "CAD_JPY", "CHF_JPY", "ZAR_JPY",
+            "EUR_USD", "GBP_USD", "AUD_USD", "EUR_GBP",
+            "AUD_NZD", "EUR_CHF", "GBP_CHF", "EUR_AUD",
+        ])
+        current_symbols = set(cfg.get("symbols", []))
+        # 4列グリッドでチェックボックスを表示
+        symbol_checks: dict[str, bool] = {}
+        cols = st.columns(4)
+        for i, sym in enumerate(available):
+            with cols[i % 4]:
+                symbol_checks[sym] = st.checkbox(
+                    sym,
+                    value=(sym in current_symbols),
+                    key=f"sym_{sym}",
+                )
+
         st.markdown("#### 基本設定")
         col1, col2 = st.columns(2)
         with col1:
@@ -258,26 +278,32 @@ with tab_config:
         submitted = st.form_submit_button("💾 設定を保存")
 
     if submitted:
-        new_cfg = {
-            "start_date":      start_date.isoformat(),
-            "end_date":        "auto",
-            "wf_train_months": wf_train,
-            "wf_test_months":  wf_test,
-            "symbols":         cfg.get("symbols", ["EUR_GBP", "AUD_NZD", "EUR_CHF"]),
-            "bb_period":       {"min": int(bb_min), "max": int(bb_max), "step": int(bb_step)},
-            "bb_std":          sorted(bb_std) if bb_std else [2.0],
-            "rsi_upper":       {"min": int(rsi_upper_min), "max": int(rsi_upper_max), "step": 5},
-            "rsi_lower":       {"min": int(rsi_lower_min), "max": int(rsi_lower_max), "step": 5},
-            "atr_sl_mult":     sorted(atr_sl) if atr_sl else [1.5],
-            "atr_tp_mult":     sorted(atr_tp) if atr_tp else [2.0],
-            "min_trades":      int(min_trades),
-            "min_pf":          float(min_pf),
-            "min_wft_sharpe":  float(min_wft_sharpe),
-        }
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(new_cfg, f, indent=2, ensure_ascii=False)
-        st.success("✅ 設定を保存しました")
-        st.json(new_cfg)
+        selected_symbols = [s for s, checked in symbol_checks.items() if checked]
+
+        if not selected_symbols:
+            st.warning("⚠️ 最低1つの通貨ペアを選択してください。")
+        else:
+            new_cfg = {
+                "available_symbols": available,
+                "start_date":        start_date.isoformat(),
+                "end_date":          "auto",
+                "wf_train_months":   wf_train,
+                "wf_test_months":    wf_test,
+                "symbols":           selected_symbols,
+                "bb_period":         {"min": int(bb_min), "max": int(bb_max), "step": int(bb_step)},
+                "bb_std":            sorted(bb_std) if bb_std else [2.0],
+                "rsi_upper":         {"min": int(rsi_upper_min), "max": int(rsi_upper_max), "step": 5},
+                "rsi_lower":         {"min": int(rsi_lower_min), "max": int(rsi_lower_max), "step": 5},
+                "atr_sl_mult":       sorted(atr_sl) if atr_sl else [1.5],
+                "atr_tp_mult":       sorted(atr_tp) if atr_tp else [2.0],
+                "min_trades":        int(min_trades),
+                "min_pf":            float(min_pf),
+                "min_wft_sharpe":    float(min_wft_sharpe),
+            }
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(new_cfg, f, indent=2, ensure_ascii=False)
+            st.success(f"✅ 設定を保存しました（選択ペア: {', '.join(selected_symbols)}）")
+            st.json(new_cfg)
 
 
 # ==================== TAB 3: バックテスト実行 ====================
