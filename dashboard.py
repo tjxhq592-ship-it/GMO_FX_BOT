@@ -599,13 +599,18 @@ with tab_gs:
     gs_pid      = gs_pid_data.get("pid")
     gs_status   = gs_pid_data.get("status", "")
     _proc_alive = bool(gs_pid and psutil.pid_exists(int(gs_pid)))
-    gs_running  = (gs_status == "running") and _proc_alive
+    gs_running  = ((gs_status == "running") and _proc_alive) \
+                  or st.session_state.get("gs_force_running", False)
 
     # PIDファイルが "running" でもプロセスが死んでいれば自動修正
     if gs_status == "running" and not _proc_alive and os.path.exists(GS_PID_FILE):
         gs_pid_data["status"] = "stopped"
         with open(GS_PID_FILE, "w", encoding="utf-8") as f:
             json.dump(gs_pid_data, f, indent=2)
+        st.session_state.pop("gs_force_running", None)
+    elif _proc_alive:
+        # プロセスが確認できたら強制フラグをクリア
+        st.session_state.pop("gs_force_running", None)
 
     if gs_running:
         st.info(f"⏳ グリッドサーチ実行中  (PID: {gs_pid}　開始: {gs_pid_data.get('started_at','')})")
@@ -631,17 +636,21 @@ with tab_gs:
                 if os.path.exists(GS_PROGRESS_FILE):
                     os.remove(GS_PROGRESS_FILE)
 
-                # PIDファイルが正常に書かれるまで最大5秒待機
-                for _ in range(10):
+                # プロセスが起動するまで最大10秒待機（st.rerun はループ完了後に呼ぶ）
+                for _ in range(20):
                     time.sleep(0.5)
-                    _check = _read_pid_file(GS_PID_FILE)
-                    if (_check.get("status") == "running"
-                            and psutil.pid_exists(int(_check.get("pid", 0)))):
-                        st.success(f"グリッドサーチを起動しました (PID: {proc.pid})")
-                        st.rerun()
-                        break
-                else:
-                    st.success(f"グリッドサーチを起動しました (PID: {proc.pid})")
+                    if os.path.exists(GS_PID_FILE):
+                        try:
+                            with open(GS_PID_FILE, "r", encoding="utf-8") as _f:
+                                _pid_check = json.load(_f)
+                            if _pid_check.get("status") == "running":
+                                st.session_state["gs_force_running"] = True
+                                break
+                        except Exception:
+                            pass
+
+                st.success(f"グリッドサーチを起動しました (PID: {proc.pid})")
+                st.rerun()
             except Exception as e:
                 st.error(f"起動失敗: {e}")
         st.caption("または、別のターミナルで:")

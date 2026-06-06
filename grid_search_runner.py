@@ -148,6 +148,115 @@ def _worker_task(args: tuple) -> tuple:
     return combo_idx, params_dict, is_s, wft_r, round(score, 4), err_msg
 
 
+# ── シンボルレベル並列用ワーカー ─────────────────────────────────────────
+# ProcessPoolExecutor に 1 シンボル = 1 タスク として submit する。
+# コンボ処理はこの関数内でシングルスレッドに回す。
+
+def _run_symbol_search(args: tuple) -> dict:
+    """1シンボル分のグリッドサーチを実行してベストスコアを返す（モジュールレベル必須）"""
+    (symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
+     wft_cutoff_ts, min_trades, min_pf, min_wft_sharpe) = args
+
+    # Windows: コンソールウィンドウ非表示
+    if hasattr(ctypes, "windll"):
+        try:
+            ctypes.windll.kernel32.FreeConsole()
+        except Exception:
+            pass
+    _ensure_valid_stream("stdout")
+    _ensure_valid_stream("stderr")
+
+    # yfinance キャッシュをワーカーごとに分離
+    import yfinance as yf
+    _cache = f".cache/sym_{os.getpid()}"
+    os.makedirs(_cache, exist_ok=True)
+    yf.set_tz_cache_location(_cache)
+
+    from datetime import datetime as _dt
+    wft_cutoff = _dt.fromtimestamp(wft_cutoff_ts)
+
+    # データ取得
+    try:
+        data       = get_historical_data(symbol)
+        train_data = data[data.index < wft_cutoff]
+    except Exception as e:
+        return {"symbol": symbol, "error": str(e), "rows": [],
+                "best_score": 0.0, "best_params": {}, "best_row": None}
+
+    rows:            list = []
+    sym_best_score:  float = 0.0
+    sym_best_params: dict  = {}
+    sym_best_row:    dict | None = None
+
+    for (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in combos:
+        params_dict = {
+            "bb_period":   bb_p,  "bb_std":      bb_s,
+            "rsi_period":  14,    "rsi_upper":   rsi_u,
+            "rsi_lower":   rsi_l, "atr_period":  14,
+            "atr_sl_mult": sl_m,  "atr_tp_mult": tp_m,
+        }
+
+        # IS バックテスト
+        try:
+            _price = float(train_data["Close"].iloc[-1])
+            bt    = Backtest(train_data, ImprovedStrategy,
+                             cash=INITIAL_CASH,
+                             commission=calc_commission(symbol, _price))
+            st_is = bt.run(**params_dict)
+            is_s  = _extract_stats(st_is)
+        except Exception:
+            continue
+
+        # WFT
+        try:
+            wft_r = walk_forward_test(data, params_dict, symbol=symbol)
+        except Exception:
+            wft_r = None
+
+        # スコアリング
+        score = 0.0
+        if is_s:
+            n          = is_s["n_trades"]
+            pf         = is_s["pf"] or 0.0
+            is_sharpe  = is_s["sharpe"]
+            wft_sharpe = wft_r["sharpe"] if wft_r else float("nan")
+            nan_check  = wft_sharpe != wft_sharpe
+            if n >= 50 and not nan_check and wft_sharpe >= 0:
+                score = (
+                    wft_sharpe           * wt_wft +
+                    max(is_sharpe, 0.0)  * wt_is  +
+                    max(pf, 0.0)         * wt_pf  +
+                    min(n / 200.0, 1.0)  * wt_trades
+                )
+
+        row = {
+            "symbol":      symbol,
+            "bb_period":   bb_p,   "bb_std":      bb_s,
+            "rsi_upper":   rsi_u,  "rsi_lower":   rsi_l,
+            "atr_sl_mult": sl_m,   "atr_tp_mult": tp_m,
+            "n_trades":    is_s["n_trades"] if is_s else 0,
+            "pf":          is_s["pf"]       if is_s else None,
+            "is_sharpe":   is_s["sharpe"]   if is_s else None,
+            "wft_sharpe":  wft_r["sharpe"]  if wft_r else None,
+            "score":       round(score, 4),
+        }
+        rows.append(row)
+
+        if score > sym_best_score:
+            sym_best_score  = score
+            sym_best_params = params_dict
+            sym_best_row    = row
+
+    return {
+        "symbol":      symbol,
+        "error":       None,
+        "rows":        rows,
+        "best_score":  sym_best_score,
+        "best_params": sym_best_params,
+        "best_row":    sym_best_row,
+    }
+
+
 # ── ヘルパー ──────────────────────────────────────────────────────────────
 
 def _write_pid(status: str) -> None:
@@ -502,173 +611,152 @@ def main(debug: bool = False) -> None:
         error_count       = 0
         completed_symbols: dict = {}
 
+        # ── データ事前取得（キャッシュ温め・失敗検出） ───────────────────────
+        log("全ペアのデータを事前取得中...")
+        valid_symbols = []
         for symbol in symbols:
-            log(f"[{symbol}] データ取得中...")
             try:
-                data       = get_historical_data(symbol)
-                train_data = data[data.index < wft_cutoff]
-                log(f"[{symbol}] データ取得完了: {len(data)}件  学習:{len(train_data)}件")
+                data = get_historical_data(symbol)
+                log(f"  {symbol}: {len(data)}件 OK")
+                valid_symbols.append(symbol)
             except Exception as e:
-                log(f"[{symbol}] データ取得失敗: {e}")
+                log(f"  {symbol}: 取得失敗 → スキップ ({e})")
                 current += len(combos)
                 completed_symbols[symbol] = {
                     "status": "error", "reason": f"データ取得失敗: {e}",
                     "best_score": 0.0, "best_params": {},
                 }
-                _write_progress(current, total, best_score, best_params,
-                                int(time.time() - start_t), 0, log_lines,
-                                completed_symbols=completed_symbols)
-                continue
+        symbols = valid_symbols
+        total   = len(combos) * len(symbols)  # 有効シンボルで再計算
 
-            # データをピクルス化してワーカーに渡す（initializer で1回だけ送信）
-            data_pkl  = pickle.dumps(data)
-            train_pkl = pickle.dumps(train_data)
-            cache_dir = f".cache/worker_{os.getpid()}"
+        # ── spawn コンテキスト + HiddenPopen ────────────────────────────────
+        _ctx = multiprocessing.get_context("spawn")
+        if sys.platform == "win32":
+            _orig_popen = _ctx.Process._popen_class
 
-            sym_best_score  = 0.0
-            sym_best_row:    dict | None = None
-            sym_best_params: dict        = {}
-            sym_done        = 0   # このシンボルで完了したコンボ数
+            class _HiddenPopen(_orig_popen):
+                def __init__(self, *_a, **_kw):
+                    _si = subprocess.STARTUPINFO()
+                    _si.dwFlags   |= subprocess.STARTF_USESHOWWINDOW
+                    _si.wShowWindow = subprocess.SW_HIDE
+                    _kw["startupinfo"] = _si
+                    super().__init__(*_a, **_kw)
 
-            # タスクリスト生成
-            tasks = [
-                (i, {
-                    "bb_period":   bb_p,
-                    "bb_std":      bb_s,
-                    "rsi_period":  14,
-                    "rsi_upper":   rsi_u,
-                    "rsi_lower":   rsi_l,
-                    "atr_period":  14,
-                    "atr_sl_mult": sl_m,
-                    "atr_tp_mult": tp_m,
-                }, wt_wft, wt_is, wt_pf, wt_trades, symbol)
-                for i, (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in enumerate(combos)
-            ]
+            _ctx.Process._popen_class = _HiddenPopen
 
-            log(f"[{symbol}] 並列実行開始 ({len(tasks)} コンボ / {max_workers} ワーカー)")
+        # ── ペア間並列: 1シンボル = 1タスク ─────────────────────────────────
+        sym_workers = min(max_workers, len(symbols))  # ペア数以上には増やさない
+        log(f"ペア間並列実行開始 ({len(symbols)}ペア / {sym_workers}ワーカー)")
 
-            # spawn コンテキストで ProcessPoolExecutor を起動
-            # → GIL の影響なく真の並列処理
-            _ctx = multiprocessing.get_context("spawn")
+        sym_task_args = [
+            (symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
+             wft_cutoff.timestamp(), min_trades, min_pf, min_wft_sharpe)
+            for symbol in symbols
+        ]
 
-            # Windows: ワーカー起動時に一瞬表示されるコンソールウィンドウを完全に非表示
-            if sys.platform == "win32":
-                _orig_popen = _ctx.Process._popen_class
+        sym_executor = ProcessPoolExecutor(
+            max_workers=sym_workers,
+            mp_context=_ctx,
+        )
+        sym_futures = {
+            sym_executor.submit(_run_symbol_search, a): a[0]
+            for a in sym_task_args
+        }
 
-                class _HiddenPopen(_orig_popen):
-                    def __init__(self, *args, **kwargs):
-                        si = subprocess.STARTUPINFO()
-                        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                        si.wShowWindow = subprocess.SW_HIDE
-                        kwargs["startupinfo"] = si
-                        super().__init__(*args, **kwargs)
-
-                _ctx.Process._popen_class = _HiddenPopen
-
-            executor = ProcessPoolExecutor(
-                max_workers=max_workers,
-                mp_context=_ctx,
-                initializer=_worker_initializer,
-                initargs=(data_pkl, train_pkl, cache_dir),
-            )
-
-            try:
-                futures = {executor.submit(_worker_task, t): t[0] for t in tasks}
-
-                for future in as_completed(futures):
-                    try:
-                        combo_idx, params_dict, is_s, wft_r, score, err_msg = future.result()
-                    except Exception as e:
-                        err_msg = f"Future例外: {e}"
-                        combo_idx, params_dict, is_s, wft_r, score = 0, {}, None, None, 0.0
-
-                    current  += 1
-                    sym_done += 1
-
-                    if err_msg and error_count < 10:
-                        log(f"  ! {symbol} combo#{combo_idx}: {err_msg}")
-                        error_count += 1
-
-                    row = {
-                        "symbol":      symbol,
-                        "bb_period":   params_dict.get("bb_period"),
-                        "bb_std":      params_dict.get("bb_std"),
-                        "rsi_upper":   params_dict.get("rsi_upper"),
-                        "rsi_lower":   params_dict.get("rsi_lower"),
-                        "atr_sl_mult": params_dict.get("atr_sl_mult"),
-                        "atr_tp_mult": params_dict.get("atr_tp_mult"),
-                        "n_trades":    is_s["n_trades"] if is_s else 0,
-                        "pf":          is_s["pf"]       if is_s else None,
-                        "is_sharpe":   is_s["sharpe"]   if is_s else None,
-                        "wft_sharpe":  wft_r["sharpe"]  if wft_r else None,
-                        "score":       score,
+        completed_syms_count = 0
+        try:
+            for future in as_completed(sym_futures):
+                symbol = sym_futures[future]
+                completed_syms_count += 1
+                try:
+                    sym_result = future.result()
+                except Exception as e:
+                    sym_result = {
+                        "symbol": symbol, "error": str(e),
+                        "rows": [], "best_score": 0.0,
+                        "best_params": {}, "best_row": None,
                     }
-                    results.append(row)
 
-                    if score > best_score:
-                        best_score  = score
-                        best_params = {**params_dict, "symbol": symbol}
-                        log(f"  * 新ベスト: score={best_score:.4f}  {symbol}"
-                            f"  bb={params_dict.get('bb_period')}/{params_dict.get('bb_std')}"
-                            f"  rsi={params_dict.get('rsi_upper')}/{params_dict.get('rsi_lower')}"
-                            f"  取引={row['n_trades']} WFT={row['wft_sharpe']}")
+                if sym_result["error"]:
+                    log(f"[{symbol}] エラー: {sym_result['error'].splitlines()[0]}")
+                    error_count += 1
+                    completed_symbols[symbol] = {
+                        "status": "error",
+                        "reason": sym_result["error"].splitlines()[0],
+                        "best_score": 0.0, "best_params": {},
+                    }
+                    current += len(combos)
+                else:
+                    sym_rows        = sym_result["rows"]
+                    sym_best_score  = sym_result["best_score"]
+                    sym_best_params = sym_result["best_params"]
+                    sym_best_row    = sym_result["best_row"]
 
-                    if score > sym_best_score:
-                        sym_best_score  = score
-                        sym_best_row    = row
-                        sym_best_params = params_dict
+                    results.extend(sym_rows)
+                    current += len(combos)
 
-                    # 1000件ごとにログ出力
-                    if sym_done % 1000 == 0:
-                        elapsed = int(time.time() - start_t)
-                        log(f"  [{symbol}] {sym_done}/{len(combos)} 完了  経過{elapsed}秒")
+                    if sym_best_score > best_score:
+                        best_score  = sym_best_score
+                        best_params = {**sym_best_params, "symbol": symbol}
 
-                    elapsed   = int(time.time() - start_t)
-                    remaining = int(elapsed / current * (total - current)) if current else 0
-                    _write_progress(current, total, best_score, best_params,
-                                    elapsed, remaining, log_lines,
-                                    completed_symbols=completed_symbols,
-                                    current_symbol=symbol,
-                                    symbol_current=sym_done,
-                                    symbol_total=len(combos))
+                    log(f"[{symbol}] 完了 ({completed_syms_count}/{len(symbols)})  "
+                        f"ベスト={sym_best_score:.4f}  コンボ={len(sym_rows)}")
 
-            finally:
-                executor.shutdown(wait=True)
+                    # 除外判定は後段 top_N で行うため "pending" で登録
+                    completed_symbols[symbol] = {
+                        "status":      "pending",
+                        "reason":      "",
+                        "best_score":  round(sym_best_score, 4),
+                        "best_params": sym_best_params,
+                    }
 
-            # ── シンボル完了: 除外判定 ──────────────────────────────────────
-            log(f"[{symbol}] 完了  ベストスコア={sym_best_score:.4f}")
-            exclude_reason: str | None = None
+                elapsed   = int(time.time() - start_t)
+                done_ratio = completed_syms_count / len(symbols) if symbols else 1
+                remaining = int(elapsed / done_ratio * (1 - done_ratio)) if done_ratio else 0
+                _write_progress(current, total, best_score, best_params,
+                                elapsed, remaining, log_lines,
+                                completed_symbols=completed_symbols,
+                                current_symbol=symbol,
+                                symbol_current=len(combos),
+                                symbol_total=len(combos))
+        finally:
+            sym_executor.shutdown(wait=True)
 
-            if sym_best_score <= 0.0 or sym_best_row is None:
-                exclude_reason = "全パターンでスコア0"
-            elif sym_best_row.get("n_trades", 0) < min_trades:
-                exclude_reason = (
-                    f"取引回数({sym_best_row['n_trades']}) < 最小値({min_trades})"
+        # ── 旧コードとの互換: シンボル完了情報を整形 ─────────────────────────
+        # top_N 判定処理に渡すためにシンボルごとのベスト情報を取り出す
+        # (除外判定ブロックは後続の ranked / adopted_set ロジックで実施)
+        for symbol in list(completed_symbols.keys()):
+            if completed_symbols[symbol]["status"] == "pending":
+                sym_best_score = completed_symbols[symbol]["best_score"]
+                exclude_reason: str | None = None
+                sym_best_row = next(
+                    (r for r in results
+                     if r["symbol"] == symbol and r["score"] == sym_best_score),
+                    None,
                 )
-            elif (sym_best_row.get("pf") is not None
-                  and sym_best_row["pf"] < min_pf):
-                exclude_reason = (
-                    f"PF({sym_best_row['pf']:.2f}) < 最小値({min_pf})"
-                )
-            elif (sym_best_row.get("wft_sharpe") is not None
-                  and sym_best_row["wft_sharpe"] < min_wft_sharpe):
-                exclude_reason = (
-                    f"WFTシャープ({sym_best_row['wft_sharpe']:.2f}) < 最小値({min_wft_sharpe})"
-                )
+                if sym_best_score <= 0.0 or sym_best_row is None:
+                    exclude_reason = "全パターンでスコア0"
+                elif sym_best_row.get("n_trades", 0) < min_trades:
+                    exclude_reason = (
+                        f"取引回数({sym_best_row['n_trades']}) < 最小値({min_trades})"
+                    )
+                elif (sym_best_row.get("pf") is not None
+                      and sym_best_row["pf"] < min_pf):
+                    exclude_reason = (
+                        f"PF({sym_best_row['pf']:.2f}) < 最小値({min_pf})"
+                    )
+                elif (sym_best_row.get("wft_sharpe") is not None
+                      and sym_best_row["wft_sharpe"] < min_wft_sharpe):
+                    exclude_reason = (
+                        f"WFTシャープ({sym_best_row['wft_sharpe']:.2f}) < 最小値({min_wft_sharpe})"
+                    )
+                # exclude_reason は後段 top_N ブロックで更新
+                completed_symbols[symbol]["reason"] = exclude_reason or ""
 
-            # ペアの成否に関わらずスコアを記録（後で top_N 判定に使う）
-            completed_symbols[symbol] = {
-                "status":      "pending",   # top_N 判定後に上書き
-                "reason":      exclude_reason or "",
-                "best_score":  round(sym_best_score, 4),
-                "best_params": sym_best_params,
-            }
-            log(f"[{symbol}] 暫定スコア={sym_best_score:.4f}"
-                + (f"  除外候補: {exclude_reason}" if exclude_reason else ""))
+        if error_count > 0:
+            log(f"! エラー合計: {error_count} ペア")
 
         # ── 全ペア完了: top_N 採用判定 ─────────────────────────────────────
-        if error_count > 0:
-            log(f"\n! バックテスト例外合計: {error_count} 件 (--debug で詳細確認)")
 
         # スコア降順でランキング（エラーペアは除く）
         ranked = sorted(
