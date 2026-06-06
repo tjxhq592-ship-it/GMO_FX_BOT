@@ -346,6 +346,155 @@ def check_param_change(symbol, new_params, prev_params):
 
 # ==================== メイン ====================
 
+GRID_PROGRESS_FILE   = "grid_search_progress.json"
+GRID_SEARCH_CFG_FILE = "grid_search_config.json"
+
+# === グリッドサーチジョブ ===
+def grid_search_job(config: dict, score_weights: dict) -> list:
+    """
+    backtest_config.json の範囲から全パラメータ組み合わせを生成し、
+    各組み合わせでバックテストを実行してスコアリングする。
+    進捗は grid_search_progress.json にリアルタイムで書き出す。
+    """
+    import itertools
+
+    symbols = config.get("symbols", SYMBOLS)
+
+    bb_cfg   = config.get("bb_period", {"min": 10, "max": 30, "step": 5})
+    bb_stds  = config.get("bb_std",    [1.0, 1.5, 2.0, 2.5])
+    ru_cfg   = config.get("rsi_upper", {"min": 60, "max": 75, "step": 5})
+    rl_cfg   = config.get("rsi_lower", {"min": 25, "max": 40, "step": 5})
+    sl_mults = config.get("atr_sl_mult", [1.5, 2.0])
+    tp_mults = config.get("atr_tp_mult", [2.0, 2.5])
+
+    bb_periods  = list(range(bb_cfg["min"], bb_cfg["max"] + 1, bb_cfg.get("step", 5)))
+    rsi_uppers  = list(range(ru_cfg["min"], ru_cfg["max"] + 1, ru_cfg.get("step", 5)))
+    rsi_lowers  = list(range(rl_cfg["min"], rl_cfg["max"] + 1, rl_cfg.get("step", 5)))
+
+    combos = list(itertools.product(
+        bb_periods, bb_stds, rsi_uppers, rsi_lowers, sl_mults, tp_mults
+    ))
+    total   = len(combos) * len(symbols)
+    current = 0
+    start_t = time.time()
+    results = []
+    best_score = 0.0
+    best_params: dict = {}
+
+    wt_wft    = score_weights.get("wft_sharpe", 0.4)
+    wt_is     = score_weights.get("is_sharpe",  0.2)
+    wt_pf     = score_weights.get("pf",         0.2)
+    wt_trades = score_weights.get("trades",      0.2)
+
+    wft_cutoff = END_DATE - relativedelta(months=WF_TEST_MONTHS)
+
+    for symbol in symbols:
+        try:
+            data       = get_historical_data(symbol)
+            train_data = data[data.index < wft_cutoff]
+        except Exception as e:
+            print(f"  {symbol} データ取得失敗: {e}")
+            current += len(combos)
+            continue
+
+        for (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in combos:
+            current += 1
+            params_dict = {
+                "bb_period":   bb_p,
+                "bb_std":      bb_s,
+                "rsi_period":  14,
+                "rsi_upper":   rsi_u,
+                "rsi_lower":   rsi_l,
+                "atr_period":  14,
+                "atr_sl_mult": sl_m,
+                "atr_tp_mult": tp_m,
+            }
+
+            # IS バックテスト
+            try:
+                bt  = Backtest(train_data, ImprovedStrategy,
+                               cash=INITIAL_CASH, commission=0.00002)
+                st_is = bt.run(**params_dict)
+                is_s  = _extract_stats(st_is)
+            except Exception:
+                is_s = None
+
+            # WFT
+            wft_r = walk_forward_test(data, params_dict) if is_s else None
+
+            # スコアリング
+            score = 0.0
+            if is_s:
+                n    = is_s["n_trades"]
+                pf   = is_s["pf"] or 0.0
+                is_sharpe  = is_s["sharpe"]
+                wft_sharpe = wft_r["sharpe"] if wft_r else float("nan")
+
+                if n >= 50 and not (wft_sharpe != wft_sharpe) and wft_sharpe >= 0:
+                    score = (
+                        wft_sharpe              * wt_wft +
+                        max(is_sharpe, 0.0)     * wt_is  +
+                        max(pf,        0.0)     * wt_pf  +
+                        min(n / 200.0, 1.0)     * wt_trades
+                    )
+
+            row = {
+                "symbol":      symbol,
+                "bb_period":   bb_p,
+                "bb_std":      bb_s,
+                "rsi_upper":   rsi_u,
+                "rsi_lower":   rsi_l,
+                "atr_sl_mult": sl_m,
+                "atr_tp_mult": tp_m,
+                "n_trades":    is_s["n_trades"]  if is_s else 0,
+                "pf":          is_s["pf"]        if is_s else None,
+                "is_sharpe":   is_s["sharpe"]    if is_s else None,
+                "wft_sharpe":  wft_r["sharpe"]   if wft_r else None,
+                "score":       round(score, 4),
+            }
+            results.append(row)
+
+            if score > best_score:
+                best_score  = score
+                best_params = {**params_dict, "symbol": symbol}
+
+            # 進捗書き出し
+            elapsed = int(time.time() - start_t)
+            remaining = int(elapsed / current * (total - current)) if current else 0
+            progress = {
+                "current":     current,
+                "total":       total,
+                "best_score":  round(best_score, 4),
+                "best_params": best_params,
+                "elapsed":     elapsed,
+                "remaining":   remaining,
+            }
+            with open(GRID_PROGRESS_FILE, "w", encoding="utf-8") as _f:
+                json.dump(progress, _f, ensure_ascii=False)
+
+    # スコア降順ソート
+    results.sort(key=lambda x: x["score"], reverse=True)
+
+    # 最終進捗（完了）
+    elapsed = int(time.time() - start_t)
+    with open(GRID_PROGRESS_FILE, "w", encoding="utf-8") as _f:
+        json.dump({
+            "current": total, "total": total,
+            "best_score": round(best_score, 4),
+            "best_params": best_params,
+            "elapsed": elapsed, "remaining": 0,
+            "done": True,
+        }, _f, ensure_ascii=False)
+
+    # 結果を JSON 保存
+    with open("grid_search_results.json", "w", encoding="utf-8") as _f:
+        json.dump(results[:50], _f, indent=2, ensure_ascii=False)
+
+    print(f"\nグリッドサーチ完了: {total}件  ベストスコア={best_score:.4f}")
+    print(f"ベストパラメータ: {best_params}")
+    return results
+
+
 def run_backtest_job() -> None:
     """scheduler.py から毎週月曜に呼び出すエントリーポイント"""
     import sys
@@ -362,188 +511,208 @@ def run_backtest_job() -> None:
 
 
 if __name__ == "__main__":
-    prev_params = load_prev_params()
-    wft_cutoff  = END_DATE - relativedelta(months=WF_TEST_MONTHS)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--grid-search", action="store_true",
+                        help="グリッドサーチモードで実行")
+    args = parser.parse_args()
 
-    print(f"バックテスト期間 : {START_DATE.date()} 〜 {END_DATE.date()}")
-    print(f"最適化 / WFT     : 〜 {wft_cutoff.date()} / {wft_cutoff.date()} 〜 {END_DATE.date()}")
-    print(f"フォワードテスト : {FW_START_DATE.date()} 〜 {FW_END_DATE.date()}")
-    print()
-
-    raw_results = {}
-    errors      = {}
-    total       = len(SYMBOLS)
-
-    for idx, symbol in enumerate(SYMBOLS, 1):
-        print(f"\n{'='*50}")
-        try:
-            raw_results[symbol] = optimize_symbol(symbol, idx, total, wft_cutoff, prev_params)
-        except Exception as e:
-            errors[symbol] = str(e)
-            print(f"[{idx}/{total}] {symbol} エラー: {e}")
-
-    fw_results = {}
-    print(f"\n{'='*50}")
-    print("フォワードテスト開始")
-    for idx, symbol in enumerate(raw_results, 1):
-        print(f"[{idx}/{len(raw_results)}] {symbol} フォワードテスト中...")
-        fw_results[symbol] = run_forward_test(symbol, raw_results[symbol]["params_dict"])
-        fw = fw_results[symbol]
-        if fw:
-            pf_str = f"{fw['pf']:.2f}" if fw["pf"] is not None else "N/A"
-            print(
-                f"  完了 — シャープ={fw['sharpe']:.2f}  PF={pf_str}"
-                f"  最大DD={fw['max_dd']:.1f}%  勝率={fw['win_rate']:.1f}%  取引={fw['n_trades']}回"
-            )
+    if args.grid_search:
+        # grid_search_config.json からスコア重みを読み込む
+        if os.path.exists(GRID_SEARCH_CFG_FILE):
+            with open(GRID_SEARCH_CFG_FILE, "r", encoding="utf-8") as f:
+                gs_cfg = json.load(f)
+            score_weights = gs_cfg.get("score_weights", {})
         else:
-            print("  データ不足のためスキップ")
+            score_weights = {
+                "wft_sharpe": 0.4, "is_sharpe": 0.2,
+                "pf": 0.2, "trades": 0.2,
+            }
+        grid_search_job(_cfg, score_weights)
+    else:
+        # ── 通常バックテスト ──────────────────────────────────────────────
+        prev_params = load_prev_params()
+        wft_cutoff  = END_DATE - relativedelta(months=WF_TEST_MONTHS)
 
-    if errors:
+        print(f"バックテスト期間 : {START_DATE.date()} 〜 {END_DATE.date()}")
+        print(f"最適化 / WFT     : 〜 {wft_cutoff.date()} / {wft_cutoff.date()} 〜 {END_DATE.date()}")
+        print(f"フォワードテスト : {FW_START_DATE.date()} 〜 {FW_END_DATE.date()}")
         print()
-        for sym, msg in errors.items():
-            print(f"  ⚠️ {sym} エラー: {msg}")
 
-    # === 結果集計 ===
-    if not raw_results:
-        print("\n全銘柄でエラーが発生しました。処理を終了します。")
-        raise SystemExit(1)
+        raw_results = {}
+        errors      = {}
+        total       = len(SYMBOLS)
 
-    results      = []
-    equity_finals = []
+        for idx, symbol in enumerate(SYMBOLS, 1):
+            print(f"\n{'='*50}")
+            try:
+                raw_results[symbol] = optimize_symbol(symbol, idx, total, wft_cutoff, prev_params)
+            except Exception as e:
+                errors[symbol] = str(e)
+                print(f"[{idx}/{total}] {symbol} エラー: {e}")
 
-    for symbol in SYMBOLS:
-        if symbol not in raw_results:
-            continue
-        r    = raw_results[symbol]
-        is_s = r["is_stats"]
-        wft_r = r["wft_result"]
-        pf_str  = f"{is_s['pf']:.2f}"       if is_s["pf"]  is not None else "N/A"
-        wft_str = f"{wft_r['sharpe']:.2f}"  if wft_r       is not None else "N/A"
-        equity_finals.append(is_s["equity_final"])
-        results.append({
-            "銘柄":         symbol,
-            "最終資産":     f"¥{is_s['equity_final']:,.0f}",
-            "総リターン":   f"{is_s['return_pct']:.1f}%",
-            "年率リターン": f"{is_s['return_ann']:.1f}%",
-            "最大DD":       f"{is_s['max_dd']:.1f}%",
-            "勝率":         f"{is_s['win_rate']:.1f}%",
-            "取引回数":     is_s["n_trades"],
-            "PF":           pf_str,
-            "シャープ(IS)": f"{is_s['sharpe']:.2f}",
-            "シャープ(WFT)": wft_str,
-            "_is_stats":    is_s,
-            "_wft_result":  wft_r,
-        })
+        fw_results = {}
+        print(f"\n{'='*50}")
+        print("フォワードテスト開始")
+        for idx, symbol in enumerate(raw_results, 1):
+            print(f"[{idx}/{len(raw_results)}] {symbol} フォワードテスト中...")
+            fw_results[symbol] = run_forward_test(symbol, raw_results[symbol]["params_dict"])
+            fw = fw_results[symbol]
+            if fw:
+                pf_str = f"{fw['pf']:.2f}" if fw["pf"] is not None else "N/A"
+                print(
+                    f"  完了 — シャープ={fw['sharpe']:.2f}  PF={pf_str}"
+                    f"  最大DD={fw['max_dd']:.1f}%  勝率={fw['win_rate']:.1f}%  取引={fw['n_trades']}回"
+                )
+            else:
+                print("  データ不足のためスキップ")
 
-    # === 結果表示 ===
-    print("\n=== 全銘柄最適化バックテスト結果 ===")
-    print(f"初期資金（各銘柄）: ¥{INITIAL_CASH:,}")
-    print()
-    display_cols = ["銘柄", "最終資産", "総リターン", "年率リターン", "最大DD", "勝率", "取引回数", "PF", "シャープ(IS)", "シャープ(WFT)"]
-    df = pd.DataFrame(results)[display_cols]
-    print(df.to_string(index=False))
+        if errors:
+            print()
+            for sym, msg in errors.items():
+                print(f"  ⚠️ {sym} エラー: {msg}")
 
-    if equity_finals:
-        total_final   = sum(equity_finals)
-        total_initial = INITIAL_CASH * len(equity_finals)
-        print(f"\n=== 合計 ===")
-        print(f"総投資額: ¥{total_initial:,}")
-        print(f"最終資産合計: ¥{total_final:,.0f}")
-        print(f"総合リターン: {(total_final - total_initial) / total_initial * 100:.1f}%")
+        # === 結果集計 ===
+        if not raw_results:
+            print("\n全銘柄でエラーが発生しました。処理を終了します。")
+            raise SystemExit(1)
 
-    print("\n=== 銘柄別最適パラメータ一覧 ===")
-    for symbol in SYMBOLS:
-        if symbol in raw_results:
-            print(f"{symbol}: {raw_results[symbol]['params_dict']}")
+        results       = []
+        equity_finals = []
 
-    # === 除外判定・params.json 保存 ===
-    results_dict = {r["銘柄"]: r for r in results}
-    params_out   = {}
-    excluded     = []
+        for symbol in SYMBOLS:
+            if symbol not in raw_results:
+                continue
+            r     = raw_results[symbol]
+            is_s  = r["is_stats"]
+            wft_r = r["wft_result"]
+            pf_str  = f"{is_s['pf']:.2f}"      if is_s["pf"] is not None else "N/A"
+            wft_str = f"{wft_r['sharpe']:.2f}"  if wft_r      is not None else "N/A"
+            equity_finals.append(is_s["equity_final"])
+            results.append({
+                "銘柄":          symbol,
+                "最終資産":      f"¥{is_s['equity_final']:,.0f}",
+                "総リターン":    f"{is_s['return_pct']:.1f}%",
+                "年率リターン":  f"{is_s['return_ann']:.1f}%",
+                "最大DD":        f"{is_s['max_dd']:.1f}%",
+                "勝率":          f"{is_s['win_rate']:.1f}%",
+                "取引回数":      is_s["n_trades"],
+                "PF":            pf_str,
+                "シャープ(IS)":  f"{is_s['sharpe']:.2f}",
+                "シャープ(WFT)": wft_str,
+                "_is_stats":     is_s,
+                "_wft_result":   wft_r,
+            })
 
-    for symbol in SYMBOLS:
-        if symbol not in raw_results:
-            continue
-        r     = results_dict[symbol]
-        is_s  = r["_is_stats"]
-        wft_r = r["_wft_result"]
-        new_p = raw_results[symbol]["params_dict"]
+        # === 結果表示 ===
+        print("\n=== 全銘柄最適化バックテスト結果 ===")
+        print(f"初期資金（各銘柄）: ¥{INITIAL_CASH:,}")
+        print()
+        display_cols = ["銘柄", "最終資産", "総リターン", "年率リターン", "最大DD", "勝率",
+                        "取引回数", "PF", "シャープ(IS)", "シャープ(WFT)"]
+        df = pd.DataFrame(results)[display_cols]
+        print(df.to_string(index=False))
 
-        # 除外条件の強化
-        wft_sharpe = wft_r["sharpe"] if wft_r else None
-        pf         = is_s["pf"]
-        n_trades   = is_s["n_trades"]
+        if equity_finals:
+            total_final   = sum(equity_finals)
+            total_initial = INITIAL_CASH * len(equity_finals)
+            print(f"\n=== 合計 ===")
+            print(f"総投資額: ¥{total_initial:,}")
+            print(f"最終資産合計: ¥{total_final:,.0f}")
+            print(f"総合リターン: {(total_final - total_initial) / total_initial * 100:.1f}%")
 
-        if wft_sharpe is not None and wft_sharpe < SHARPE_THRESHOLD:
-            reason = f"WFTシャープ:{wft_sharpe:.2f} < {SHARPE_THRESHOLD}"
-            excluded.append(f"{symbol}({reason})")
-            continue
+        print("\n=== 銘柄別最適パラメータ一覧 ===")
+        for symbol in SYMBOLS:
+            if symbol in raw_results:
+                print(f"{symbol}: {raw_results[symbol]['params_dict']}")
 
-        if pf is not None and pf < PF_THRESHOLD:
-            reason = f"PF:{pf:.2f} < {PF_THRESHOLD}"
-            excluded.append(f"{symbol}({reason})")
-            continue
+        # === 除外判定・params.json 保存 ===
+        results_dict = {r["銘柄"]: r for r in results}
+        params_out   = {}
+        excluded     = []
 
-        if n_trades < MIN_TRADES:
-            reason = f"取引回数:{n_trades}回 < {MIN_TRADES}回"
-            excluded.append(f"{symbol}({reason})")
-            continue
+        for symbol in SYMBOLS:
+            if symbol not in raw_results:
+                continue
+            r     = results_dict[symbol]
+            is_s  = r["_is_stats"]
+            wft_r = r["_wft_result"]
+            new_p = raw_results[symbol]["params_dict"]
 
-        if is_s["sharpe"] >= 1.0:
-            adjusted_p = check_param_change(symbol, new_p, prev_params)
-            params_out[symbol] = adjusted_p
-        else:
-            reason = f"シャープ:{is_s['sharpe']:.2f}"
-            excluded.append(f"{symbol}({reason})")
+            wft_sharpe = wft_r["sharpe"] if wft_r else None
+            pf         = is_s["pf"]
+            n_trades   = is_s["n_trades"]
 
-    output = {
-        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "params":     params_out,
-        "excluded":   excluded,
-    }
-    with open(PARAMS_FILE, "w", encoding="utf-8") as f:
-        json.dump(output, f, indent=2, ensure_ascii=False)
+            if wft_sharpe is not None and wft_sharpe < SHARPE_THRESHOLD:
+                reason = f"WFTシャープ:{wft_sharpe:.2f} < {SHARPE_THRESHOLD}"
+                excluded.append(f"{symbol}({reason})")
+                continue
 
-    if excluded:
-        print("\n=== 除外ペア ===")
-        for e in excluded:
-            print(f"  ⚠️ {e}")
+            if pf is not None and pf < PF_THRESHOLD:
+                reason = f"PF:{pf:.2f} < {PF_THRESHOLD}"
+                excluded.append(f"{symbol}({reason})")
+                continue
 
-    if _param_change_log:
-        print("\n=== パラメータ急変チェック ===")
-        for line in _param_change_log:
-            print(f"  ⚠️ {line}")
+            if n_trades < MIN_TRADES:
+                reason = f"取引回数:{n_trades}回 < {MIN_TRADES}回"
+                excluded.append(f"{symbol}({reason})")
+                continue
 
-    print(f"\nparams.json に保存しました。")
+            if is_s["sharpe"] >= 1.0:
+                adjusted_p = check_param_change(symbol, new_p, prev_params)
+                params_out[symbol] = adjusted_p
+            else:
+                reason = f"シャープ:{is_s['sharpe']:.2f}"
+                excluded.append(f"{symbol}({reason})")
 
-    # === backtest_results.json 保存 ===
-    bt_results = {}
-    for symbol in SYMBOLS:
-        if symbol not in raw_results:
-            continue
-        r    = raw_results[symbol]
-        is_s = r["is_stats"]
-        wft_r = r["wft_result"]
-        bt_results[symbol] = {
-            "bt": {
-                "sharpe":   is_s["sharpe"],
-                "pf":       is_s["pf"],
-                "max_dd":   is_s["max_dd"],
-                "win_rate": is_s["win_rate"],
-                "n_trades": is_s["n_trades"],
-            },
-            "wft": {
-                "sharpe":   wft_r["sharpe"]   if wft_r else None,
-                "pf":       wft_r["pf"]       if wft_r else None,
-                "max_dd":   wft_r["max_dd"]   if wft_r else None,
-                "win_rate": wft_r["win_rate"] if wft_r else None,
-                "n_trades": wft_r["n_trades"] if wft_r else None,
-            },
-            "fw": fw_results.get(symbol),
-            "dates":  r.get("equity_dates",  []),
-            "equity": r.get("equity_values", []),
+        output = {
+            "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "params":     params_out,
+            "excluded":   excluded,
         }
+        with open(PARAMS_FILE, "w", encoding="utf-8") as f:
+            json.dump(output, f, indent=2, ensure_ascii=False)
 
-    with open(RESULTS_FILE, "w", encoding="utf-8") as f:
-        json.dump(bt_results, f, indent=2, ensure_ascii=False)
-    print(f"backtest_results.json に保存しました。")
+        if excluded:
+            print("\n=== 除外ペア ===")
+            for e in excluded:
+                print(f"  ⚠️ {e}")
+
+        if _param_change_log:
+            print("\n=== パラメータ急変チェック ===")
+            for line in _param_change_log:
+                print(f"  ⚠️ {line}")
+
+        print(f"\nparams.json に保存しました。")
+
+        # === backtest_results.json 保存 ===
+        bt_results = {}
+        for symbol in SYMBOLS:
+            if symbol not in raw_results:
+                continue
+            r     = raw_results[symbol]
+            is_s  = r["is_stats"]
+            wft_r = r["wft_result"]
+            bt_results[symbol] = {
+                "bt": {
+                    "sharpe":   is_s["sharpe"],
+                    "pf":       is_s["pf"],
+                    "max_dd":   is_s["max_dd"],
+                    "win_rate": is_s["win_rate"],
+                    "n_trades": is_s["n_trades"],
+                },
+                "wft": {
+                    "sharpe":   wft_r["sharpe"]   if wft_r else None,
+                    "pf":       wft_r["pf"]        if wft_r else None,
+                    "max_dd":   wft_r["max_dd"]    if wft_r else None,
+                    "win_rate": wft_r["win_rate"]  if wft_r else None,
+                    "n_trades": wft_r["n_trades"]  if wft_r else None,
+                },
+                "fw":     fw_results.get(symbol),
+                "dates":  r.get("equity_dates",  []),
+                "equity": r.get("equity_values", []),
+            }
+
+        with open(RESULTS_FILE, "w", encoding="utf-8") as f:
+            json.dump(bt_results, f, indent=2, ensure_ascii=False)
+        print(f"backtest_results.json に保存しました。")

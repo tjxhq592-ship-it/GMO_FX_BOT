@@ -88,10 +88,11 @@ def load_log():
 
 # ==================== タブ構成 ====================
 
-tab_main, tab_config, tab_run = st.tabs([
+tab_main, tab_config, tab_run, tab_gs = st.tabs([
     "📊 ダッシュボード",
     "⚙️ バックテスト設定",
     "🚀 バックテスト実行",
+    "🔍 グリッドサーチ",
 ])
 
 
@@ -398,3 +399,182 @@ with tab_run:
     elif st.session_state.bt_log_lines:
         st.markdown("**前回の実行ログ**")
         st.code("\n".join(st.session_state.bt_log_lines[-200:]), language="")
+
+
+# ==================== TAB 4: グリッドサーチ ====================
+
+GS_PROGRESS_FILE = "grid_search_progress.json"
+GS_RESULTS_FILE  = "grid_search_results.json"
+GS_CONFIG_FILE   = "grid_search_config.json"
+
+with tab_gs:
+    st.subheader("グリッドサーチ")
+
+    # session_state 初期化
+    for _k, _v in [("gs_process", None), ("gs_running", False), ("gs_done", False)]:
+        if _k not in st.session_state:
+            st.session_state[_k] = _v
+
+    # ── スコアリング重み設定 ──────────────────────────────────────────────
+    st.markdown("#### スコアリング重み")
+    w_col1, w_col2, w_col3, w_col4 = st.columns(4)
+    wt_wft    = w_col1.slider("WFTシャープ", 0.0, 1.0, 0.4, 0.05, key="wt_wft")
+    wt_is     = w_col2.slider("ISシャープ",  0.0, 1.0, 0.2, 0.05, key="wt_is")
+    wt_pf     = w_col3.slider("PF",          0.0, 1.0, 0.2, 0.05, key="wt_pf")
+    wt_trades = w_col4.slider("取引回数",    0.0, 1.0, 0.2, 0.05, key="wt_trades")
+
+    total_w = wt_wft + wt_is + wt_pf + wt_trades
+    st.caption(f"合計: **{total_w:.2f}**")
+    if total_w > 1.001:
+        st.warning(f"⚠️ 重みの合計が {total_w:.2f} です。合計が 1.0 を超えています。")
+
+    # ── 開始 / 停止ボタン ────────────────────────────────────────────────
+    if not st.session_state.gs_running:
+        if st.button("🔍 グリッドサーチ開始", type="primary"):
+            # grid_search_config.json にスコア重みを保存
+            gs_cfg = {
+                "score_weights": {
+                    "wft_sharpe": wt_wft,
+                    "is_sharpe":  wt_is,
+                    "pf":         wt_pf,
+                    "trades":     wt_trades,
+                }
+            }
+            with open(GS_CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(gs_cfg, f, indent=2)
+
+            # progress ファイルをリセット
+            if os.path.exists(GS_PROGRESS_FILE):
+                os.remove(GS_PROGRESS_FILE)
+
+            backtest_script = os.path.join(os.path.dirname(__file__) or ".", "backtest.py")
+            proc = subprocess.Popen(
+                [sys.executable, "-u", backtest_script, "--grid-search"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                encoding="utf-8",
+                errors="replace",
+            )
+            st.session_state.gs_process = proc
+            st.session_state.gs_running = True
+            st.session_state.gs_done    = False
+            st.rerun()
+
+    if st.session_state.gs_running:
+        proc = st.session_state.gs_process
+
+        # 停止ボタン
+        if st.button("⏹ 停止", key="gs_stop"):
+            if proc and proc.poll() is None:
+                proc.terminate()
+            st.session_state.gs_running = False
+            st.session_state.gs_process = None
+            st.warning("グリッドサーチを停止しました。")
+            st.rerun()
+
+        # 進捗バー表示
+        prog_placeholder  = st.empty()
+        stats_placeholder = st.empty()
+        best_placeholder  = st.empty()
+
+        if os.path.exists(GS_PROGRESS_FILE):
+            try:
+                with open(GS_PROGRESS_FILE, "r", encoding="utf-8") as f:
+                    prog = json.load(f)
+                cur   = prog.get("current", 0)
+                tot   = prog.get("total",   1)
+                ratio = cur / tot if tot > 0 else 0.0
+
+                with prog_placeholder.container():
+                    st.progress(ratio)
+                    elapsed   = prog.get("elapsed",   0)
+                    remaining = prog.get("remaining", 0)
+                    st.caption(
+                        f"{cur} / {tot} 完了　"
+                        f"経過: {elapsed//60}分{elapsed%60}秒　"
+                        f"残り: {remaining//60}分{remaining%60}秒"
+                    )
+
+                with stats_placeholder.container():
+                    st.metric("現在ベストスコア", f"{prog.get('best_score', 0):.4f}")
+
+                with best_placeholder.container():
+                    if prog.get("best_params"):
+                        st.json(prog["best_params"])
+
+            except Exception:
+                pass
+
+        # プロセス終了チェック
+        if proc and proc.poll() is not None:
+            st.session_state.gs_running = False
+            st.session_state.gs_process = None
+            st.session_state.gs_done    = True
+            if proc.returncode == 0:
+                st.success("✅ グリッドサーチ完了！")
+                st.balloons()
+            else:
+                st.error(f"⚠️ エラー終了（終了コード: {proc.returncode}）")
+            st.rerun()
+        else:
+            time.sleep(0.5)
+            st.rerun()
+
+    # ── 結果テーブル ─────────────────────────────────────────────────────
+    if os.path.exists(GS_RESULTS_FILE):
+        st.markdown("#### 検索結果（上位20件）")
+        try:
+            with open(GS_RESULTS_FILE, "r", encoding="utf-8") as f:
+                gs_rows = json.load(f)
+
+            df_gs = pd.DataFrame(gs_rows[:20])
+            display_gs_cols = [
+                "symbol", "bb_period", "bb_std", "rsi_upper", "rsi_lower",
+                "atr_sl_mult", "atr_tp_mult", "n_trades", "pf",
+                "is_sharpe", "wft_sharpe", "score",
+            ]
+            display_gs_cols = [c for c in display_gs_cols if c in df_gs.columns]
+            df_gs_display = df_gs[display_gs_cols].copy()
+
+            # ベスト行を強調（score 最大行に ★ を付ける）
+            if not df_gs_display.empty and "score" in df_gs_display.columns:
+                best_idx = df_gs_display["score"].idxmax()
+                df_gs_display.insert(0, "rank", "")
+                df_gs_display.loc[best_idx, "rank"] = "★"
+
+            st.dataframe(df_gs_display, use_container_width=True)
+
+            # ── ベストパラメータ採用 ─────────────────────────────────────
+            if gs_rows:
+                best_row = gs_rows[0]
+                st.markdown(f"**ベストスコア: {best_row['score']:.4f}** / 銘柄: {best_row.get('symbol','')}")
+
+                if st.button("✅ ベストパラメータを採用"):
+                    symbol = best_row.get("symbol", "")
+                    new_p  = {
+                        k: best_row[k]
+                        for k in ["bb_period","bb_std","rsi_period","rsi_upper","rsi_lower",
+                                  "atr_period","atr_sl_mult","atr_tp_mult"]
+                        if k in best_row
+                    }
+
+                    # params.json 更新
+                    params_data = load_params() or {}
+                    params_data.setdefault("params", {})[symbol] = new_p
+                    params_data["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    with open(PARAMS_FILE, "w", encoding="utf-8") as f:
+                        json.dump(params_data, f, indent=2, ensure_ascii=False)
+
+                    # backtest_config.json の symbols にも反映
+                    cfg_now = load_config()
+                    if symbol and symbol not in cfg_now.get("symbols", []):
+                        cfg_now.setdefault("symbols", []).append(symbol)
+                        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                            json.dump(cfg_now, f, indent=2, ensure_ascii=False)
+
+                    st.success(f"✅ {symbol} のパラメータを更新しました。📊タブを確認してください。")
+
+        except Exception as e:
+            st.error(f"結果ファイル読み込みエラー: {e}")

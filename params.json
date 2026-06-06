@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-06-06 16:45:04",
+  "updated_at": "2026-06-06 16:58:56",
   "params": {},
   "excluded": [
-    "EUR_GBP(WFTシャープ:-0.94)",
-    "AUD_NZD(WFTシャープ:-1.36)",
-    "EUR_CHF(取引回数:51回 < 200回)"
+    "EUR_GBP(WFTシャープ:-0.84)",
+    "AUD_NZD(WFTシャープ:-3.21)",
+    "EUR_CHF(取引回数:55回 < 200回)"
   ]
 }
