@@ -522,7 +522,8 @@ if __name__ == "__main__":
         if os.path.exists(GRID_SEARCH_CFG_FILE):
             with open(GRID_SEARCH_CFG_FILE, "r", encoding="utf-8") as f:
                 gs_cfg = json.load(f)
-            score_weights = gs_cfg.get("score_weights", {})
+            # "score_weights" または "weights" どちらのキーにも対応
+            score_weights = gs_cfg.get("score_weights") or gs_cfg.get("weights", {})
         else:
             score_weights = {
                 "wft_sharpe": 0.4, "is_sharpe": 0.2,

@@ -1,0 +1,8 @@
+{
+  "weights": {
+    "wft_sharpe": 0.5,
+    "is_sharpe": 0.2,
+    "pf": 0.2,
+    "trades": 0.1
+  }
+}
