@@ -1,3 +1,4 @@
+import os
 import matplotlib
 matplotlib.use("Agg")
 
@@ -320,6 +321,10 @@ if __name__ == "__main__":
             print(f"  ⚠️ {sym} エラー: {msg}")
 
     # === 結果集計 ===
+    if not raw_results:
+        print("\n全銘柄でエラーが発生しました。処理を終了します。")
+        raise SystemExit(1)
+
     results      = []
     equity_finals = []
 
