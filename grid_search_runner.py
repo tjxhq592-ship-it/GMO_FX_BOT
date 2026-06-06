@@ -366,12 +366,11 @@ def main(debug: bool = False) -> None:
 
     try:
         config = _cfg
+        gs_cfg: dict = {}
         if os.path.exists(GS_CFG_FILE):
             with open(GS_CFG_FILE, "r", encoding="utf-8") as f:
                 gs_cfg = json.load(f)
-            score_weights = gs_cfg.get("score_weights") or gs_cfg.get("weights", {})
-        else:
-            score_weights = {"wft_sharpe": 0.4, "is_sharpe": 0.2, "pf": 0.2, "trades": 0.2}
+        score_weights = gs_cfg.get("score_weights") or gs_cfg.get("weights") or {"wft_sharpe": 0.4, "is_sharpe": 0.2, "pf": 0.2, "trades": 0.2}
 
         if debug:
             debug_run(config, score_weights)
@@ -411,9 +410,8 @@ def main(debug: bool = False) -> None:
         min_pf         = float(config.get("min_pf",        1.2))
         min_wft_sharpe = float(config.get("min_wft_sharpe", 0.0))
 
-        # ThreadPoolExecutor + backtesting の安定性検証中のため max_workers=1 で実行
-        # 動作確認後: 2 → 4 → 8 → 14 と段階的に増やす
-        max_workers = 1
+        # grid_search_config.json の max_workers を優先、未設定なら 1
+        max_workers = max(1, min(int(gs_cfg.get("max_workers", 1)), (os.cpu_count() or 4) - 2))
 
         log("=== グリッドサーチ開始 (並列実行) ===")
         log(f"対象ペア: {symbols}")
