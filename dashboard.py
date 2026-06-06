@@ -159,7 +159,9 @@ with tab_main:
             equity = v.get("equity", [])
             if dates and equity and len(dates) == len(equity):
                 s = pd.Series(equity, index=pd.to_datetime(dates), name=sym)
+                s = s[~s.index.duplicated(keep="first")]
                 equity_df = pd.concat([equity_df, s], axis=1)
+                equity_df = equity_df[~equity_df.index.duplicated(keep="first")]
         if equity_df.empty:
             st.info("エクイティデータが空です。")
         else:
