@@ -5,6 +5,8 @@ GMOコイン 外国為替FX 自動取引ボット
 import json
 import logging
 import re
+import time
+from datetime import datetime, timezone, timedelta
 
 import anthropic
 import requests
@@ -20,6 +22,8 @@ from utils import (
     calculate_rsi, calculate_bollinger, calculate_atr,
     get_market_condition, calc_trade_size,
 )
+
+JST = timezone(timedelta(hours=9))
 
 logging.basicConfig(
     filename=LOG_FILE,
@@ -53,7 +57,8 @@ def load_params() -> dict:
 
 
 # ── クライアント初期化 ────────────────────────────────────────────────────
-gmo    = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY)
+# notify_fn を渡すことで gmo_client 内のエラーも LINE 通知される
+gmo    = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY, notify_fn=send_line)
 claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
@@ -168,10 +173,44 @@ ATR: {atr_now:.5f} / ATR20期間平均: {atr_avg:.5f if pd.notna(atr_avg) else '
     return {"action": "hold", "reason": "判断取得失敗"}
 
 
-# ── ポジション確認 ────────────────────────────────────────────────────────
+# ── ポジション確認（常に API から最新状態を取得）────────────────────────
 def get_position(symbol: str) -> dict | None:
     positions = gmo.get_open_positions(symbol)
     return positions[0] if positions else None
+
+
+# ── 高スプレッド時間帯チェック ────────────────────────────────────────────
+def _is_high_spread_period() -> bool:
+    """
+    以下の時間帯はエントリーをスキップ（スプレッド拡大リスク）
+    - 平日 22:00〜24:00 JST（NYクローズ前後）
+    - 平日 06:55〜07:05 JST（東京オープン前後）
+    """
+    now = datetime.now(JST)
+    h, m = now.hour, now.minute
+    if 22 <= h < 24:
+        return True
+    if (h == 6 and m >= 55) or (h == 7 and m <= 5):
+        return True
+    return False
+
+
+# ── 期限切れ指値注文のキャンセル ──────────────────────────────────────────
+def _cancel_stale_orders(symbol: str) -> None:
+    """1時間以上前に出した未約定の指値注文をキャンセルする"""
+    try:
+        orders  = gmo.get_active_orders(symbol)
+        now_ms  = int(time.time() * 1000)
+        for order in orders:
+            # GMO API は timestamp をミリ秒 Unix 時刻で返す
+            order_ts = int(order.get("timestamp", now_ms))
+            age_h    = (now_ms - order_ts) / 3_600_000
+            if age_h >= 1:
+                order_id = order.get("orderId", "")
+                gmo.cancel_order(order_id)
+                logging.info(f"期限切れ指値注文キャンセル: {symbol} orderId={order_id}")
+    except Exception as e:
+        logging.warning(f"注文キャンセルチェックエラー ({symbol}): {e}")
 
 
 # ── メインループ ──────────────────────────────────────────────────────────
@@ -198,8 +237,12 @@ def run_bot() -> None:
         p = symbol_params[symbol]
 
         try:
-            bars       = get_market_data(symbol, symbol_params)
-            position   = get_position(symbol)
+            # 期限切れ指値注文を先にキャンセル
+            _cancel_stale_orders(symbol)
+
+            bars        = get_market_data(symbol, symbol_params)
+            # ポジション状態は常にAPIから取得（ローカル管理なし）
+            position    = get_position(symbol)
             poly_signal = get_polymarket_signal(symbol)
 
             # 市場環境（通貨ペア自身のトレンドで判断）
@@ -236,41 +279,55 @@ def run_bot() -> None:
             short_sl = round(price + atr * atr_sl_mult, 5)
             short_tp = round(price - atr * atr_tp_mult, 5)
 
+            # 指値価格（BB バンドに合わせる）
+            long_limit  = round(float(bars.iloc[-1]["BB_lower"]), 5)
+            short_limit = round(float(bars.iloc[-1]["BB_upper"]), 5)
+
             pos_side = position["side"] if position else None
 
-            # ── 新規ロング ──────────────────────────────────────────────
+            # ── 新規ロング（指値: BB下限）──────────────────────────────
             if decision["action"] == "buy" and position is None and market == "bull":
                 if should_block_entry(poly_signal):
                     logging.info(f"{symbol} Polymarketリスクブロック: ロングスキップ")
                     summary_lines.append(f"  {symbol}: Polymarketリスクブロックでスキップ")
                     continue
 
-                gmo.place_order(symbol, "BUY", size)
-                logging.info(f"買い注文実行: {symbol} {size}ロット @ {price}  SL={long_sl}  TP={long_tp}")
+                if _is_high_spread_period():
+                    logging.info(f"{symbol} 高スプレッド時間帯: ロングエントリーをスキップ")
+                    summary_lines.append(f"  {symbol}: 高スプレッド時間帯スキップ")
+                    continue
+
+                gmo.place_order(symbol, "BUY", size, order_type="LIMIT", price=long_limit)
+                logging.info(f"指値ロング発注: {symbol} {size}ロット @ {long_limit}  SL={long_sl}  TP={long_tp}")
                 send_line(
-                    f"📈 新規ロング\n通貨ペア: {symbol}\n価格: {price:.5f}\n"
+                    f"📈 指値ロング発注\n通貨ペア: {symbol}\n指値: {long_limit:.5f}\n"
                     f"数量: {size}ロット\nATR: {atr:.5f}\n"
                     f"利確: {long_tp:.5f}  損切: {long_sl:.5f}\n理由: {decision['reason']}"
                 )
                 buy_count += 1
-                summary_lines.append(f"  {symbol}: ロング {size}ロット @ {price:.5f}")
+                summary_lines.append(f"  {symbol}: 指値ロング @ {long_limit:.5f}")
 
-            # ── 新規ショート ────────────────────────────────────────────
+            # ── 新規ショート（指値: BB上限）────────────────────────────
             elif decision["action"] == "sell" and position is None and market == "bear":
                 if should_block_entry(poly_signal):
                     logging.info(f"{symbol} Polymarketリスクブロック: ショートスキップ")
                     summary_lines.append(f"  {symbol}: Polymarketリスクブロックでスキップ")
                     continue
 
-                gmo.place_order(symbol, "SELL", size)
-                logging.info(f"新規ショート: {symbol} {size}ロット @ {price}  SL={short_sl}  TP={short_tp}")
+                if _is_high_spread_period():
+                    logging.info(f"{symbol} 高スプレッド時間帯: ショートエントリーをスキップ")
+                    summary_lines.append(f"  {symbol}: 高スプレッド時間帯スキップ")
+                    continue
+
+                gmo.place_order(symbol, "SELL", size, order_type="LIMIT", price=short_limit)
+                logging.info(f"指値ショート発注: {symbol} {size}ロット @ {short_limit}  SL={short_sl}  TP={short_tp}")
                 send_line(
-                    f"📉 新規ショート\n通貨ペア: {symbol}\n価格: {price:.5f}\n"
+                    f"📉 指値ショート発注\n通貨ペア: {symbol}\n指値: {short_limit:.5f}\n"
                     f"数量: {size}ロット\nATR: {atr:.5f}\n"
                     f"利確: {short_tp:.5f}  損切: {short_sl:.5f}\n理由: {decision['reason']}"
                 )
                 sell_count += 1
-                summary_lines.append(f"  {symbol}: ショート {size}ロット @ {price:.5f}")
+                summary_lines.append(f"  {symbol}: 指値ショート @ {short_limit:.5f}")
 
             # ── ロング決済（Claudeがsell判断 かつ ロング保有中）──────────
             elif decision["action"] == "sell" and pos_side == "BUY":

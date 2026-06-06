@@ -16,6 +16,8 @@ from config import (
     LOG_FILE, SYMBOLS,
     LINE_CHANNEL_TOKEN, LINE_USER_ID,
 )
+from config import GMO_API_KEY, GMO_SECRET_KEY
+from gmo_client import GmoFxClient
 import trade_bot
 import ws_monitor
 import backtest as bt_module
@@ -46,6 +48,36 @@ def _send_line(message: str) -> None:
             logging.error(f"LINE送信失敗: {r.status_code} {r.text}")
     except Exception as e:
         logging.error(f"LINE送信エラー: {e}")
+
+
+# ── 起動時ポジション同期 ─────────────────────────────────────────────────
+def init_position_sync() -> None:
+    """
+    起動・再起動時に全ペアのポジション状態を API から取得してログ出力。
+    ローカル状態との乖離を防ぎ、現状を把握してから処理を開始する。
+    """
+    gmo = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY, notify_fn=_send_line)
+    logging.info("=== 起動時ポジション確認 ===")
+    lines = []
+    for symbol in SYMBOLS:
+        try:
+            positions = gmo.get_open_positions(symbol)
+            if positions:
+                for pos in positions:
+                    line = (
+                        f"  {symbol}: {pos.get('side')} "
+                        f"{pos.get('size')}ロット @ {pos.get('price')}"
+                    )
+                    logging.info(line)
+                    lines.append(line)
+            else:
+                logging.info(f"  {symbol}: ポジションなし")
+                lines.append(f"  {symbol}: ポジションなし")
+        except Exception as e:
+            logging.error(f"  {symbol} ポジション確認エラー: {e}")
+            lines.append(f"  {symbol}: 確認エラー ({e})")
+
+    _send_line("🔍 起動時ポジション確認\n" + "\n".join(lines))
 
 
 # ── FX市場時間チェック ────────────────────────────────────────────────────
@@ -118,6 +150,9 @@ def main() -> None:
     )
     logging.info(startup_msg)
     _send_line(startup_msg)
+
+    # 起動時に全ペアのポジション状態を確認
+    init_position_sync()
 
     # WebSocket 監視スレッドを常時起動
     ws_thread = _start_ws_thread()

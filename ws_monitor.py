@@ -28,7 +28,7 @@ logging.basicConfig(
     format="%(asctime)s %(message)s",
 )
 
-gmo = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY)
+gmo = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY, notify_fn=send_line)
 
 
 def _load_params() -> dict:
@@ -51,13 +51,12 @@ def _check_sl_tp(symbol: str, current_price: float) -> None:
         return
 
     pos         = positions[0]
+    # 建値・数量は毎回 API のポジション情報から取得（ローカル管理なし）
     entry_price = float(pos.get("price", current_price))
     atr_sl_mult = p.get("atr_sl_mult", 1.5)
     atr_tp_mult = p.get("atr_tp_mult", 2.5)
 
-    # ATR は直近データから再計算（建値に固定割合で近似）
-    # 実運用では建値記録時の ATR を別途保存するのが理想
-    # ここでは params の atr_period を使い gmo_client から取得
+    # ATR は直近3日の1時間足から再計算
     try:
         from utils import calculate_atr
         import pandas as pd

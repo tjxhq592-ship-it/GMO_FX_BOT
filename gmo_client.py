@@ -1,12 +1,16 @@
 """
 GMOコイン 外国為替FX API クライアント
-Alpaca の TradingClient / StockHistoricalDataClient に相当するラッパー
+- カスタム例外: GmoApiError / RateLimitError / MaintenanceError
+- 指数バックオフリトライ（429: 5→10→20秒、503: 5分×3回）
+- 注文系エラーは LINE 通知必須
 """
 import hashlib
 import hmac
 import json
+import logging
 import time
 from datetime import datetime, timedelta
+from typing import Callable
 
 import pandas as pd
 import requests
@@ -15,18 +19,40 @@ import requests
 BASE_PUBLIC  = "https://forex-api.coin.z.com/public"
 BASE_PRIVATE = "https://forex-api.coin.z.com/private"
 
+MAX_RETRIES = 3
+
+
+# ── カスタム例外 ──────────────────────────────────────────────────────────
+
+class GmoApiError(Exception):
+    """GMO API の全般的なエラー"""
+
+class RateLimitError(GmoApiError):
+    """429 レートリミット超過"""
+
+class MaintenanceError(GmoApiError):
+    """503 メンテナンス中"""
+
+
+# ── クライアント ──────────────────────────────────────────────────────────
 
 class GmoFxClient:
-    def __init__(self, api_key: str, secret_key: str):
+    def __init__(
+        self,
+        api_key: str,
+        secret_key: str,
+        notify_fn: Callable[[str], None] | None = None,
+    ):
         self.api_key    = api_key
         self.secret_key = secret_key
+        self._notify_fn = notify_fn   # LINE 通知などのコールバック
 
     # ── 認証ヘッダー生成 ────────────────────────────────────────────────
     def _sign(self, method: str, path: str, body: dict | None = None) -> dict:
-        ts   = str(int(time.time() * 1000))
+        ts       = str(int(time.time() * 1000))
         body_str = json.dumps(body) if body else ""
-        text = ts + method + path + body_str
-        sign = hmac.new(
+        text     = ts + method + path + body_str
+        sign     = hmac.new(
             self.secret_key.encode(), text.encode(), hashlib.sha256
         ).hexdigest()
         return {
@@ -36,18 +62,83 @@ class GmoFxClient:
             "Content-Type":  "application/json",
         }
 
+    # ── リトライ付きリクエスト ───────────────────────────────────────────
+    def _request(
+        self,
+        method: str,
+        url: str,
+        is_order: bool = False,
+        **kwargs,
+    ) -> dict:
+        """
+        指数バックオフ付きリトライ。
+        429: 5→10→20秒待機後リトライ（最大3回）
+        503: LINE通知 + 5分待機後リトライ（最大3回）
+        その他エラー: GmoApiError を送出
+        注文系（is_order=True）: エラー時 LINE 通知必須
+        """
+        for attempt in range(MAX_RETRIES):
+            # HTTP リクエスト送信
+            try:
+                r = requests.request(method, url, timeout=10, **kwargs)
+            except requests.exceptions.Timeout:
+                if attempt < MAX_RETRIES - 1:
+                    time.sleep(2 ** attempt)
+                    continue
+                raise GmoApiError("リクエストタイムアウト（3回）")
+            except requests.exceptions.RequestException as e:
+                raise GmoApiError(str(e)) from e
+
+            # 429: レートリミット
+            if r.status_code == 429:
+                wait = 5 * (2 ** attempt)   # 5 / 10 / 20 秒
+                logging.warning(f"429 Rate limit. {wait}秒後にリトライ ({attempt+1}/{MAX_RETRIES})")
+                if attempt < MAX_RETRIES - 1:
+                    time.sleep(wait)
+                    continue
+                raise RateLimitError(f"レートリミット: {MAX_RETRIES}回リトライ後も失敗")
+
+            # 503: メンテナンス
+            if r.status_code == 503:
+                logging.warning(f"503 Maintenance ({attempt+1}/{MAX_RETRIES})")
+                if self._notify_fn:
+                    self._notify_fn("⚠️ GMO FX メンテナンス中\n5分後に再試行します")
+                if attempt < MAX_RETRIES - 1:
+                    time.sleep(300)   # 5分待機
+                    continue
+                raise MaintenanceError(f"GMOメンテナンス: {MAX_RETRIES}回試行後も失敗")
+
+            # その他 HTTP エラー
+            try:
+                r.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+                msg = f"HTTP {r.status_code}: {r.text[:300]}"
+                logging.error(msg)
+                if is_order and self._notify_fn:
+                    self._notify_fn(f"⚠️ 注文HTTPエラー\n{msg}")
+                raise GmoApiError(msg) from e
+
+            # GMO 業務エラー
+            data = r.json()
+            if data.get("status") != 0:
+                msg = f"GMO APIエラー status={data.get('status')}: {data}"
+                logging.error(msg)
+                if is_order and self._notify_fn:
+                    self._notify_fn(f"⚠️ 注文APIエラー\n{msg}")
+                raise GmoApiError(msg)
+
+            return data
+
+        raise GmoApiError("最大リトライ回数を超えました")
+
     # ── Public API ───────────────────────────────────────────────────────
     def get_ticker(self, symbol: str) -> dict:
         """最新レート取得"""
-        r = requests.get(
+        data = self._request(
+            "GET",
             f"{BASE_PUBLIC}/v1/ticker",
             params={"symbol": symbol},
-            timeout=10,
         )
-        r.raise_for_status()
-        data = r.json()
-        if data["status"] != 0:
-            raise RuntimeError(f"ticker error: {data}")
         return data["data"][0]
 
     def get_klines(
@@ -56,23 +147,14 @@ class GmoFxClient:
         interval: str = "1day",
         date: str | None = None,
     ) -> pd.DataFrame:
-        """
-        KLine（ローソク足）取得
-        interval: 1min / 5min / 10min / 15min / 30min / 1hour /
-                  4hour / 8hour / 12hour / 1day / 1week / 1month
-        date: YYYYMMDD（日足以上は YYYY、週足は YYYYMMM なども可）
-        """
+        """KLine（ローソク足）取得"""
         if date is None:
             date = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
-        r = requests.get(
+        data = self._request(
+            "GET",
             f"{BASE_PUBLIC}/v1/klines",
             params={"symbol": symbol, "interval": interval, "date": date},
-            timeout=10,
         )
-        r.raise_for_status()
-        data = r.json()
-        if data["status"] != 0:
-            raise RuntimeError(f"klines error: {data}")
         rows = data["data"]
         df = pd.DataFrame(rows, columns=["openTime", "open", "high", "low", "close", "volume"])
         df["openTime"] = pd.to_datetime(df["openTime"].astype(int), unit="ms", utc=True)
@@ -87,16 +169,15 @@ class GmoFxClient:
         interval: str = "1day",
         days: int = 90,
     ) -> pd.DataFrame:
-        """複数日のKLineを結合して返す（日足の場合は各日付で1回ずつ取得）"""
+        """複数日の KLine を結合して返す"""
         frames = []
         for i in range(days, 0, -1):
             d = (datetime.now() - timedelta(days=i)).strftime("%Y%m%d")
             try:
-                df = self.get_klines(symbol, interval, d)
-                frames.append(df)
+                frames.append(self.get_klines(symbol, interval, d))
             except Exception:
                 pass
-            time.sleep(0.2)  # レート制限対策
+            time.sleep(0.2)
         if not frames:
             raise RuntimeError("KLine取得失敗")
         return pd.concat(frames).sort_index().drop_duplicates()
@@ -105,87 +186,102 @@ class GmoFxClient:
     def get_assets(self) -> dict:
         """資産残高取得"""
         path = "/v1/account/assets"
-        r = requests.get(
+        data = self._request(
+            "GET",
             BASE_PRIVATE + path,
             headers=self._sign("GET", path),
-            timeout=10,
         )
-        r.raise_for_status()
-        data = r.json()
-        if data["status"] != 0:
-            raise RuntimeError(f"assets error: {data}")
         return data["data"]
 
     def get_open_positions(self, symbol: str | None = None) -> list:
-        """建玉一覧取得"""
-        path = "/v1/openPositions"
-        params = {}
-        if symbol:
-            params["symbol"] = symbol
-        r = requests.get(
+        """建玉一覧取得（常に API から最新状態を取得）"""
+        path   = "/v1/openPositions"
+        params = {"symbol": symbol} if symbol else {}
+        data   = self._request(
+            "GET",
             BASE_PRIVATE + path,
             headers=self._sign("GET", path),
             params=params,
-            timeout=10,
         )
-        r.raise_for_status()
-        data = r.json()
-        if data["status"] != 0:
-            raise RuntimeError(f"positions error: {data}")
+        return data.get("data", {}).get("list", [])
+
+    def get_active_orders(self, symbol: str) -> list:
+        """未約定の有効注文一覧を取得"""
+        path   = "/v1/activeOrders"
+        params = {"symbol": symbol, "executionType": "LIMIT"}
+        data   = self._request(
+            "GET",
+            BASE_PRIVATE + path,
+            headers=self._sign("GET", path),
+            params=params,
+        )
         return data.get("data", {}).get("list", [])
 
     def place_order(
         self,
         symbol: str,
-        side: str,          # "BUY" or "SELL"
-        size: int,          # 取引数量（1000通貨単位）
+        side: str,
+        size: int,
         order_type: str = "MARKET",
         price: float | None = None,
     ) -> dict:
-        """注文発注"""
+        """注文発注（成行 or 指値）"""
         path = "/v1/order"
         body: dict = {
-            "symbol":    symbol,
-            "side":      side,
+            "symbol":        symbol,
+            "side":          side,
             "executionType": order_type,
-            "size":      str(size),
+            "size":          str(size),
         }
         if price is not None:
             body["price"] = str(price)
-        r = requests.post(
+        data = self._request(
+            "POST",
             BASE_PRIVATE + path,
+            is_order=True,
             headers=self._sign("POST", path, body),
             json=body,
-            timeout=10,
         )
-        r.raise_for_status()
-        data = r.json()
-        if data["status"] != 0:
-            raise RuntimeError(f"order error: {data}")
         return data["data"]
 
-    def close_position(self, position_id: str, symbol: str, side: str, size: int) -> dict:
+    def close_position(
+        self,
+        position_id: str,
+        symbol: str,
+        side: str,
+        size: int,
+    ) -> dict:
         """決済注文"""
         path = "/v1/closeOrder"
         body = {
             "symbol":        symbol,
-            "side":          side,          # 建玉と逆サイド
+            "side":          side,
             "executionType": "MARKET",
             "settlePosition": [
                 {"positionId": position_id, "size": str(size)}
             ],
         }
-        r = requests.post(
+        data = self._request(
+            "POST",
             BASE_PRIVATE + path,
+            is_order=True,
             headers=self._sign("POST", path, body),
             json=body,
-            timeout=10,
         )
-        r.raise_for_status()
-        data = r.json()
-        if data["status"] != 0:
-            raise RuntimeError(f"close order error: {data}")
         return data["data"]
+
+    def cancel_order(self, order_id: str) -> dict:
+        """指値注文のキャンセル"""
+        path = "/v1/cancelOrder"
+        body = {"orderId": order_id}
+        data = self._request(
+            "POST",
+            BASE_PRIVATE + path,
+            is_order=True,
+            headers=self._sign("POST", path, body),
+            json=body,
+        )
+        return data.get("data", {})
 
     def get_cash_jpy(self) -> float:
         """日本円の有効証拠金を返す"""
