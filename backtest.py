@@ -1,13 +1,10 @@
-import ctypes
-import multiprocessing
+# -*- coding: utf-8 -*-
 import os
-import subprocess
 import sys
 import matplotlib
 matplotlib.use("Agg")
 
 from backtesting import Backtest, Strategy
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import hashlib
@@ -243,52 +240,6 @@ def run_forward_test(symbol, params_dict):
     bt = Backtest(fw_data, ImprovedStrategy, cash=INITIAL_CASH, commission=0.00002)
     stats = bt.run(**params_dict)
     return _extract_stats(stats)
-
-# ── ワーカープロセス用ユーティリティ ─────────────────────────────────────
-
-def _ensure_valid_stream(stream_name: str) -> None:
-    """デタッチドプロセスで stdout/stderr が None になる問題を回避"""
-    stream = getattr(sys, stream_name, None)
-    try:
-        if stream is None:
-            raise AttributeError("None")
-        stream.write("")
-        stream.flush()
-    except Exception:
-        devnull = open(os.devnull, "w", encoding="utf-8", errors="replace")
-        setattr(sys, stream_name, devnull)
-
-
-def _bt_worker_initializer(cache_dir: str) -> None:
-    """各ワーカープロセスの起動時に1回だけ実行される初期化関数"""
-    # Windows でコンソールウィンドウを非表示
-    if hasattr(ctypes, "windll"):
-        try:
-            ctypes.windll.kernel32.FreeConsole()
-        except Exception:
-            pass
-
-    _ensure_valid_stream("stdout")
-    _ensure_valid_stream("stderr")
-
-    # yfinance SQLite キャッシュをワーカーごとに分離してロック競合を回避
-    import yfinance as yf
-    os.makedirs(cache_dir, exist_ok=True)
-    yf.set_tz_cache_location(cache_dir)
-
-
-def _bt_worker(args: tuple) -> tuple:
-    """ワーカープロセスで1銘柄の optimize_symbol を実行するモジュールレベル関数"""
-    symbol, idx, total, wft_cutoff, prev_params = args
-    _ensure_valid_stream("stdout")
-    _ensure_valid_stream("stderr")
-    try:
-        result = optimize_symbol(symbol, idx, total, wft_cutoff, prev_params)
-        return symbol, result, None
-    except Exception as e:
-        import traceback
-        return symbol, None, f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
-
 
 # === 1銘柄分の最適化処理 ===
 def optimize_symbol(symbol, idx, total, wft_cutoff, prev_params):
@@ -558,7 +509,7 @@ def grid_search_job(config: dict, score_weights: dict) -> list:
                 "remaining":   remaining,
             }
             with open(GRID_PROGRESS_FILE, "w", encoding="utf-8") as _f:
-                json.dump(progress, _f, ensure_ascii=False)
+                json.dump(progress, _f, ensure_ascii=False, indent=2)
 
     # スコア降順ソート
     results.sort(key=lambda x: x["score"], reverse=True)
@@ -572,7 +523,7 @@ def grid_search_job(config: dict, score_weights: dict) -> list:
             "best_params": best_params,
             "elapsed": elapsed, "remaining": 0,
             "done": True,
-        }, _f, ensure_ascii=False)
+        }, _f, ensure_ascii=False, indent=2)
 
     # 結果を JSON 保存
     with open("grid_search_results.json", "w", encoding="utf-8") as _f:
@@ -599,8 +550,6 @@ def run_backtest_job() -> None:
 
 
 if __name__ == "__main__":
-    multiprocessing.freeze_support()
-
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--grid-search", action="store_true",
@@ -621,20 +570,9 @@ if __name__ == "__main__":
             }
         grid_search_job(_cfg, score_weights)
     else:
-        # ── 通常バックテスト（ProcessPoolExecutor で並列化） ───────────────
+        # ── 通常バックテスト ────────────────────────────────────────────────
         prev_params = load_prev_params()
         wft_cutoff  = END_DATE - relativedelta(months=WF_TEST_MONTHS)
-
-        # grid_search_config.json から max_workers を読み込む
-        _gs_cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                    "grid_search_config.json")
-        try:
-            with open(_gs_cfg_path, "r", encoding="utf-8") as _f:
-                _gs_cfg = json.load(_f)
-            max_workers = max(1, min(int(_gs_cfg.get("max_workers", 1)),
-                                     (os.cpu_count() or 4) - 2))
-        except Exception:
-            max_workers = 1
 
         # 対象シンボル: params.json に保存済みのペア優先、初回は backtest_config.json を使用
         try:
@@ -647,7 +585,6 @@ if __name__ == "__main__":
         _bt_log(f"バックテスト期間 : {START_DATE.date()} 〜 {END_DATE.date()}")
         _bt_log(f"最適化 / WFT     : 〜 {wft_cutoff.date()} / {wft_cutoff.date()} 〜 {END_DATE.date()}")
         _bt_log(f"フォワードテスト : {FW_START_DATE.date()} 〜 {FW_END_DATE.date()}")
-        _bt_log(f"並列ワーカー数   : {max_workers}")
         _bt_log(f"対象ペア         : {TARGET_SYMBOLS}")
         _bt_log("")
 
@@ -656,74 +593,17 @@ if __name__ == "__main__":
         total       = len(TARGET_SYMBOLS)
         _write_bt_progress(0, total, "", "running")
 
-        # タスク生成
-        _cache_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                  f".cache/bt_worker_{os.getpid()}")
-        _tasks = [
-            (symbol, idx, total, wft_cutoff, prev_params)
-            for idx, symbol in enumerate(TARGET_SYMBOLS, 1)
-        ]
-
-        if max_workers <= 1:
-            # ── シングルスレッド実行（ProcessPoolExecutor を使わない） ─────
-            _bt_log("シングルスレッドモードで実行中...")
-            for _idx, _task in enumerate(_tasks, 1):
-                _sym, _i, _tot, _wft_c, _prev = _task
-                _write_bt_progress(_idx - 1, total, _sym, "running")
-                try:
-                    _result = optimize_symbol(_sym, _i, _tot, _wft_c, _prev)
-                    raw_results[_sym] = _result
-                    _bt_log(f"[{_idx}/{total}] {_sym} 完了")
-                except Exception as _e:
-                    errors[_sym] = str(_e)
-                    _bt_log(f"[{_idx}/{total}] {_sym} エラー: {str(_e).splitlines()[0]}")
-                _write_bt_progress(_idx, total, _sym, "running")
-        else:
-            # ── 並列実行（ProcessPoolExecutor） ───────────────────────────
-            _ctx = multiprocessing.get_context("spawn")
-
-            # Windows: ワーカー起動時のコンソールウィンドウを完全に非表示
-            if sys.platform == "win32":
-                _orig_popen = _ctx.Process._popen_class
-
-                class _HiddenPopen(_orig_popen):
-                    def __init__(self, *args, **kwargs):
-                        si = subprocess.STARTUPINFO()
-                        si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                        si.wShowWindow = subprocess.SW_HIDE
-                        kwargs["startupinfo"] = si
-                        super().__init__(*args, **kwargs)
-
-                _ctx.Process._popen_class = _HiddenPopen
-
-            _executor = ProcessPoolExecutor(
-                max_workers=max_workers,
-                mp_context=_ctx,
-                initializer=_bt_worker_initializer,
-                initargs=(_cache_dir,),
-            )
-            _completed = 0
+        for idx, symbol in enumerate(TARGET_SYMBOLS, 1):
+            _bt_log(f"\n{'='*50}")
+            _bt_log(f"[{idx}/{total}] {symbol} 開始...")
+            _write_bt_progress(idx - 1, total, symbol, "running")
             try:
-                _futures = {_executor.submit(_bt_worker, t): t[0] for t in _tasks}
-                for _future in as_completed(_futures):
-                    symbol = _futures[_future]
-                    _completed += 1
-                    try:
-                        sym_ret, result, err = _future.result()
-                    except Exception as e:
-                        err = str(e)
-                        result = None
-                        sym_ret = symbol
-
-                    if err:
-                        errors[sym_ret] = err
-                        _bt_log(f"[{_completed}/{total}] {sym_ret} エラー: {err.splitlines()[0]}")
-                    else:
-                        raw_results[sym_ret] = result
-                        _bt_log(f"[{_completed}/{total}] {sym_ret} 完了")
-                    _write_bt_progress(_completed, total, sym_ret, "running")
-            finally:
-                _executor.shutdown(wait=True)
+                raw_results[symbol] = optimize_symbol(symbol, idx, total, wft_cutoff, prev_params)
+                _bt_log(f"[{idx}/{total}] {symbol} 完了")
+            except Exception as e:
+                errors[symbol] = str(e)
+                _bt_log(f"[{idx}/{total}] {symbol} エラー: {e}")
+            _write_bt_progress(idx, total, symbol, "running")
 
         fw_results = {}
         _bt_log(f"\n{'='*50}")
