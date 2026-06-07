@@ -1,89 +1,25 @@
 {
-  "available_symbols": [
-    "USD_JPY",
-    "EUR_JPY",
-    "GBP_JPY",
-    "AUD_JPY",
-    "NZD_JPY",
-    "CAD_JPY",
-    "CHF_JPY",
-    "ZAR_JPY",
-    "EUR_USD",
-    "GBP_USD",
-    "AUD_USD",
-    "EUR_GBP",
-    "AUD_NZD",
-    "EUR_CHF",
-    "GBP_CHF",
-    "EUR_AUD"
-  ],
   "start_date": "2024-06-16",
   "end_date": "auto",
   "wf_train_months": 12,
   "wf_test_months": 1,
-  "symbols": [
-    "USD_JPY",
-    "GBP_CHF",
-    "EUR_AUD"
+  "symbols": ["EUR_AUD", "GBP_CHF"],
+  "available_symbols": [
+    "USD_JPY", "EUR_JPY", "GBP_JPY", "AUD_JPY",
+    "NZD_JPY", "CAD_JPY", "CHF_JPY", "ZAR_JPY",
+    "EUR_USD", "GBP_USD", "AUD_USD", "EUR_GBP",
+    "AUD_NZD", "EUR_CHF", "GBP_CHF", "EUR_AUD"
   ],
-  "bb_period": {
-    "min": 15,
-    "max": 40,
-    "step": 5
-  },
-  "bb_std": [
-    2.0,
-    2.5,
-    3.0,
-    3.5,
-    4.0
-  ],
-  "rsi_upper": {
-    "min": 65,
-    "max": 80,
-    "step": 5
-  },
-  "rsi_lower": {
-    "min": 20,
-    "max": 35,
-    "step": 5
-  },
-  "atr_sl_mult": [
-    1.5,
-    2.0,
-    2.5,
-    3.0
-  ],
-  "atr_tp_mult": [
-    3.0,
-    3.5,
-    4.0,
-    4.5,
-    5.0
-  ],
-  "min_trades": 50,
-  "min_pf": 1.1,
-  "min_wft_sharpe": -0.3,
-  "active_symbols": [
-    "EUR_AUD"
-  ],
-  "grid_search_symbols": [
-    "USD_JPY",
-    "EUR_JPY",
-    "AUD_JPY",
-    "NZD_JPY",
-    "CAD_JPY",
-    "CHF_JPY",
-    "ZAR_JPY",
-    "EUR_USD",
-    "GBP_USD",
-    "AUD_USD",
-    "EUR_GBP",
-    "AUD_NZD",
-    "EUR_CHF",
-    "GBP_CHF",
-    "EUR_AUD"
-  ],
+  "grid_search_symbols": [],
   "grid_search_top_n": 3,
-  "max_workers": 14
+  "bb_period": {"min": 15, "max": 40, "step": 5},
+  "bb_std": [1.5, 2.0, 2.5, 3.0, 3.5],
+  "rsi_upper": {"min": 65, "max": 80, "step": 5},
+  "rsi_lower": {"min": 20, "max": 35, "step": 5},
+  "atr_sl_mult": [1.5, 2.0, 2.5, 3.0],
+  "atr_tp_mult": [2.0, 2.5, 3.0, 3.5, 4.0],
+  "min_trades": 30,
+  "min_pf": 1.2,
+  "min_wft_sharpe": 0.0,
+  "active_symbols": ["EUR_AUD", "GBP_CHF"]
 }
