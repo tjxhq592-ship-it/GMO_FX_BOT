@@ -3,23 +3,21 @@
 起動コマンド:
   python grid_search_runner.py            # 通常実行（並列）
   python grid_search_runner.py --debug    # 最初の1パターンのみテスト実行
+  python grid_search_runner.py --diagnose # EUR_AUD 先頭10パターン詳細診断
 
-各シンボルのコンボを ProcessPoolExecutor (spawn) で真の並列実行。
-Windows でコンソールウィンドウを開かないよう initializer で FreeConsole を呼ぶ。
-シンボル間は順次処理（シンボルをまたいで並列しない）。
+シンボルは順次処理。各シンボル内のコンボを ThreadPoolExecutor で並列実行。
+ProcessPoolExecutor は Windows での spawn ハングを引き起こすため廃止。
+numpy/pandas の計算は GIL を解放するためスレッド並列でも効果あり。
 """
 import json
-import multiprocessing
 import os
 import subprocess
 import sys
 import time
 import traceback
 import itertools
-import ctypes
-import pickle
 import threading
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
@@ -62,60 +60,23 @@ BT_CFG_FILE   = "backtest_config.json"
 # 進捗ファイル書き込みの排他制御
 _progress_lock = threading.Lock()
 
-# ── ワーカープロセス用グローバル変数 ─────────────────────────────────────
-# initializer で各ワーカープロセスに1回だけデータをロード（コピー最小化）
-_g_data:       object = None
-_g_train_data: object = None
-
-
-def _worker_initializer(data_pkl: bytes, train_pkl: bytes, cache_dir: str) -> None:
-    """各ワーカープロセスの起動時に1回だけ実行される初期化関数"""
-    global _g_data, _g_train_data
-
-    # Windows でコンソールウィンドウを非表示（FreeConsole でデタッチ）
-    if hasattr(ctypes, "windll"):
-        try:
-            ctypes.windll.kernel32.FreeConsole()
-        except Exception:
-            pass
-
-    import yfinance as yf
-
-    # yfinance SQLite キャッシュをワーカーごとに分離してロック競合を回避
-    os.makedirs(cache_dir, exist_ok=True)
-    yf.set_tz_cache_location(cache_dir)
-
-    # stdout/stderr の安全化（デタッチドプロセス対応）
-    _ensure_valid_stream("stdout")
-    _ensure_valid_stream("stderr")
-
-    # ピクルス化されたデータをメモリに展開
-    _g_data       = pickle.loads(data_pkl)
-    _g_train_data = pickle.loads(train_pkl)
-
-
 def _worker_task(args: tuple) -> tuple:
-    """ワーカープロセスで実行する1コンボのバックテスト（モジュールレベル関数必須）"""
-    combo_idx, params_dict, wt_wft, wt_is, wt_pf, wt_trades, symbol = args
-
-    _ensure_valid_stream("stdout")
-    _ensure_valid_stream("stderr")
+    """スレッドワーカーで実行する1コンボのバックテスト。
+    スレッドはメモリを共有するため data/train_data を直接引数で受け取る。
+    numpy/pandas の演算は GIL を解放するためスレッド並列でも効果あり。
+    """
+    combo_idx, params_dict, wt_wft, wt_is, wt_pf, wt_trades, symbol, data, train_data = args
 
     is_s: dict | None = None
     err_msg: str | None = None
 
     # IS バックテスト
     try:
-        _price = float(_g_train_data["Close"].iloc[-1])
-        bt    = Backtest(_g_train_data, ImprovedStrategy,
+        _price = float(train_data["Close"].iloc[-1])
+        bt    = Backtest(train_data, ImprovedStrategy,
                          cash=INITIAL_CASH, commission=calc_commission(symbol, _price))
         st_is = bt.run(**params_dict)
         is_s  = _extract_stats(st_is)
-    except (AttributeError, IOError, OSError) as e:
-        _ensure_valid_stream("stdout")
-        _ensure_valid_stream("stderr")
-        err_msg = f"IS ストリームエラー(修復済み): {type(e).__name__}: {e}"
-        return combo_idx, params_dict, None, None, 0.0, err_msg
     except Exception as e:
         err_msg = f"IS 例外: {type(e).__name__}: {e}"
         return combo_idx, params_dict, None, None, 0.0, err_msg
@@ -123,7 +84,7 @@ def _worker_task(args: tuple) -> tuple:
     # WFT
     wft_r: dict | None = None
     try:
-        wft_r = walk_forward_test(_g_data, params_dict, symbol=symbol)
+        wft_r = walk_forward_test(data, params_dict, symbol=symbol)
     except Exception as e:
         err_msg = f"WFT 例外: {type(e).__name__}: {e}"
         wft_r = None
@@ -148,25 +109,17 @@ def _worker_task(args: tuple) -> tuple:
     return combo_idx, params_dict, is_s, wft_r, round(score, 4), err_msg
 
 
-# ── シンボルレベル並列用ワーカー ─────────────────────────────────────────
-# ProcessPoolExecutor に 1 シンボル = 1 タスク として submit する。
-# コンボ処理はこの関数内でシングルスレッドに回す。
+# ── シンボルレベルシングルスレッド用ワーカー（--diagnose / 旧互換用） ────
+# _run_symbol_search はスレッドから直接呼ばれることもある（診断モード等）。
 
 def _run_symbol_search(args: tuple) -> dict:
-    """1シンボル分のグリッドサーチを実行してベストスコアを返す（モジュールレベル必須）"""
+    """1シンボル分のグリッドサーチを実行してベストスコアを返す"""
     (symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
      wft_cutoff_ts, min_trades, min_pf, min_wft_sharpe) = args
 
-    # Windows: コンソールウィンドウ非表示
-    if hasattr(ctypes, "windll"):
-        try:
-            ctypes.windll.kernel32.FreeConsole()
-        except Exception:
-            pass
     _ensure_valid_stream("stdout")
     _ensure_valid_stream("stderr")
 
-    # yfinance キャッシュをワーカーごとに分離
     import yfinance as yf
     _cache = f".cache/sym_{os.getpid()}"
     os.makedirs(_cache, exist_ok=True)
@@ -717,13 +670,11 @@ def main(debug: bool = False) -> None:
         symbols = valid_symbols
         total   = len(combos) * len(symbols)  # 有効シンボルで再計算
 
-        # ── spawn コンテキスト（Python 3.14対応: HiddenPopen削除済み） ──────────
-        _ctx = multiprocessing.get_context("spawn")
-
-        # ── ペアを順次処理・コンボを並列処理 ─────────────────────────────────
-        # ペア間の並列処理はデッドロックの原因になるため廃止。
-        # 代わりに1ペアずつ順次処理し、コンボ（パターン）レベルで ProcessPoolExecutor を使う。
-        log(f"ペア順次処理開始 ({len(symbols)}ペア / コンボ並列ワーカー: {max_workers})")
+        # ── ペアを順次処理・コンボを ThreadPoolExecutor で並列処理 ─────────────
+        # ProcessPoolExecutor は Windows spawn でハングするため ThreadPoolExecutor に変更。
+        # numpy/pandas の演算は GIL を解放するためスレッド並列でも効果あり。
+        # スレッドはメモリ共有のため pickle 不要、コンソールウィンドウも表示されない。
+        log(f"ペア順次処理開始 ({len(symbols)}ペア / スレッドワーカー: {max_workers})")
 
         _combo_timeout = 60   # 1コンボのタイムアウト（秒）
         _sym_timeout   = max(300, len(combos) * 2)  # 1ペア全体のタイムアウト（秒）
@@ -751,19 +702,14 @@ def main(debug: bool = False) -> None:
                 error_count += 1
                 continue
 
-            # データをピクルス化してワーカーに渡す
-            data_pkl  = pickle.dumps(data)
-            train_pkl = pickle.dumps(train_data)
-            cache_dir = f".cache/sym_{os.getpid()}_{symbol}"
-
-            # コンボ引数リスト
+            # コンボ引数リスト（data/train_data はスレッド共有なので直接渡す）
             combo_args = [
                 (i, {
                     "bb_period":   bb_p,  "bb_std":      bb_s,
                     "rsi_period":  14,    "rsi_upper":   rsi_u,
                     "rsi_lower":   rsi_l, "atr_period":  14,
                     "atr_sl_mult": sl_m,  "atr_tp_mult": tp_m,
-                }, wt_wft, wt_is, wt_pf, wt_trades, symbol)
+                }, wt_wft, wt_is, wt_pf, wt_trades, symbol, data, train_data)
                 for i, (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in enumerate(combos)
             ]
 
@@ -771,15 +717,9 @@ def main(debug: bool = False) -> None:
             sym_best_score:  float = 0.0
             sym_best_params: dict  = {}
             sym_best_row:    dict | None = None
-            sym_done:        int   = 0
 
             try:
-                with ProcessPoolExecutor(
-                    max_workers=max_workers,
-                    mp_context=_ctx,
-                    initializer=_worker_initializer,
-                    initargs=(data_pkl, train_pkl, cache_dir),
-                ) as executor:
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
                     futures = {
                         executor.submit(_worker_task, a): a[0]
                         for a in combo_args
@@ -790,10 +730,8 @@ def main(debug: bool = False) -> None:
                                 combo_idx, params_dict, is_s, wft_r, score, err = \
                                     future.result(timeout=_combo_timeout)
                             except Exception:
-                                sym_done += 1
                                 continue
 
-                            sym_done += 1
                             row = {
                                 "symbol":      symbol,
                                 "bb_period":   params_dict.get("bb_period"),
