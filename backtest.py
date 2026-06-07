@@ -97,26 +97,32 @@ CACHE_TTL    = 3600
 PARAMS_FILE  = "params.json"
 RESULTS_FILE = "backtest_results.json"
 
-# ── ペア別スプレッド設定 ────────────────────────────────────────────────────
+# ── ペア別スプレッド設定（GMOクリック証券FXネオ 原則固定スプレッド） ──────
+# 円ペア: 銭単位（1銭=0.01円）、クロスペア: pips単位（1pip=0.01単位）
+# calc_commission で spread / price として往復コスト率に変換する。
 SPREAD_PIPS = {
-    # 円ペア（単位: 銭 → 実行時に price で割って率に変換）
+    # 円ペア（銭単位）
     "USD_JPY": 0.002,    # 0.2銭
     "EUR_JPY": 0.004,    # 0.4銭
     "GBP_JPY": 0.007,    # 0.7銭
     "AUD_JPY": 0.004,    # 0.4銭
     "NZD_JPY": 0.007,    # 0.7銭
     "CAD_JPY": 0.004,    # 0.4銭
-    "CHF_JPY": 0.007,    # 0.7銭
-    "ZAR_JPY": 0.030,    # 3.0銭（流動性低い）
-    # クロスドル・クロス（単位: pips → 実行時に price で割って率に変換）
-    "EUR_USD": 0.00010,  # 1.0pip
-    "GBP_USD": 0.00013,  # 1.3pips
-    "AUD_USD": 0.00013,  # 1.3pips
-    "EUR_GBP": 0.00010,  # 1.0pip
-    "AUD_NZD": 0.00030,  # 3.0pips
-    "EUR_CHF": 0.00020,  # 2.0pips
-    "GBP_CHF": 0.00030,  # 3.0pips
-    "EUR_AUD": 0.00020,  # 2.0pips
+    "CHF_JPY": 0.008,    # 0.8銭
+    "ZAR_JPY": 0.090,    # 9.0銭（流動性低い）
+    "TRY_JPY": 0.140,    # 14.0銭
+    "MXN_JPY": 0.040,    # 4.0銭
+    # クロスドル・クロスユーロ（pips単位）
+    "EUR_USD": 0.003,    # 0.3pips
+    "GBP_USD": 0.005,    # 0.5pips
+    "AUD_USD": 0.004,    # 0.4pips
+    "EUR_GBP": 0.005,    # 0.5pips
+    "EUR_CHF": 0.007,    # 0.7pips
+    "EUR_AUD": 0.010,    # 1.0pips
+    "GBP_CHF": 0.012,    # 1.2pips
+    "AUD_NZD": 0.010,    # 1.0pips
+    "GBP_AUD": 0.012,    # 1.2pips
+    "NZD_USD": 0.007,    # 0.7pips
 }
 
 def calc_commission(symbol: str, price: float) -> float:
