@@ -41,7 +41,7 @@ _ensure_valid_stream("stderr")
 from backtest import (
     _cfg,
     SYMBOLS, START_DATE, END_DATE, FW_START_DATE, FW_END_DATE,
-    WF_TEST_MONTHS, INITIAL_CASH,
+    WF_TEST_MONTHS, WFT_OFFSET_MONTHS, INITIAL_CASH,
     SPREAD_PIPS, calc_commission,
     get_historical_data,
     walk_forward_test,
@@ -628,19 +628,20 @@ def main(debug: bool = False) -> None:
         best_score  = 0.0
         best_params: dict = {}
 
-        wft_cutoff = END_DATE - relativedelta(months=WF_TEST_MONTHS)
+        # WFT 期間計算（オフセット対応）
+        # 例: offset=2, test=2 → IS学習 = ~END-4ヶ月, WFT検証 = END-4ヶ月〜END-2ヶ月
+        wft_offset_months = int(config.get("wft_offset_months", WFT_OFFSET_MONTHS))
+        wft_end    = END_DATE - relativedelta(months=wft_offset_months)
+        wft_cutoff = wft_end  - relativedelta(months=WF_TEST_MONTHS)
 
         min_trades     = int(config.get("min_trades",      100))
         min_pf         = float(config.get("min_pf",        1.2))
         min_wft_sharpe = float(config.get("min_wft_sharpe", 0.0))
 
-        # grid_search_config.json の max_workers を優先、未設定なら 1
-        max_workers = max(1, min(int(gs_cfg.get("max_workers", 1)), (os.cpu_count() or 4) - 2))
-
-        log("=== グリッドサーチ開始 (並列実行) ===")
+        log("=== グリッドサーチ開始 (シングルスレッド) ===")
         log(f"対象ペア ({len(symbols)}件): {symbols}")
         log(f"組み合わせ数: {len(combos)} x {len(symbols)}銘柄 = {total} 件")
-        log(f"並列ワーカー数: {max_workers}")
+        log(f"WFT期間: {wft_cutoff.date()} 〜 {wft_end.date()} (offset={wft_offset_months}ヶ月)")
 
         # 起動直後に progress ファイルを初期化（ダッシュボードが即座に「running」を検知できるよう）
         _write_progress(0, total, 0.0, {}, 0, 0,
@@ -670,14 +671,10 @@ def main(debug: bool = False) -> None:
         symbols = valid_symbols
         total   = len(combos) * len(symbols)  # 有効シンボルで再計算
 
-        # ── ペアを順次処理・コンボを ThreadPoolExecutor で並列処理 ─────────────
-        # ProcessPoolExecutor は Windows spawn でハングするため ThreadPoolExecutor に変更。
-        # numpy/pandas の演算は GIL を解放するためスレッド並列でも効果あり。
-        # スレッドはメモリ共有のため pickle 不要、コンソールウィンドウも表示されない。
-        log(f"ペア順次処理開始 ({len(symbols)}ペア / スレッドワーカー: {max_workers})")
-
-        _combo_timeout = 60   # 1コンボのタイムアウト（秒）
-        _sym_timeout   = max(300, len(combos) * 2)  # 1ペア全体のタイムアウト（秒）
+        # ── ペア順次 / コンボ順次（シングルスレッド）─────────────────────────
+        # 並列処理（Process/Thread）は Windows DETACHED_PROCESS でハングするため廃止。
+        # 純粋な for 文で実装し、100コンボごとに進捗を書き出す。
+        log(f"ペア順次処理開始 ({len(symbols)}ペア / シングルスレッド)")
 
         for sym_idx, symbol in enumerate(symbols, 1):
             log(f"[{symbol}] 開始... ({sym_idx}/{len(symbols)})")
@@ -690,8 +687,8 @@ def main(debug: bool = False) -> None:
 
             # データ取得（事前取得済みキャッシュから読む）
             try:
-                data       = get_historical_data(symbol)
-                train_data = data[data.index < wft_cutoff]
+                sym_data       = get_historical_data(symbol)
+                sym_train_data = sym_data[sym_data.index < wft_cutoff]
             except Exception as e:
                 log(f"[{symbol}] データ取得失敗: {e}")
                 completed_symbols[symbol] = {
@@ -702,73 +699,59 @@ def main(debug: bool = False) -> None:
                 error_count += 1
                 continue
 
-            # コンボ引数リスト（data/train_data はスレッド共有なので直接渡す）
-            combo_args = [
-                (i, {
-                    "bb_period":   bb_p,  "bb_std":      bb_s,
-                    "rsi_period":  14,    "rsi_upper":   rsi_u,
-                    "rsi_lower":   rsi_l, "atr_period":  14,
-                    "atr_sl_mult": sl_m,  "atr_tp_mult": tp_m,
-                }, wt_wft, wt_is, wt_pf, wt_trades, symbol, data, train_data)
-                for i, (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in enumerate(combos)
-            ]
-
             sym_rows:        list  = []
             sym_best_score:  float = 0.0
             sym_best_params: dict  = {}
             sym_best_row:    dict | None = None
 
-            try:
-                with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                    futures = {
-                        executor.submit(_worker_task, a): a[0]
-                        for a in combo_args
-                    }
-                    try:
-                        for future in as_completed(futures, timeout=_sym_timeout):
-                            try:
-                                combo_idx, params_dict, is_s, wft_r, score, err = \
-                                    future.result(timeout=_combo_timeout)
-                            except Exception:
-                                continue
-
-                            row = {
-                                "symbol":      symbol,
-                                "bb_period":   params_dict.get("bb_period"),
-                                "bb_std":      params_dict.get("bb_std"),
-                                "rsi_upper":   params_dict.get("rsi_upper"),
-                                "rsi_lower":   params_dict.get("rsi_lower"),
-                                "atr_sl_mult": params_dict.get("atr_sl_mult"),
-                                "atr_tp_mult": params_dict.get("atr_tp_mult"),
-                                "n_trades":    is_s["n_trades"] if is_s else 0,
-                                "pf":          is_s["pf"]       if is_s else None,
-                                "is_sharpe":   is_s["sharpe"]   if is_s else None,
-                                "wft_sharpe":  wft_r["sharpe"]  if wft_r else None,
-                                "score":       round(score, 4),
-                            }
-                            sym_rows.append(row)
-
-                            if score > sym_best_score:
-                                sym_best_score  = score
-                                sym_best_params = params_dict
-                                sym_best_row    = row
-
-                    except TimeoutError:
-                        log(f"[{symbol}] タイムアウト（{_sym_timeout}秒超過）: 途中結果を使用")
-
-            except Exception as e:
-                log(f"[{symbol}] executor エラー: {e}")
-                completed_symbols[symbol] = {
-                    "status": "error", "reason": str(e).splitlines()[0],
-                    "best_score": 0.0, "best_params": {},
+            # ── コンボをシングルスレッドで順次実行 ──────────────────────────
+            for combo_i, (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in enumerate(combos):
+                params_dict = {
+                    "bb_period":   bb_p,  "bb_std":      bb_s,
+                    "rsi_period":  14,    "rsi_upper":   rsi_u,
+                    "rsi_lower":   rsi_l, "atr_period":  14,
+                    "atr_sl_mult": sl_m,  "atr_tp_mult": tp_m,
                 }
-                current += len(combos)
-                error_count += 1
-                elapsed = int(time.time() - start_t)
-                _write_progress(current, total, best_score, best_params,
-                                elapsed, 0, log_lines,
-                                completed_symbols=completed_symbols)
-                continue
+                args = (combo_i, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
+                        symbol, sym_data, sym_train_data)
+                try:
+                    _, params_dict, is_s, wft_r, score, err = _worker_task(args)
+                except Exception as e:
+                    continue
+
+                row = {
+                    "symbol":      symbol,
+                    "bb_period":   params_dict.get("bb_period"),
+                    "bb_std":      params_dict.get("bb_std"),
+                    "rsi_upper":   params_dict.get("rsi_upper"),
+                    "rsi_lower":   params_dict.get("rsi_lower"),
+                    "atr_sl_mult": params_dict.get("atr_sl_mult"),
+                    "atr_tp_mult": params_dict.get("atr_tp_mult"),
+                    "n_trades":    is_s["n_trades"] if is_s else 0,
+                    "pf":          is_s["pf"]       if is_s else None,
+                    "is_sharpe":   is_s["sharpe"]   if is_s else None,
+                    "wft_sharpe":  wft_r["sharpe"]  if wft_r else None,
+                    "score":       round(score, 4),
+                }
+                sym_rows.append(row)
+
+                if score > sym_best_score:
+                    sym_best_score  = score
+                    sym_best_params = params_dict
+                    sym_best_row    = row
+
+                # 100コンボごとに進捗更新
+                if combo_i % 100 == 0:
+                    elapsed = int(time.time() - start_t)
+                    done_combos = current + combo_i + 1
+                    done_ratio  = done_combos / total if total > 0 else 1
+                    remaining   = int(elapsed / done_ratio * (1 - done_ratio)) if done_ratio > 0 else 0
+                    _write_progress(done_combos, total, best_score, best_params,
+                                    elapsed, remaining, log_lines,
+                                    completed_symbols=completed_symbols,
+                                    current_symbol=symbol,
+                                    symbol_current=combo_i + 1,
+                                    symbol_total=len(combos))
 
             # ── シンボル完了処理 ────────────────────────────────────────────
             results.extend(sym_rows)

@@ -3,6 +3,7 @@
   "end_date": "auto",
   "wf_train_months": 6,
   "wf_test_months": 2,
+  "wft_offset_months": 2,
   "symbols": [],
   "available_symbols": [
     "USD_JPY",

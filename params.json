@@ -1,41 +1,22 @@
 {
-  "updated_at": "2026-06-07 01:12:21",
-  "params": {
-    "EUR_AUD": {
-      "bb_period": 20,
-      "bb_std": 1.5,
-      "rsi_period": 14,
-      "rsi_upper": 80,
-      "rsi_lower": 20,
-      "atr_period": 14,
-      "atr_sl_mult": 1.0,
-      "atr_tp_mult": 1.5
-    },
-    "GBP_CHF": {
-      "bb_period": 20,
-      "bb_std": 2.5,
-      "rsi_period": 14,
-      "rsi_upper": 80,
-      "rsi_lower": 20,
-      "atr_period": 14,
-      "atr_sl_mult": 2.5,
-      "atr_tp_mult": 2.5
-    },
-    "USD_JPY": {}
-  },
+  "updated_at": "2026-06-07 17:18:19",
+  "params": {},
   "excluded": [
-    "NZD_JPY(全パターンでスコア0)",
-    "EUR_JPY(全パターンでスコア0)",
-    "EUR_CHF(全パターンでスコア0)",
-    "CHF_JPY(全パターンでスコア0)",
     "GBP_JPY(全パターンでスコア0)",
-    "CAD_JPY(全パターンでスコア0)",
-    "AUD_USD(全パターンでスコア0)",
     "ZAR_JPY(全パターンでスコア0)",
-    "EUR_GBP(全パターンでスコア0)",
+    "CAD_JPY(全パターンでスコア0)",
+    "USD_JPY(全パターンでスコア0)",
+    "EUR_CHF(全パターンでスコア0)",
+    "EUR_JPY(全パターンでスコア0)",
+    "GBP_USD(全パターンでスコア0)",
     "AUD_JPY(全パターンでスコア0)",
+    "GBP_CHF(全パターンでスコア0)",
+    "NZD_JPY(全パターンでスコア0)",
+    "EUR_GBP(全パターンでスコア0)",
+    "EUR_AUD(全パターンでスコア0)",
+    "AUD_USD(全パターンでスコア0)",
+    "CHF_JPY(全パターンでスコア0)",
     "EUR_USD(全パターンでスコア0)",
-    "AUD_NZD(全パターンでスコア0)",
-    "GBP_USD(全パターンでスコア0)"
+    "AUD_NZD(全パターンでスコア0)"
   ]
 }

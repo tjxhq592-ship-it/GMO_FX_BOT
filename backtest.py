@@ -83,8 +83,11 @@ FW_START_DATE = datetime.now() - timedelta(days=90)
 FW_END_DATE   = datetime.now() - timedelta(days=1)
 
 # WF 期間
-WF_TRAIN_MONTHS = int(_cfg.get("wf_train_months", 12))
-WF_TEST_MONTHS  = int(_cfg.get("wf_test_months",  1))
+WF_TRAIN_MONTHS   = int(_cfg.get("wf_train_months",   12))
+WF_TEST_MONTHS    = int(_cfg.get("wf_test_months",     1))
+# WFT 期間を直近からずらすオフセット（月数）
+# 例: wft_offset_months=2, wf_test_months=2 → WFT = END-4ヶ月 〜 END-2ヶ月
+WFT_OFFSET_MONTHS = int(_cfg.get("wft_offset_months",  0))
 
 # 除外条件
 MIN_TRADES       = int(_cfg.get("min_trades",     200))
@@ -284,8 +287,11 @@ def _extract_stats(stats):
 
 # === ウォークフォワードテスト ===
 def walk_forward_test(data, params_dict, symbol: str = ""):
-    wft_start = END_DATE - relativedelta(months=WF_TEST_MONTHS)
-    test_data = data[data.index >= wft_start]
+    # WFT 期間: END_DATE から wft_offset_months 遡った時点を終端とする
+    # 例: offset=2, test=2 → END-4ヶ月 〜 END-2ヶ月
+    wft_end   = END_DATE - relativedelta(months=WFT_OFFSET_MONTHS)
+    wft_start = wft_end  - relativedelta(months=WF_TEST_MONTHS)
+    test_data = data[(data.index >= wft_start) & (data.index < wft_end)]
     if len(test_data) < 20:
         return None
     _price = float(test_data["Close"].iloc[-1])
