@@ -98,50 +98,51 @@ PARAMS_FILE  = "params.json"
 RESULTS_FILE = "backtest_results.json"
 
 # ── ペア別スプレッド設定（GMOクリック証券FXネオ 原則固定スプレッド） ──────
-# 円ペア  : 銭単位（例: 0.002 = 0.2銭 = 0.002円）
-# クロスペア: pips単位（例: 10 = 10pips, 1pip = 0.0001）
+# 円ペア  : 銭単位（例: 0.2 = 0.2銭）
+# クロスペア: 0.1pips単位の整数（例: 1 = 0.1pips, 15 = 1.5pips）
 SPREAD_PIPS = {
-    # 円ペア（銭単位: 0.002 = 0.2銭）
-    "USD_JPY": 0.002,    # 0.2銭
-    "EUR_JPY": 0.004,    # 0.4銭
-    "GBP_JPY": 0.007,    # 0.7銭
-    "AUD_JPY": 0.004,    # 0.4銭
-    "NZD_JPY": 0.007,    # 0.7銭
-    "CAD_JPY": 0.004,    # 0.4銭
-    "CHF_JPY": 0.008,    # 0.8銭
-    "ZAR_JPY": 0.090,    # 9.0銭（流動性低い）
-    "TRY_JPY": 0.140,    # 14.0銭
-    "MXN_JPY": 0.040,    # 4.0銭
-    # クロスペア（pips単位: 10 = 10pips）
-    "EUR_USD":  3,       # 3pips
-    "GBP_USD":  5,       # 5pips
-    "AUD_USD":  4,       # 4pips
-    "EUR_GBP":  5,       # 5pips
-    "EUR_CHF":  7,       # 7pips
-    "EUR_AUD": 10,       # 10pips
-    "GBP_CHF": 12,       # 12pips
-    "AUD_NZD": 10,       # 10pips
-    "GBP_AUD": 12,       # 12pips
-    "NZD_USD":  7,       # 7pips
+    # 円ペア（銭単位）
+    "USD_JPY":  0.2,    # 0.2銭
+    "EUR_JPY":  0.4,    # 0.4銭
+    "GBP_JPY":  0.7,    # 0.7銭
+    "AUD_JPY":  0.4,    # 0.4銭
+    "NZD_JPY":  0.7,    # 0.7銭
+    "CAD_JPY":  0.4,    # 0.4銭
+    "CHF_JPY":  0.8,    # 0.8銭
+    "ZAR_JPY":  9.0,    # 9.0銭
+    "TRY_JPY": 14.0,    # 14.0銭
+    "MXN_JPY":  4.0,    # 4.0銭
+    # クロスペア（0.1pips単位の整数）
+    "EUR_USD":  1,      # 0.1pips
+    "GBP_USD":  5,      # 0.5pips
+    "AUD_USD":  4,      # 0.4pips
+    "NZD_USD":  7,      # 0.7pips
+    "EUR_GBP":  5,      # 0.5pips
+    "EUR_AUD": 15,      # 1.5pips
+    "EUR_CHF":  7,      # 0.7pips
+    "GBP_CHF": 12,      # 1.2pips
+    "GBP_AUD": 12,      # 1.2pips
+    "AUD_NZD": 10,      # 1.0pips
+    "USD_CHF":  9,      # 0.9pips
 }
 
 def calc_commission(symbol: str, price: float) -> float:
     """API手数料（固定） + スプレッド（価格比率）を合算して返す。
 
     円ペア  : spread は銭単位 → 円換算（÷100）→ price で割って率に変換
-              例) USD_JPY spread=0.002銭 → 0.002/100/150 ≒ 0.000000133
-    クロスペア: spread は pips単位 → ×0.0001 → price で割って率に変換
-              例) EUR_AUD spread=10pips → 10*0.0001/1.63 ≒ 0.000613
+              例) USD_JPY 0.2銭 → 0.2/100/150 ≒ 0.0000133
+    クロスペア: spread は 0.1pips単位の整数 → ×0.00001 → price で割って率に変換
+              例) EUR_AUD 15(=1.5pips) → 15*0.00001/1.63 ≒ 0.0000920
     """
-    spread = SPREAD_PIPS.get(symbol, 10)  # デフォルト10pips
+    spread = SPREAD_PIPS.get(symbol, 10)  # デフォルト10（=1.0pips）
     if price <= 0:
         return 0.00002
     if symbol.endswith("_JPY"):
-        # 銭単位 → 円 → レートで割って率に変換
+        # 銭単位 → 円（÷100）→ レートで割って率に変換
         spread_rate = (spread / 100) / price
     else:
-        # pips単位 → 0.0001を掛けて価格換算
-        spread_rate = (spread * 0.0001) / price
+        # 0.1pips単位の整数 → ×0.00001 → price で割って率に変換
+        spread_rate = (spread * 0.00001) / price
     return 0.00002 + spread_rate
 
 # 対象シンボル: active_symbols（グリッドサーチ採用済みでトレード対象）
