@@ -169,6 +169,23 @@ def load_log():
 
 # ==================== タブ構成 ====================
 
+st.markdown("""
+<style>
+    .stTabs [data-baseweb="tab-list"] {
+        position: fixed;
+        top: 0;
+        z-index: 999;
+        background-color: white;
+        width: 100%;
+        padding-top: 10px;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    .stTabs [data-baseweb="tab-panel"] {
+        margin-top: 60px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 tab_main, tab_config, tab_run, tab_gs = st.tabs([
     "📊 ダッシュボード",
     "⚙️ 設定",
@@ -746,32 +763,38 @@ with tab_gs:
                 })
             st.dataframe(pd.DataFrame(_rank_rows), use_container_width=True, hide_index=True)
 
-    # ── 検索結果テーブル ──────────────────────────────────────────────────
-    if os.path.exists(GS_RESULTS_FILE):
-        st.markdown("#### 検索結果（上位20件）")
-        try:
-            with open(GS_RESULTS_FILE, "r", encoding="utf-8") as f:
-                gs_rows = json.load(f)
+    # ── 採用パラメータテーブル ────────────────────────────────────────────
+    st.subheader("✅ 採用パラメータ")
+    try:
+        if os.path.exists(PARAMS_FILE):
+            with open(PARAMS_FILE, encoding="utf-8") as f:
+                params_data = json.load(f)
+        else:
+            params_data = {}
 
-            df_gs = pd.DataFrame(gs_rows[:20])
-            display_cols = [
-                "symbol", "bb_period", "bb_std", "rsi_upper", "rsi_lower",
-                "atr_sl_mult", "atr_tp_mult", "n_trades", "pf",
-                "is_sharpe", "wft_sharpe", "score",
-            ]
-            display_cols = [c for c in display_cols if c in df_gs.columns]
-            df_gs_display = df_gs[display_cols].copy()
+        adopted = params_data.get("params", {})
+        if adopted:
+            rows = []
+            for symbol, p in adopted.items():
+                rows.append({
+                    "銘柄":       symbol,
+                    "bb_period":  p.get("bb_period"),
+                    "bb_std":     p.get("bb_std"),
+                    "rsi_upper":  p.get("rsi_upper"),
+                    "rsi_lower":  p.get("rsi_lower"),
+                    "atr_sl_mult": p.get("atr_sl_mult"),
+                    "atr_tp_mult": p.get("atr_tp_mult"),
+                })
+            df = pd.DataFrame(rows)
+            st.dataframe(df, use_container_width=True)
+        else:
+            st.info("採用済みパラメータがありません。グリッドサーチを実行してください。")
 
-            if not df_gs_display.empty and "score" in df_gs_display.columns:
-                best_idx = df_gs_display["score"].idxmax()
-                df_gs_display.insert(0, "rank", "")
-                df_gs_display.loc[best_idx, "rank"] = "★"
+        excluded = params_data.get("excluded", [])
+        if excluded:
+            with st.expander(f"❌ 除外ペア ({len(excluded)}件)"):
+                for e in excluded:
+                    st.write(f"• {e}")
 
-            st.dataframe(df_gs_display, use_container_width=True)
-
-            if gs_rows:
-                best_row = gs_rows[0]
-                st.markdown(f"**ベストスコア: {best_row['score']:.4f}** / 銘柄: {best_row.get('symbol','')}")
-
-        except Exception as e:
-            st.error(f"結果ファイル読み込みエラー: {e}")
+    except Exception as e:
+        st.error(f"params.json 読み込みエラー: {e}")
