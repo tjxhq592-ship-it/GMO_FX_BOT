@@ -449,12 +449,12 @@ def _run_single(train_data, data, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
 # ── デバッグモード ────────────────────────────────────────────────────────
 
 def debug_run(config: dict, score_weights: dict) -> None:
-    """最初の1パターンのみ実行してデバッグ情報を詳細表示"""
+    """1パターンのみ実行してスコアゼロ原因を詳細表示"""
     print("=" * 60)
-    print("=== デバッグモード: 最初の1パターンのみ実行 ===")
+    print("=== デバッグモード: スコアゼロ原因調査 ===")
     print("=" * 60)
 
-    # デバッグ用固定パラメータ
+    # デバッグ用固定パラメータ（前回グリッドサーチでスコア3.86が出たパラメータ）
     params_dict = {
         "bb_period":   20,
         "bb_std":      1.5,
@@ -469,13 +469,20 @@ def debug_run(config: dict, score_weights: dict) -> None:
     symbol     = "EUR_AUD"
     wft_cutoff = END_DATE - relativedelta(months=WF_TEST_MONTHS)
 
+    # 除外条件（backtest_config.json から読み込み）
+    min_trades     = int(config.get("min_trades",      30))
+    min_pf         = float(config.get("min_pf",        1.2))
+    min_wft_sharpe = float(config.get("min_wft_sharpe", 0.0))
+
     print(f"\n対象シンボル : {symbol}")
     print(f"テストパラメータ: {params_dict}")
     print(f"データ期間  : {START_DATE.date()} ~ {END_DATE.date()}")
     print(f"WFT cutoff  : {wft_cutoff.date()}")
     print(f"スコア重み  : {score_weights}")
+    print(f"除外条件    : 取引>={min_trades}  PF>={min_pf}  WFTシャープ>={min_wft_sharpe}")
     print()
 
+    # ── [1] データ取得 ──────────────────────────────────────────────────────
     print("[1] データ取得中...")
     try:
         data = get_historical_data(symbol)
@@ -486,35 +493,113 @@ def debug_run(config: dict, score_weights: dict) -> None:
         return
 
     train_data = data[data.index < wft_cutoff]
-    print(f"  学習: {len(train_data)}件 / テスト: {len(data) - len(train_data)}件")
+    test_data  = data[data.index >= wft_cutoff]
+    print(f"  学習データ (IS)  : {len(train_data)}件  ({train_data.index[0] if len(train_data) else 'N/A'} ~ {wft_cutoff.date()})")
+    print(f"  テストデータ (WFT): {len(test_data)}件  ({wft_cutoff.date()} ~ {END_DATE.date()})")
 
-    # コミッション・スプレッドコストの表示
+    # ── [2] コスト情報 ──────────────────────────────────────────────────────
     _price      = float(data["Close"].iloc[-1])
     _spread     = SPREAD_PIPS.get(symbol, 0.0003)
     _commission = calc_commission(symbol, _price)
-    print(f"\n[コスト情報]")
-    print(f"  現在価格    : {_price:.5f}")
-    print(f"  spread      : {_spread:.6f}  ({'銭' if symbol.endswith('_JPY') else 'pips'})")
-    print(f"  commission  : {_commission:.6f}  (手数料+スプレッド)")
-    print(f"  往復コスト  : {_commission * 2 * 100:.4f}%")
+    unit        = "銭" if symbol.endswith("_JPY") else "pips"
+    print(f"\n[2] コスト情報")
+    print(f"  スプレッド: {_spread} ({symbol} / {unit})")
+    print(f"  現在価格  : {_price}")
+    print(f"  commission: {_commission:.8f}")
+    print(f"  往復コスト: {_commission * 2 * 100:.6f}%")
+    print(f"  1回の取引コスト（100万円）: {_commission * 2 * 1_000_000:.0f}円")
 
     wt_wft    = score_weights.get("wft_sharpe", 0.4)
     wt_is     = score_weights.get("is_sharpe",  0.2)
     wt_pf     = score_weights.get("pf",         0.2)
     wt_trades = score_weights.get("trades",      0.2)
 
-    print("\n[2] バックテスト実行中...")
+    # ── [3] ISバックテスト ──────────────────────────────────────────────────
+    print("\n[3] ISバックテスト実行中（学習データ）...")
     is_s, wft_r, score, err = _run_single(
         train_data, data, params_dict,
         wt_wft, wt_is, wt_pf, wt_trades, debug=True, symbol=symbol,
     )
 
-    print(f"\n[3] 最終結果")
-    print(f"  is_stats  : {is_s}")
-    print(f"  wft_result: {wft_r}")
-    print(f"  score     : {score:.4f}")
+    # ── [4] IS結果詳細 ──────────────────────────────────────────────────────
+    print(f"\n[4] IS結果詳細")
+    if is_s:
+        n_trades  = is_s["n_trades"]
+        win_rate  = is_s["win_rate"]
+        pf        = is_s["pf"] if is_s["pf"] is not None else float("nan")
+        is_sharpe = is_s["sharpe"]
+        max_dd    = is_s["max_dd"]
+        return_pct = is_s["return_pct"]
+        print(f"  取引回数  : {n_trades}")
+        print(f"  勝率      : {win_rate:.1f}%")
+        print(f"  PF        : {pf:.4f}")
+        print(f"  シャープ(IS): {is_sharpe:.4f}")
+        print(f"  最大DD    : {max_dd:.4f}%")
+        print(f"  総リターン: {return_pct:.4f}%")
+    else:
+        print("  IS結果なし（バックテスト失敗）")
+        if err:
+            print(f"  エラー: {err}")
+
+    # ── [5] WFT結果詳細 ─────────────────────────────────────────────────────
+    print(f"\n[5] WFT結果詳細")
+    if wft_r:
+        wft_sharpe = wft_r["sharpe"]
+        wft_pf     = wft_r["pf"] if wft_r["pf"] is not None else float("nan")
+        print(f"  取引回数  : {wft_r['n_trades']}")
+        print(f"  勝率      : {wft_r['win_rate']:.1f}%")
+        print(f"  PF        : {wft_pf:.4f}")
+        print(f"  シャープ(WFT): {wft_sharpe:.4f}")
+        print(f"  最大DD    : {wft_r['max_dd']:.4f}%")
+        print(f"  総リターン: {wft_r['return_pct']:.4f}%")
+    else:
+        print("  WFT結果なし（データ不足またはエラー）")
+
+    # ── [6] スコアゼロ判定 ──────────────────────────────────────────────────
+    print(f"\n[6] スコアゼロ判定")
+    score_zero_reasons = []
+
+    if is_s is None:
+        score_zero_reasons.append("ISバックテスト失敗")
+    else:
+        n_trades  = is_s["n_trades"]
+        pf        = is_s["pf"] if is_s["pf"] is not None else 0.0
+        is_sharpe = is_s["sharpe"]
+
+        if n_trades < min_trades:
+            reason = f"取引回数({n_trades}) < 最小値({min_trades})"
+            score_zero_reasons.append(reason)
+            print(f"  → スコア0: {reason}")
+
+        if pf < min_pf:
+            reason = f"PF({pf:.4f}) < 最小値({min_pf})"
+            score_zero_reasons.append(reason)
+            print(f"  → スコア0: {reason}")
+
+        if wft_r is None:
+            reason = "WFT結果なし（データ不足）"
+            score_zero_reasons.append(reason)
+            print(f"  → スコア0: {reason}")
+        else:
+            wft_sharpe = wft_r["sharpe"]
+            nan_check  = wft_sharpe != wft_sharpe
+            if nan_check:
+                reason = "WFTシャープがNaN"
+                score_zero_reasons.append(reason)
+                print(f"  → スコア0: {reason}")
+            elif wft_sharpe < min_wft_sharpe:
+                reason = f"WFTシャープ({wft_sharpe:.4f}) < 最小値({min_wft_sharpe})"
+                score_zero_reasons.append(reason)
+                print(f"  → スコア0: {reason}")
+
+    if not score_zero_reasons:
+        print("  スコアゼロの条件に該当なし → スコア計算済み")
+
+    # ── [7] 最終スコア ──────────────────────────────────────────────────────
+    print(f"\n[7] 最終結果")
+    print(f"  score: {score:.4f}")
     if err:
-        print(f"  error     : {err}")
+        print(f"  error: {err}")
     print("\n=== デバッグ完了 ===")
 
 

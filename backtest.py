@@ -98,10 +98,10 @@ PARAMS_FILE  = "params.json"
 RESULTS_FILE = "backtest_results.json"
 
 # ── ペア別スプレッド設定（GMOクリック証券FXネオ 原則固定スプレッド） ──────
-# 円ペア: 銭単位（1銭=0.01円）、クロスペア: pips単位（1pip=0.01単位）
-# calc_commission で spread / price として往復コスト率に変換する。
+# 円ペア  : 銭単位（例: 0.002 = 0.2銭 = 0.002円）
+# クロスペア: pips単位（例: 10 = 10pips, 1pip = 0.0001）
 SPREAD_PIPS = {
-    # 円ペア（銭単位）
+    # 円ペア（銭単位: 0.002 = 0.2銭）
     "USD_JPY": 0.002,    # 0.2銭
     "EUR_JPY": 0.004,    # 0.4銭
     "GBP_JPY": 0.007,    # 0.7銭
@@ -112,23 +112,36 @@ SPREAD_PIPS = {
     "ZAR_JPY": 0.090,    # 9.0銭（流動性低い）
     "TRY_JPY": 0.140,    # 14.0銭
     "MXN_JPY": 0.040,    # 4.0銭
-    # クロスドル・クロスユーロ（pips単位）
-    "EUR_USD": 0.003,    # 0.3pips
-    "GBP_USD": 0.005,    # 0.5pips
-    "AUD_USD": 0.004,    # 0.4pips
-    "EUR_GBP": 0.005,    # 0.5pips
-    "EUR_CHF": 0.007,    # 0.7pips
-    "EUR_AUD": 0.010,    # 1.0pips
-    "GBP_CHF": 0.012,    # 1.2pips
-    "AUD_NZD": 0.010,    # 1.0pips
-    "GBP_AUD": 0.012,    # 1.2pips
-    "NZD_USD": 0.007,    # 0.7pips
+    # クロスペア（pips単位: 10 = 10pips）
+    "EUR_USD":  3,       # 3pips
+    "GBP_USD":  5,       # 5pips
+    "AUD_USD":  4,       # 4pips
+    "EUR_GBP":  5,       # 5pips
+    "EUR_CHF":  7,       # 7pips
+    "EUR_AUD": 10,       # 10pips
+    "GBP_CHF": 12,       # 12pips
+    "AUD_NZD": 10,       # 10pips
+    "GBP_AUD": 12,       # 12pips
+    "NZD_USD":  7,       # 7pips
 }
 
 def calc_commission(symbol: str, price: float) -> float:
-    """手数料（固定） + スプレッド（価格比率）を合算して返す。"""
-    spread = SPREAD_PIPS.get(symbol, 0.0003)
-    spread_rate = spread / price if price > 0 else 0.0
+    """API手数料（固定） + スプレッド（価格比率）を合算して返す。
+
+    円ペア  : spread は銭単位 → 円換算（÷100）→ price で割って率に変換
+              例) USD_JPY spread=0.002銭 → 0.002/100/150 ≒ 0.000000133
+    クロスペア: spread は pips単位 → ×0.0001 → price で割って率に変換
+              例) EUR_AUD spread=10pips → 10*0.0001/1.63 ≒ 0.000613
+    """
+    spread = SPREAD_PIPS.get(symbol, 10)  # デフォルト10pips
+    if price <= 0:
+        return 0.00002
+    if symbol.endswith("_JPY"):
+        # 銭単位 → 円 → レートで割って率に変換
+        spread_rate = (spread / 100) / price
+    else:
+        # pips単位 → 0.0001を掛けて価格換算
+        spread_rate = (spread * 0.0001) / price
     return 0.00002 + spread_rate
 
 # 対象シンボル: active_symbols（グリッドサーチ採用済みでトレード対象）
