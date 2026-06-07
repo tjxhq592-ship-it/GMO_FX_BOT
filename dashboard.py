@@ -169,22 +169,6 @@ def load_log():
 
 # ==================== タブ構成 ====================
 
-st.markdown("""
-<style>
-    .stTabs [data-baseweb="tab-list"] {
-        position: fixed;
-        top: 0;
-        z-index: 999;
-        background-color: white;
-        width: 100%;
-        padding-top: 10px;
-        border-bottom: 1px solid #e0e0e0;
-    }
-    .stTabs [data-baseweb="tab-panel"] {
-        margin-top: 60px;
-    }
-</style>
-""", unsafe_allow_html=True)
 
 tab_main, tab_config, tab_run, tab_gs = st.tabs([
     "📊 ダッシュボード",
