@@ -5,7 +5,7 @@
   python grid_search_runner.py --debug    # 最初の1パターンのみテスト実行
   python grid_search_runner.py --diagnose # EUR_AUD 先頭10パターン詳細診断
 
-プランB: 1コア1銘柄の multiprocessing.ProcessPoolExecutor 並列化。
+プランB: 1コア1銘柄の multiprocessing.Process 直接並列化（ProcessPoolExecutor廃止）。
 各ワーカーは担当銘柄の全コンボをシングルスレッドで処理し、
 500コンボごとに {PROGRESS_FILE}.{symbol} へ進捗を書き出す。
 メインプロセスはバックグラウンドスレッドで各シンボルの進捗ファイルを
@@ -20,7 +20,8 @@ import time
 import traceback
 import itertools
 import threading
-from concurrent.futures import ProcessPoolExecutor, as_completed
+# ProcessPoolExecutor は multiprocessing.Process に移行したため不使用
+# from concurrent.futures import ProcessPoolExecutor, as_completed
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
@@ -82,16 +83,14 @@ def get_optimal_workers(symbols: list, max_from_cfg: int = 14) -> int:
     return max(1, base)
 
 
-# ── 1銘柄のグリッドサーチ（ProcessPoolExecutor のワーカー関数） ─────────────
+# ── 1銘柄のグリッドサーチ（multiprocessing.Process のターゲット関数） ────────
 
-def search_one_symbol(args: tuple) -> dict:
-    """1銘柄の全コンボをシングルスレッドで処理してベスト結果を返す。
-    ProcessPoolExecutor のワーカーとして別プロセスで実行されるため
-    モジュールレベルに配置している（pickle 可能である必要がある）。
+def search_one_symbol(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
+                      wft_cutoff_ts, progress_file_base, result_queue):
+    """1銘柄の全コンボをシングルスレッドで処理し、結果を result_queue に put する。
+    multiprocessing.Process(target=...) から別プロセスで呼ばれる。
+    戻り値は使われないため result_queue 経由で結果を渡す。
     """
-    (symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
-     wft_cutoff_ts, progress_file_base) = args
-
     # Windows DETACHED_PROCESS 対応
     _ensure_valid_stream("stdout")
     _ensure_valid_stream("stderr")
@@ -106,14 +105,15 @@ def search_one_symbol(args: tuple) -> dict:
         sym_data       = get_historical_data(symbol)
         sym_train_data = sym_data[sym_data.index < wft_cutoff]
     except Exception as e:
-        return {
+        result_queue.put({
             "symbol":      symbol,
             "error":       str(e),
             "rows":        [],
             "best_score":  0.0,
             "best_params": {},
             "best_row":    None,
-        }
+        })
+        return
 
     rows:        list  = []
     best_score:  float = 0.0
@@ -177,14 +177,14 @@ def search_one_symbol(args: tuple) -> dict:
     except Exception:
         pass
 
-    return {
+    result_queue.put({
         "symbol":      symbol,
         "error":       None,
         "rows":        rows,
         "best_score":  best_score,
         "best_params": best_params,
         "best_row":    best_row,
-    }
+    })
 
 
 def _worker_task(args: tuple) -> tuple:
@@ -844,82 +844,137 @@ def main(debug: bool = False) -> None:
         _poll_thread = threading.Thread(target=_poll_sym_progress, daemon=True)
         _poll_thread.start()
 
-        # ── ProcessPoolExecutor で銘柄間を並列実行 ───────────────────────────
-        _ctx = multiprocessing.get_context("spawn")
-        sym_args = [
-            (sym, combos, wt_wft, wt_is, wt_pf, wt_trades,
-             wft_cutoff.timestamp(), PROGRESS_FILE)
-            for sym in symbols
-        ]
+        # ── multiprocessing.Process で銘柄間を並列実行 ──────────────────────────
+        manager        = multiprocessing.Manager()
+        result_queue   = manager.Queue()
 
+        # max_workers に従ってバッチ実行（一度に起動するプロセス数を制限）
+        remaining_syms = list(symbols)
         completed_syms_count = 0
+
         try:
-            with ProcessPoolExecutor(max_workers=max_workers, mp_context=_ctx) as executor:
-                future_to_sym = {
-                    executor.submit(search_one_symbol, a): a[0]
-                    for a in sym_args
-                }
-                for future in as_completed(future_to_sym):
-                    symbol = future_to_sym[future]
-                    completed_syms_count += 1
+            while remaining_syms or True:
+                # バッチ: max_workers 個ずつ起動
+                batch = remaining_syms[:max_workers]
+                remaining_syms = remaining_syms[max_workers:]
+
+                if not batch:
+                    break
+
+                processes = []
+                for sym in batch:
+                    p = multiprocessing.Process(
+                        target=search_one_symbol,
+                        args=(sym, combos, wt_wft, wt_is, wt_pf, wt_trades,
+                              wft_cutoff.timestamp(), PROGRESS_FILE, result_queue),
+                        daemon=False,
+                    )
+                    p.start()
+                    processes.append((sym, p))
+
+                # バッチ内の全プロセスが完了するまでポーリング
+                alive = dict(processes)  # sym -> process
+                while alive:
+                    for sym, p in list(alive.items()):
+                        if not p.is_alive():
+                            p.join(timeout=10)
+                            del alive[sym]
+
+                    # キューから結果を取り出して即時処理
+                    while not result_queue.empty():
+                        try:
+                            sym_result = result_queue.get_nowait()
+                        except Exception:
+                            break
+                        symbol = sym_result.get("symbol", "")
+                        completed_syms_count += 1
+
+                        if sym_result.get("error"):
+                            log(f"[{symbol}] エラー: {sym_result['error'].splitlines()[0]}")
+                            completed_symbols[symbol] = {
+                                "status": "error",
+                                "reason": sym_result["error"].splitlines()[0],
+                                "best_score": 0.0, "best_params": {},
+                            }
+                            current += len(combos)
+                            error_count += 1
+                        else:
+                            sym_rows        = sym_result["rows"]
+                            sym_best_score  = sym_result["best_score"]
+                            sym_best_params = sym_result["best_params"]
+
+                            results.extend(sym_rows)
+                            current += len(combos)
+
+                            if sym_best_score > best_score:
+                                best_score  = sym_best_score
+                                best_params = {**sym_best_params, "symbol": symbol}
+
+                            log(f"[{symbol}] 完了 ({completed_syms_count}/{len(symbols)})  "
+                                f"ベスト={sym_best_score:.4f}  コンボ={len(sym_rows)}/{len(combos)}")
+
+                            completed_symbols[symbol] = {
+                                "status":      "pending",
+                                "reason":      "",
+                                "best_score":  round(sym_best_score, 4),
+                                "best_params": sym_best_params,
+                            }
+                            _sym_prog_shared.pop(symbol, None)
+
+                        elapsed    = int(time.time() - start_t)
+                        done_ratio = completed_syms_count / len(symbols)
+                        remaining  = int(elapsed / done_ratio * (1 - done_ratio)) if done_ratio > 0 else 0
+                        _write_progress(current, total, best_score, best_params,
+                                        elapsed, remaining, log_lines,
+                                        completed_symbols=completed_symbols,
+                                        current_symbol=symbol,
+                                        symbol_current=len(combos),
+                                        symbol_total=len(combos),
+                                        symbol_progress=dict(_sym_prog_shared))
+
+                    if alive:
+                        time.sleep(2)
+
+                # バッチ終了後にキューを再度ドレイン（取り漏れ防止）
+                while not result_queue.empty():
                     try:
-                        sym_result = future.result(timeout=7200)  # 2時間上限
-                    except Exception as e:
-                        log(f"[{symbol}] エラー: {e}")
-                        completed_symbols[symbol] = {
-                            "status": "error", "reason": str(e).splitlines()[0],
-                            "best_score": 0.0, "best_params": {},
-                        }
-                        current += len(combos)
-                        error_count += 1
-                        continue
+                        sym_result = result_queue.get_nowait()
+                    except Exception:
+                        break
+                    symbol = sym_result.get("symbol", "")
+                    if symbol and symbol not in completed_symbols:
+                        completed_syms_count += 1
+                        if sym_result.get("error"):
+                            completed_symbols[symbol] = {
+                                "status": "error",
+                                "reason": sym_result["error"].splitlines()[0],
+                                "best_score": 0.0, "best_params": {},
+                            }
+                            current += len(combos)
+                            error_count += 1
+                        else:
+                            sym_rows        = sym_result["rows"]
+                            sym_best_score  = sym_result["best_score"]
+                            sym_best_params = sym_result["best_params"]
+                            results.extend(sym_rows)
+                            current += len(combos)
+                            if sym_best_score > best_score:
+                                best_score  = sym_best_score
+                                best_params = {**sym_best_params, "symbol": symbol}
+                            completed_symbols[symbol] = {
+                                "status":      "pending",
+                                "reason":      "",
+                                "best_score":  round(sym_best_score, 4),
+                                "best_params": sym_best_params,
+                            }
 
-                    if sym_result.get("error"):
-                        log(f"[{symbol}] エラー: {sym_result['error'].splitlines()[0]}")
-                        completed_symbols[symbol] = {
-                            "status": "error",
-                            "reason": sym_result["error"].splitlines()[0],
-                            "best_score": 0.0, "best_params": {},
-                        }
-                        current += len(combos)
-                        error_count += 1
-                    else:
-                        sym_rows        = sym_result["rows"]
-                        sym_best_score  = sym_result["best_score"]
-                        sym_best_params = sym_result["best_params"]
-
-                        results.extend(sym_rows)
-                        current += len(combos)
-
-                        if sym_best_score > best_score:
-                            best_score  = sym_best_score
-                            best_params = {**sym_best_params, "symbol": symbol}
-
-                        log(f"[{symbol}] 完了 ({completed_syms_count}/{len(symbols)})  "
-                            f"ベスト={sym_best_score:.4f}  コンボ={len(sym_rows)}/{len(combos)}")
-
-                        completed_symbols[symbol] = {
-                            "status":      "pending",
-                            "reason":      "",
-                            "best_score":  round(sym_best_score, 4),
-                            "best_params": sym_best_params,
-                        }
-                        # 完了シンボルの進捗エントリを削除
-                        _sym_prog_shared.pop(symbol, None)
-
-                    elapsed    = int(time.time() - start_t)
-                    done_ratio = completed_syms_count / len(symbols)
-                    remaining  = int(elapsed / done_ratio * (1 - done_ratio)) if done_ratio > 0 else 0
-                    _write_progress(current, total, best_score, best_params,
-                                    elapsed, remaining, log_lines,
-                                    completed_symbols=completed_symbols,
-                                    current_symbol=symbol,
-                                    symbol_current=len(combos),
-                                    symbol_total=len(combos),
-                                    symbol_progress=dict(_sym_prog_shared))
         finally:
             _poll_stop.set()
             _poll_thread.join(timeout=5)
+            try:
+                manager.shutdown()
+            except Exception:
+                pass
 
         # ── 旧コードとの互換: シンボル完了情報を整形 ─────────────────────────
         # top_N 判定処理に渡すためにシンボルごとのベスト情報を取り出す
