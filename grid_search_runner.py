@@ -422,7 +422,17 @@ def _save_to_params(symbol: str, params_dict: dict | None, log_fn,
 
         if params_dict is not None:
             # 採用: params に保存、excluded から除去、active_symbols に追加
-            params_data["params"][symbol] = params_dict
+            best_params = {
+                "bb_period":   params_dict.get("bb_period"),
+                "bb_std":      params_dict.get("bb_std"),
+                "rsi_period":  14,
+                "rsi_upper":   params_dict.get("rsi_upper"),
+                "rsi_lower":   params_dict.get("rsi_lower"),
+                "atr_period":  14,
+                "atr_sl_mult": params_dict.get("atr_sl_mult"),
+                "atr_tp_mult": params_dict.get("atr_tp_mult"),
+            }
+            params_data["params"][symbol] = best_params
             params_data["excluded"] = [
                 e for e in params_data["excluded"]
                 if not (isinstance(e, str) and e.startswith(f"{symbol}("))

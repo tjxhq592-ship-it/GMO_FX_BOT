@@ -662,7 +662,7 @@ with tab_gs:
         logs      = gs_prog.get("log", [])
 
         if status == "completed":
-            st.success("✅ グリッドサーチ完了！")
+            st.success("✅ グリッドサーチ完了！パラメータは自動的にparams.jsonに保存されました。バックテストタブで結果を確認してください。")
         elif status == "error":
             st.error("⚠️ エラーで終了しました。")
         else:
@@ -772,28 +772,6 @@ with tab_gs:
             if gs_rows:
                 best_row = gs_rows[0]
                 st.markdown(f"**ベストスコア: {best_row['score']:.4f}** / 銘柄: {best_row.get('symbol','')}")
-
-                if st.button("✅ ベストパラメータを採用", key="gs_adopt"):
-                    symbol = best_row.get("symbol", "")
-                    new_p  = {
-                        k: best_row[k]
-                        for k in ["bb_period", "bb_std", "rsi_period", "rsi_upper", "rsi_lower",
-                                  "atr_period", "atr_sl_mult", "atr_tp_mult"]
-                        if k in best_row
-                    }
-                    params_data = load_params() or {}
-                    params_data.setdefault("params", {})[symbol] = new_p
-                    params_data["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    with open(PARAMS_FILE, "w", encoding="utf-8") as f:
-                        json.dump(params_data, f, indent=2, ensure_ascii=False)
-
-                    cfg_now = load_config()
-                    if symbol and symbol not in cfg_now.get("symbols", []):
-                        cfg_now.setdefault("symbols", []).append(symbol)
-                        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-                            json.dump(cfg_now, f, indent=2, ensure_ascii=False)
-
-                    st.success(f"✅ {symbol} のパラメータを更新しました。📊タブを確認してください。")
 
         except Exception as e:
             st.error(f"結果ファイル読み込みエラー: {e}")
