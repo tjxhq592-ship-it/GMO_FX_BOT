@@ -679,12 +679,10 @@ with tab_gs:
                 st.json(best_p)
 
         # ── ペア別進捗 ────────────────────────────────────────────────────
-        completed = gs_prog.get("completed_symbols", {})
-        cur_sym   = gs_prog.get("current_symbol", "")
-        sym_cur   = gs_prog.get("symbol_current", 0)
-        sym_tot   = gs_prog.get("symbol_total",   0)
+        completed      = gs_prog.get("completed_symbols", {})
+        sym_progress   = gs_prog.get("symbol_progress", {})
 
-        # 表示対象: completed_symbols の全キー ∪ grid_search_symbols（設定値）
+        # 表示対象: grid_search_symbols（設定値）∪ completed_symbols のキー
         _cfg_now  = load_config()
         _gs_syms  = _cfg_now.get("grid_search_symbols") or _cfg_now.get("symbols", [])
         _all_syms = list(dict.fromkeys(list(_gs_syms) + list(completed.keys())))
@@ -692,6 +690,7 @@ with tab_gs:
         if _all_syms:
             st.markdown("**ペア別進捗**")
             for sym in _all_syms:
+                # completed_symbols に最終ステータスがある場合を優先
                 if sym in completed:
                     info   = completed[sym]
                     st_sym = info.get("status", "")
@@ -707,9 +706,20 @@ with tab_gs:
                         st.info(f"🔄 {sym}: 処理完了（採用判定中）スコア {sc:.4f}")
                     else:
                         st.info(f"⏳ {sym}: 待機中")
-                elif sym == cur_sym and sym_tot > 0:
-                    pct = sym_cur / sym_tot
-                    st.info(f"🔄 {sym}: 処理中  {sym_cur:,} / {sym_tot:,}  ({pct:.0%})")
+                # symbol_progress にリアルタイム進捗がある場合
+                elif sym in sym_progress:
+                    prog   = sym_progress[sym]
+                    s_stat = prog.get("status", "waiting")
+                    cur_c  = prog.get("current", 0)
+                    tot_c  = prog.get("total", 1)
+                    bsc    = prog.get("best_score", 0.0)
+                    pct    = prog.get("pct", 0.0)
+                    if s_stat == "running":
+                        st.info(f"🔄 {sym}: {cur_c:,} / {tot_c:,} 件処理中  ({pct:.1f}%)  ベスト={bsc:.4f}")
+                    elif s_stat == "completed":
+                        st.success(f"✅ {sym}: 完了  ベスト={bsc:.4f}")
+                    else:
+                        st.info(f"⏳ {sym}: 待機中")
                 else:
                     st.info(f"⏳ {sym}: 待機中")
 

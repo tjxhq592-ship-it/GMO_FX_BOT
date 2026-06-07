@@ -86,10 +86,11 @@ def get_optimal_workers(symbols: list, max_from_cfg: int = 14) -> int:
 # ── 1銘柄のグリッドサーチ（multiprocessing.Process のターゲット関数） ────────
 
 def search_one_symbol(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
-                      wft_cutoff_ts, progress_file_base, result_queue):
+                      wft_cutoff_ts, progress_file_base, result_queue,
+                      progress_queue):
     """1銘柄の全コンボをシングルスレッドで処理し、結果を result_queue に put する。
-    multiprocessing.Process(target=...) から別プロセスで呼ばれる。
-    戻り値は使われないため result_queue 経由で結果を渡す。
+    進捗は progress_queue 経由でメインプロセスに送り、メインプロセスが一元書き込みする。
+    multiprocessing.Process(target=...) から別プロセスで実行される。
     """
     # Windows DETACHED_PROCESS 対応
     _ensure_valid_stream("stdout")
@@ -97,8 +98,6 @@ def search_one_symbol(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
 
     from datetime import datetime as _dt
     wft_cutoff = _dt.fromtimestamp(wft_cutoff_ts)
-
-    sym_progress_file = f"{progress_file_base}.{symbol}"
 
     # ── データ取得 ──────────────────────────────────────────────────────────
     try:
@@ -157,25 +156,13 @@ def search_one_symbol(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
             best_params = params_dict
             best_row    = row
 
-        # 500コンボごと（および最終コンボ）に進捗ファイルを更新
+        # 500コンボごと（および最終コンボ）に progress_queue で進捗を送信
         if combo_i % 500 == 0 or combo_i == total_combos - 1:
             try:
-                with open(sym_progress_file, "w", encoding="utf-8") as _f:
-                    json.dump({
-                        "symbol":     symbol,
-                        "current":    combo_i + 1,
-                        "total":      total_combos,
-                        "best_score": round(best_score, 4),
-                        "pct":        round((combo_i + 1) / total_combos * 100, 1),
-                    }, _f)
+                progress_queue.put((symbol, combo_i + 1, total_combos,
+                                    round(best_score, 4)))
             except Exception:
                 pass
-
-    # 完了後に進捗ファイルを削除（ポーリングスレッドが完了判定に使う）
-    try:
-        os.remove(sym_progress_file)
-    except Exception:
-        pass
 
     result_queue.put({
         "symbol":      symbol,
@@ -810,44 +797,56 @@ def main(debug: bool = False) -> None:
         log(f"ワーカー数: {max_workers}  (CPU={os.cpu_count()} / "
             f"使用率={psutil.cpu_percent():.0f}% / MEM={psutil.virtual_memory().percent:.0f}%)")
 
-        # ── バックグラウンドでシンボル進捗ファイルをポーリング ──────────────
-        # 各ワーカーが {PROGRESS_FILE}.{symbol} に500コンボごと書き出すので
-        # メインプロセスが3秒ごとに読み取って全銘柄の進捗をまとめる。
-        _poll_stop   = threading.Event()
-        _sym_prog_shared: dict = {}   # ポーリングスレッドと共有する進捗辞書
+        # ── progress_writer スレッド ────────────────────────────────────────
+        # 各ワーカーが progress_queue に (symbol, current, total, best_score) を送信し、
+        # メインプロセスのこのスレッドだけが grid_search_progress.json を書き込む。
+        # ファイル競合を完全に排除し、ステータスを正確に管理する。
+        _sym_prog_shared: dict = {
+            s: {"current": 0, "total": len(combos), "status": "waiting", "best_score": 0.0}
+            for s in symbols
+        }
+        _prog_writer_stop = threading.Event()
 
-        def _poll_sym_progress():
-            while not _poll_stop.is_set():
-                new_prog: dict = {}
-                for sym in symbols:
-                    pf = f"{PROGRESS_FILE}.{sym}"
-                    if os.path.exists(pf):
-                        try:
-                            with open(pf, "r", encoding="utf-8") as _f:
-                                new_prog[sym] = json.load(_f)
-                        except Exception:
-                            pass
-                if new_prog:
-                    _sym_prog_shared.update(new_prog)
-                    elapsed = int(time.time() - start_t)
-                    done_combos = current + sum(
-                        v.get("current", 0) for v in new_prog.values()
-                    )
-                    done_ratio = done_combos / total if total > 0 else 1
-                    remaining  = int(elapsed / done_ratio * (1 - done_ratio)) if done_ratio > 0 else 0
-                    _write_progress(done_combos, total, best_score, best_params,
-                                    elapsed, remaining, log_lines,
-                                    completed_symbols=completed_symbols,
-                                    symbol_progress=dict(_sym_prog_shared))
-                _poll_stop.wait(timeout=3)
+        def _progress_writer_thread(progress_queue):
+            while not _prog_writer_stop.is_set():
+                try:
+                    msg = progress_queue.get(timeout=1)
+                except Exception:
+                    continue
+                if msg == "DONE":
+                    break
+                sym, cur_c, tot_c, bsc = msg
+                _sym_prog_shared[sym] = {
+                    "current":    cur_c,
+                    "total":      tot_c,
+                    "status":     "running",
+                    "best_score": bsc,
+                    "pct":        round(cur_c / tot_c * 100, 1) if tot_c > 0 else 0,
+                }
+                elapsed = int(time.time() - start_t)
+                # 全銘柄の進捗から完了コンボ数を推定
+                done_combos = current + sum(
+                    v.get("current", 0) for v in _sym_prog_shared.values()
+                    if v.get("status") == "running"
+                )
+                done_ratio = done_combos / total if total > 0 else 1
+                remaining  = int(elapsed / done_ratio * (1 - done_ratio)) if done_ratio > 0 else 0
+                _write_progress(done_combos, total, best_score, best_params,
+                                elapsed, remaining, log_lines,
+                                completed_symbols=completed_symbols,
+                                symbol_progress=dict(_sym_prog_shared))
 
-        _poll_thread = threading.Thread(target=_poll_sym_progress, daemon=True)
-        _poll_thread.start()
-
-        # ── multiprocessing.Process で銘柄間を並列実行 ──────────────────────────
+        # Manager と2つのキューを一括作成
         manager        = multiprocessing.Manager()
         result_queue   = manager.Queue()
+        progress_queue = manager.Queue()
 
+        _pw_thread = threading.Thread(
+            target=_progress_writer_thread, args=(progress_queue,), daemon=True
+        )
+        _pw_thread.start()
+
+        # ── multiprocessing.Process で銘柄間を並列実行 ──────────────────────────
         # max_workers に従ってバッチ実行（一度に起動するプロセス数を制限）
         remaining_syms = list(symbols)
         completed_syms_count = 0
@@ -866,7 +865,8 @@ def main(debug: bool = False) -> None:
                     p = multiprocessing.Process(
                         target=search_one_symbol,
                         args=(sym, combos, wt_wft, wt_is, wt_pf, wt_trades,
-                              wft_cutoff.timestamp(), PROGRESS_FILE, result_queue),
+                              wft_cutoff.timestamp(), PROGRESS_FILE,
+                              result_queue, progress_queue),
                         daemon=False,
                     )
                     p.start()
@@ -919,7 +919,14 @@ def main(debug: bool = False) -> None:
                                 "best_score":  round(sym_best_score, 4),
                                 "best_params": sym_best_params,
                             }
-                            _sym_prog_shared.pop(symbol, None)
+                            # 完了シンボルの symbol_progress ステータスを更新
+                            _sym_prog_shared[symbol] = {
+                                "current":    len(combos),
+                                "total":      len(combos),
+                                "status":     "completed",
+                                "best_score": round(sym_best_score, 4),
+                                "pct":        100.0,
+                            }
 
                         elapsed    = int(time.time() - start_t)
                         done_ratio = completed_syms_count / len(symbols)
@@ -967,10 +974,21 @@ def main(debug: bool = False) -> None:
                                 "best_score":  round(sym_best_score, 4),
                                 "best_params": sym_best_params,
                             }
+                            _sym_prog_shared[symbol] = {
+                                "current":    len(combos),
+                                "total":      len(combos),
+                                "status":     "completed",
+                                "best_score": round(sym_best_score, 4),
+                                "pct":        100.0,
+                            }
 
         finally:
-            _poll_stop.set()
-            _poll_thread.join(timeout=5)
+            _prog_writer_stop.set()
+            try:
+                progress_queue.put("DONE")
+            except Exception:
+                pass
+            _pw_thread.join(timeout=5)
             try:
                 manager.shutdown()
             except Exception:
