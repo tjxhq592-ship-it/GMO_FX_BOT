@@ -1,9 +1,9 @@
 {
   "weights": {
-    "wft_sharpe": 0.35,
-    "is_sharpe": 0.20,
-    "pf": 0.25,
-    "trades": 0.20
+    "wft_sharpe": 0.50,
+    "is_sharpe": 0.15,
+    "pf": 0.20,
+    "trades": 0.15
   },
   "max_workers": 14
 }
