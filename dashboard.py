@@ -78,8 +78,18 @@ def _read_progress_json(path: str, retries: int = 3, delay: float = 0.1) -> dict
     return None
 
 
+SCHEDULER_PID_FILE = os.path.join(BASE_DIR, "scheduler_pid.json")
+
+
+def check_scheduler_status() -> bool:
+    data = _read_pid_file(SCHEDULER_PID_FILE)
+    pid = data.get("pid")
+    if not pid:
+        return False
+    return psutil.pid_exists(int(pid))
+
+
 st.set_page_config(page_title="GMO FX Bot Dashboard", layout="wide")
-st.title("GMO FX Bot ダッシュボード")
 
 
 # ==================== データ読込ユーティリティ ====================
@@ -167,20 +177,39 @@ def load_log():
     return pd.DataFrame(records)
 
 
-# ==================== タブ構成 ====================
+# ==================== サイドバーナビゲーション ====================
+
+with st.sidebar:
+    st.title("GMO FX Bot")
+    st.divider()
+
+    page = st.radio(
+        "メニュー",
+        ["📊 ダッシュボード",
+         "⚙️ 設定",
+         "🚀 バックテスト実行",
+         "🔍 グリッドサーチ"],
+        label_visibility="collapsed",
+    )
+
+    st.divider()
+
+    st.caption("接続状態")
+    if check_scheduler_status():
+        st.success("🟢 ボット稼働中")
+    else:
+        st.warning("🔴 ボット停止中")
+
+    st.divider()
+
+    if st.button("🚪 ログアウト", use_container_width=True):
+        st.session_state.clear()
+        st.rerun()
 
 
-tab_main, tab_config, tab_run, tab_gs = st.tabs([
-    "📊 ダッシュボード",
-    "⚙️ 設定",
-    "🚀 バックテスト実行",
-    "🔍 グリッドサーチ",
-])
+# ==================== ページ: ダッシュボード ====================
 
-
-# ==================== TAB 1: ダッシュボード ====================
-
-with tab_main:
+def show_dashboard():
 
     st.subheader("サマリー")
     params_data = load_params()
@@ -265,9 +294,10 @@ with tab_main:
         st.bar_chart(count_df)
 
 
-# ==================== TAB 2: 設定 ====================
 
-with tab_config:
+# ==================== ページ: 設定 ====================
+
+def show_settings():
     st.subheader("設定")
     cfg      = load_config()
     gs_cfg   = load_gs_config()
@@ -508,9 +538,10 @@ with tab_config:
                     st.json(load_gs_config())
 
 
-# ==================== TAB 3: バックテスト実行 ====================
 
-with tab_run:
+# ==================== ページ: バックテスト実行 ====================
+
+def show_backtest():
     st.subheader("バックテスト実行")
     st_autorefresh(interval=3000, key="bt_refresh")
 
@@ -579,9 +610,10 @@ with tab_run:
         st.caption("`backtest_progress.json` がありません。実行開始後に進捗が表示されます。")
 
 
-# ==================== TAB 4: グリッドサーチ ====================
 
-with tab_gs:
+# ==================== ページ: グリッドサーチ ====================
+
+def show_grid_search():
     st.subheader("グリッドサーチ")
     st_autorefresh(interval=3000, key="gs_refresh")
 
@@ -782,3 +814,15 @@ with tab_gs:
 
     except Exception as e:
         st.error(f"params.json 読み込みエラー: {e}")
+
+
+# ==================== ページルーティング ====================
+
+if page == "📊 ダッシュボード":
+    show_dashboard()
+elif page == "⚙️ 設定":
+    show_settings()
+elif page == "🚀 バックテスト実行":
+    show_backtest()
+elif page == "🔍 グリッドサーチ":
+    show_grid_search()
