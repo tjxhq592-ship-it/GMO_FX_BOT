@@ -323,9 +323,16 @@ def show_settings():
     st.markdown("#### データ期間")
     d_col1, d_col2 = st.columns(2)
     with d_col1:
+        start_date_str = cfg.get("start_date", "2024-06-07")
+        if start_date_str == "auto" or not start_date_str:
+            start_date_str = "2024-06-07"
+        try:
+            start_date_val = date.fromisoformat(start_date_str)
+        except ValueError:
+            start_date_val = date(2024, 6, 7)
         start_date = st.date_input(
             "開始日",
-            value=date.fromisoformat(cfg.get("start_date", "2024-06-16")),
+            value=start_date_val,
         )
     with d_col2:
         st.text_input("終了日", value="auto（昨日）", disabled=True)
