@@ -289,7 +289,19 @@ class GmoFxClient:
     def get_cash_jpy(self) -> float:
         """日本円の有効証拠金を返す"""
         assets = self.get_assets()
-        for a in assets:
-            if a.get("symbol") == "JPY":
-                return float(a.get("availableAmount", 0))
+
+        # デバッグ用に構造を出力
+        print("assets type:", type(assets))
+        print("assets:", assets)
+
+        # assetsがdictの場合
+        if isinstance(assets, dict):
+            return float(assets.get("availableAmount", 0))
+
+        # assetsがlistの場合
+        if isinstance(assets, list):
+            for a in assets:
+                if isinstance(a, dict) and a.get("symbol") == "JPY":
+                    return float(a.get("availableAmount", 0))
+
         return 0.0
