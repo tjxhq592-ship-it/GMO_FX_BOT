@@ -91,15 +91,21 @@ def check_scheduler_status() -> bool:
     return psutil.pid_exists(int(pid))
 
 
-def get_bot_pid():
-    """scheduler.py を実行しているプロセスの PID を取得"""
-    for proc in psutil.process_iter(['pid', 'cmdline']):
-        try:
-            if 'scheduler.py' in ' '.join(proc.info['cmdline'] or []):
-                return proc.info['pid']
-        except Exception:
-            pass
-    return None
+def get_bot_status() -> bool:
+    """systemd サービスの稼働状態を確認"""
+    result = subprocess.run(
+        ["systemctl", "is-active", "gmo-fx-bot"],
+        capture_output=True, text=True
+    )
+    return result.stdout.strip() == "active"
+
+
+def start_bot():
+    subprocess.run(["sudo", "systemctl", "start", "gmo-fx-bot"])
+
+
+def stop_bot():
+    subprocess.run(["sudo", "systemctl", "stop", "gmo-fx-bot"])
 
 
 st.set_page_config(page_title="GMO FX Bot Dashboard", layout="wide")
@@ -226,20 +232,15 @@ with st.sidebar:
 
     st.divider()
 
-    pid = get_bot_pid()
-    if pid:
-        st.success(f"🟢 ボット稼働中 (PID: {pid})")
+    if get_bot_status():
+        st.success("🟢 ボット稼働中")
         if st.button("⏹ ボット停止", key="stop_bot", use_container_width=True):
-            os.kill(pid, signal.SIGTERM)
+            stop_bot()
             st.rerun()
     else:
         st.error("🔴 ボット停止中")
         if st.button("▶ ボット起動", key="start_bot", use_container_width=True):
-            subprocess.Popen(
-                [sys.executable, "scheduler.py"],
-                cwd=BASE_DIR,
-                start_new_session=True,
-            )
+            start_bot()
             st.rerun()
 
 
