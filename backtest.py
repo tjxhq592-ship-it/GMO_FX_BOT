@@ -95,10 +95,14 @@ MIN_TRADES       = int(_cfg.get("min_trades",     200))
 PF_THRESHOLD     = float(_cfg.get("min_pf",       1.2))
 SHARPE_THRESHOLD = float(_cfg.get("min_wft_sharpe", 0.0))
 
-INTERVAL     = _cfg.get("interval", "30min")
+INTERVAL            = _cfg.get("interval", "30min")
+DATA_SOURCE         = _cfg.get("data_source", "gmo")           # "gmo" or "dukascopy"
+DUKASCOPY_START_YR  = int(_cfg.get("dukascopy_start_year", 2016))
 INITIAL_CASH = 1_000_000  # 円（固定）
-CACHE_DIR    = os.path.join(".cache", INTERVAL)   # interval 別キャッシュ
-CACHE_TTL    = 4 * 3600   # 4時間
+CACHE_DIR    = os.path.join(".cache", DATA_SOURCE, INTERVAL)   # ソース+interval 別キャッシュ
+CACHE_TTL_GMO  = 4  * 3600   # GMO: 4時間
+CACHE_TTL_DUKA = 24 * 3600   # Dukascopy: 24時間
+CACHE_TTL    = CACHE_TTL_DUKA if DATA_SOURCE == "dukascopy" else CACHE_TTL_GMO
 PARAMS_FILE  = "params.json"
 RESULTS_FILE = "backtest_results.json"
 
@@ -170,8 +174,8 @@ bt_logger = logging.getLogger("backtest")
 
 # === データキャッシュ ===
 def _cache_path(symbol: str) -> str:
-    """シンボル単位のキャッシュパス（interval 別ディレクトリ・TTL で鮮度管理）"""
-    key = f"gmo_{symbol}_{INTERVAL}"
+    """シンボル単位のキャッシュパス（ソース+interval 別ディレクトリ・TTL で鮮度管理）"""
+    key = f"{DATA_SOURCE}_{symbol}_{INTERVAL}"
     return os.path.join(CACHE_DIR, hashlib.md5(key.encode()).hexdigest() + ".pkl")
 
 def _download_gmo(symbol: str) -> pd.DataFrame:
@@ -188,14 +192,33 @@ def _download_gmo(symbol: str) -> pd.DataFrame:
     df = df[["Open", "High", "Low", "Close", "Volume"]]
     return df.dropna(subset=["Open", "High", "Low", "Close"])
 
+def _download_dukascopy(symbol: str) -> pd.DataFrame:
+    """Dukascopy から履歴データを取得して返す（キャッシュは get_historical_data が管理）"""
+    from dukascopy_fetcher import fetch_dukascopy
+    return fetch_dukascopy(
+        symbol,
+        interval=INTERVAL,
+        start_year=DUKASCOPY_START_YR,
+        use_cache=False,   # キャッシュは下の get_historical_data が一括管理
+    )
+
 def get_historical_data(symbol: str) -> pd.DataFrame:
-    """バックテスト用データを取得（TTLキャッシュ付き）"""
+    """バックテスト用データを取得（TTLキャッシュ付き）
+
+    data_source 設定に応じて GMO API / Dukascopy を切り替える。
+    キャッシュは .cache/{source}/{interval}/ に保存。
+    """
     os.makedirs(CACHE_DIR, exist_ok=True)
     path = _cache_path(symbol)
     if os.path.exists(path) and time.time() - os.path.getmtime(path) < CACHE_TTL:
         with open(path, "rb") as f:
             return pickle.load(f)
-    df = _download_gmo(symbol)
+
+    if DATA_SOURCE == "dukascopy":
+        df = _download_dukascopy(symbol)
+    else:
+        df = _download_gmo(symbol)
+
     with open(path, "wb") as f:
         pickle.dump(df, f)
     return df

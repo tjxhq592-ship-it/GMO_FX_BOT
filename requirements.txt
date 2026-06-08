@@ -12,3 +12,4 @@ websocket-client
 streamlit-autorefresh
 loky
 psutil
+dukascopy-python

@@ -2,13 +2,22 @@
   "start_date": "2024-06-07",
   "end_date": "auto",
   "interval": "30min",
+  "data_source": "dukascopy",
+  "dukascopy_start_year": 2016,
   "wf_train_months": 6,
-  "wf_test_months": 2,
+  "wf_test_months": 1,
   "wft_offset_months": 2,
   "symbols": [
     "USD_JPY",
     "EUR_JPY",
-    "CHF_JPY"
+    "GBP_JPY",
+    "AUD_JPY",
+    "NZD_JPY",
+    "CAD_JPY",
+    "CHF_JPY",
+    "EUR_USD",
+    "GBP_USD",
+    "AUD_USD"
   ],
   "available_symbols": [
     "USD_JPY",
@@ -78,20 +87,20 @@
     3.0,
     3.5
   ],
-  "min_trades": 20,
+  "min_trades": 50,
   "min_pf": 0.8,
   "min_wft_sharpe": -0.5,
   "active_symbols": [
     "USD_JPY",
     "EUR_JPY",
-    "CHF_JPY",
-    "AUD_USD",
     "GBP_JPY",
-    "GBP_USD",
-    "CAD_JPY",
     "AUD_JPY",
+    "NZD_JPY",
+    "CAD_JPY",
+    "CHF_JPY",
     "EUR_USD",
-    "NZD_JPY"
+    "GBP_USD",
+    "AUD_USD"
   ],
   "max_workers": 14,
   "paper_trade": true

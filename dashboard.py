@@ -425,6 +425,26 @@ def show_settings():
         help="バックテスト・グリッドサーチで使用する時間足",
     )
 
+    _ds_options = ["gmo", "dukascopy"]
+    _ds_current = cfg.get("data_source", "dukascopy")
+    _ds_idx     = _ds_options.index(_ds_current) if _ds_current in _ds_options else 1
+    data_source = st.selectbox(
+        "データソース",
+        options=_ds_options,
+        index=_ds_idx,
+        help="gmo: 直近2年（API取得） / dukascopy: 10年分（バックテスト推奨）",
+    )
+
+    dukascopy_start_year = st.number_input(
+        "データ取得開始年（Dukascopy）",
+        min_value=2010,
+        max_value=datetime.today().year - 1,
+        value=int(cfg.get("dukascopy_start_year", 2016)),
+        step=1,
+        disabled=(data_source != "dukascopy"),
+        help="data_source=dukascopy のときのみ有効",
+    )
+
     st.markdown("---")
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -593,9 +613,11 @@ def show_settings():
             "min_trades":          int(min_trades),
             "min_pf":              float(min_pf),
             "min_wft_sharpe":      float(min_wft_sharpe),
-            "max_workers":         max_workers_val,
-            "paper_trade":         paper_trade,
-            "interval":            interval,
+            "max_workers":           max_workers_val,
+            "paper_trade":           paper_trade,
+            "interval":              interval,
+            "data_source":           data_source,
+            "dukascopy_start_year":  int(dukascopy_start_year),
         }
         try:
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
