@@ -320,6 +320,17 @@ def show_settings():
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     st.markdown("### 📌 共通設定")
 
+    # ── ペーパートレードモード ──────────────────────────────────────────
+    paper_trade = st.toggle(
+        "ペーパートレードモード",
+        value=cfg.get("paper_trade", True),
+        help="OFFにすると実際の発注が行われます",
+    )
+    if paper_trade:
+        st.success("📝 ペーパートレードモード：実際の発注は行われません")
+    else:
+        st.error("⚠️ 本番トレードモード：実際の発注が行われます")
+
     st.markdown("#### データ期間")
     d_col1, d_col2 = st.columns(2)
     with d_col1:
@@ -505,6 +516,7 @@ def show_settings():
             "min_pf":              float(min_pf),
             "min_wft_sharpe":      float(min_wft_sharpe),
             "max_workers":         max_workers_val,
+            "paper_trade":         paper_trade,
         }
         try:
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:

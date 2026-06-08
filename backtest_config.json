@@ -4,9 +4,7 @@
   "wf_train_months": 6,
   "wf_test_months": 2,
   "wft_offset_months": 2,
-  "symbols": [
-    "GBP_USD"
-  ],
+  "symbols": [],
   "available_symbols": [
     "USD_JPY",
     "EUR_JPY",
@@ -23,7 +21,22 @@
     "AUD_USD",
     "NZD_USD"
   ],
-  "grid_search_symbols": [],
+  "grid_search_symbols": [
+    "USD_JPY",
+    "EUR_JPY",
+    "GBP_JPY",
+    "AUD_JPY",
+    "NZD_JPY",
+    "CAD_JPY",
+    "CHF_JPY",
+    "TRY_JPY",
+    "ZAR_JPY",
+    "MXN_JPY",
+    "EUR_USD",
+    "GBP_USD",
+    "AUD_USD",
+    "NZD_USD"
+  ],
   "grid_search_top_n": 3,
   "bb_period": {
     "min": 10,
@@ -64,7 +77,10 @@
   "min_pf": 0.8,
   "min_wft_sharpe": -0.5,
   "active_symbols": [
-    "GBP_USD"
+    "USD_JPY",
+    "EUR_JPY",
+    "CHF_JPY"
   ],
-  "max_workers": 14
+  "max_workers": 14,
+  "paper_trade": true
 }

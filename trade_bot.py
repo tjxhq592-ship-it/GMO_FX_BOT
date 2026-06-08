@@ -4,6 +4,7 @@ GMOコイン 外国為替FX 自動取引ボット
 """
 import json
 import logging
+import os
 import re
 import time
 from datetime import datetime, timezone, timedelta
@@ -15,9 +16,9 @@ from polymarket import get_polymarket_signal
 from config import (
     GMO_API_KEY, GMO_SECRET_KEY, ANTHROPIC_API_KEY,
     LOG_FILE, PARAMS_FILE, SYMBOLS,
-    LINE_CHANNEL_TOKEN, LINE_USER_ID,
 )
 from gmo_client import GmoFxClient
+from notifier import send_telegram
 from utils import (
     calculate_rsi, calculate_bollinger, calculate_atr,
     get_market_condition, calc_trade_size,
@@ -31,23 +32,21 @@ logging.basicConfig(
     format="%(asctime)s %(message)s",
 )
 
-# ── LINE通知 ────────────────────────────────────────────────────────────
-def send_line(message: str) -> None:
+BASE_DIR            = os.path.dirname(os.path.abspath(__file__))
+BT_CONFIG_FILE      = os.path.join(BASE_DIR, "backtest_config.json")
+PAPER_POSITIONS_FILE = os.path.join(BASE_DIR, "paper_positions.json")
+
+
+# ── 設定読み込み ──────────────────────────────────────────────────────────
+def _load_bt_config() -> dict:
     try:
-        url     = "https://api.line.me/v2/bot/message/push"
-        headers = {
-            "Content-Type":  "application/json",
-            "Authorization": f"Bearer {LINE_CHANNEL_TOKEN}",
-        }
-        data = {
-            "to":       LINE_USER_ID,
-            "messages": [{"type": "text", "text": message}],
-        }
-        r = requests.post(url, headers=headers, json=data, timeout=10)
-        if r.status_code != 200:
-            logging.error(f"LINE送信失敗: {r.status_code} {r.text}")
-    except Exception as e:
-        logging.error(f"LINE送信エラー: {e}")
+        with open(BT_CONFIG_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+_bt_cfg    = _load_bt_config()
+PAPER_TRADE = _bt_cfg.get("paper_trade", True)
 
 
 # ── パラメータ読み込み ────────────────────────────────────────────────────
@@ -57,9 +56,73 @@ def load_params() -> dict:
 
 
 # ── クライアント初期化 ────────────────────────────────────────────────────
-# notify_fn を渡すことで gmo_client 内のエラーも LINE 通知される
-gmo    = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY, notify_fn=send_line)
+gmo    = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY, notify_fn=send_telegram)
 claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+
+# ── ペーパーポジション管理 ────────────────────────────────────────────────
+def _load_paper_positions() -> dict:
+    if not os.path.exists(PAPER_POSITIONS_FILE):
+        return {}
+    try:
+        with open(PAPER_POSITIONS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def _save_paper_positions(positions: dict) -> None:
+    with open(PAPER_POSITIONS_FILE, "w", encoding="utf-8") as f:
+        json.dump(positions, f, ensure_ascii=False, indent=2)
+
+def load_paper_position(symbol: str) -> dict | None:
+    return _load_paper_positions().get(symbol)
+
+def place_order_paper(
+    symbol: str,
+    side: str,
+    size: int,
+    entry_price: float,
+    sl: float,
+    tp: float,
+) -> None:
+    """ペーパーポジションを paper_positions.json に記録して通知。"""
+    positions = _load_paper_positions()
+    positions[symbol] = {
+        "side":        side,
+        "size":        size,
+        "entry_price": entry_price,
+        "entry_time":  datetime.now().isoformat(),
+        "sl":          sl,
+        "tp":          tp,
+    }
+    _save_paper_positions(positions)
+    send_telegram(
+        f"📝[PAPER] {side}注文\n"
+        f"銘柄: {symbol}\n"
+        f"価格: {entry_price}\n"
+        f"数量: {size}通貨\n"
+        f"SL: {sl}\n"
+        f"TP: {tp}"
+    )
+
+def close_position_paper(symbol: str, exit_price: float, reason: str) -> None:
+    """ペーパーポジションを決済して損益を通知。"""
+    pos = load_paper_position(symbol)
+    if not pos:
+        return
+    pnl = (exit_price - pos["entry_price"]) * pos["size"]
+    if pos["side"] == "SELL":
+        pnl = -pnl
+    send_telegram(
+        f"📝[PAPER] 決済\n"
+        f"銘柄: {symbol}\n"
+        f"決済価格: {exit_price}\n"
+        f"理由: {reason}\n"
+        f"損益: {pnl:+.0f}円"
+    )
+    positions = _load_paper_positions()
+    positions.pop(symbol, None)
+    _save_paper_positions(positions)
 
 
 # ── 市場データ取得 ────────────────────────────────────────────────────────
@@ -67,7 +130,6 @@ def get_market_data(symbol: str, symbol_params: dict) -> object:
     p    = symbol_params[symbol]
     bars = gmo.get_klines_range(symbol, interval="1day", days=90)
 
-    # ボリンジャーバンド
     bb_period = p.get("bb_period", 20)
     bb_std    = p.get("bb_std", 2.0)
     bb = calculate_bollinger(bars["close"], period=bb_period, std_mult=bb_std)
@@ -75,15 +137,12 @@ def get_market_data(symbol: str, symbol_params: dict) -> object:
     bars["BB_mid"]   = bb["mid"]
     bars["BB_lower"] = bb["lower"]
 
-    # RSI
     rsi_period  = p.get("rsi_period", 14)
     bars["RSI"] = calculate_rsi(bars["close"], period=rsi_period)
 
-    # ATR
     atr_period  = p.get("atr_period", 14)
     bars["ATR"] = calculate_atr(bars["high"], bars["low"], bars["close"], period=atr_period)
 
-    # レンジ判定用ATR平均
     bars["ATR_avg20"] = bars["ATR"].rolling(20).mean()
 
     return bars
@@ -108,9 +167,9 @@ def should_block_entry(signal: dict) -> bool:
 
 # ── Claudeに判断を依頼 ─────────────────────────────────────────────────
 def ask_claude(bars, symbol: str, symbol_params: dict, poly_signal: dict) -> dict:
+    import pandas as pd
     p      = symbol_params[symbol]
     latest = bars.iloc[-1]
-    prev   = bars.iloc[-2]
 
     recent = bars.iloc[-5:]
     recent_summary = "\n".join([
@@ -122,10 +181,10 @@ def ask_claude(bars, symbol: str, symbol_params: dict, poly_signal: dict) -> dic
 
     poly_context = build_polymarket_context(poly_signal)
 
-    atr_now    = latest["ATR"]
-    atr_avg    = latest["ATR_avg20"]
-    in_range   = (atr_now < atr_avg * p.get("atr_range_mult", 1.0)) if pd.notna(atr_avg) else False
-    range_str  = "レンジ相場" if in_range else "トレンド相場"
+    atr_now   = latest["ATR"]
+    atr_avg   = latest["ATR_avg20"]
+    in_range  = (atr_now < atr_avg * p.get("atr_range_mult", 1.0)) if pd.notna(atr_avg) else False
+    range_str = "レンジ相場" if in_range else "トレンド相場"
 
     prompt = f"""
 あなたはFXトレードAIです。ボリンジャーバンド+RSI逆張り戦略でレンジ相場の売買判断をしてください。
@@ -173,36 +232,29 @@ ATR: {atr_now:.5f} / ATR20期間平均: {atr_avg:.5f if pd.notna(atr_avg) else '
     return {"action": "hold", "reason": "判断取得失敗"}
 
 
-# ── ポジション確認（常に API から最新状態を取得）────────────────────────
+# ── ポジション確認 ────────────────────────────────────────────────────────
 def get_position(symbol: str) -> dict | None:
+    if PAPER_TRADE:
+        return load_paper_position(symbol)
     positions = gmo.get_open_positions(symbol)
     return positions[0] if positions else None
 
 
 # ── 高スプレッド時間帯チェック ────────────────────────────────────────────
 def _is_high_spread_period() -> bool:
-    """
-    低スプレッド時間帯（エントリー許可）: 09:00〜翌03:00 JST
-    それ以外（03:00〜09:00 JST）はスプレッド拡大リスクのためエントリーをスキップ。
-
-    Returns:
-        True  → 高スプレッド時間帯（エントリー不可）
-        False → 低スプレッド時間帯（エントリー可）
-    """
     now = datetime.now(JST)
     h = now.hour
-    # 03:00以上09:00未満 → 高スプレッド時間帯
     return 3 <= h < 9
 
 
 # ── 期限切れ指値注文のキャンセル ──────────────────────────────────────────
 def _cancel_stale_orders(symbol: str) -> None:
-    """1時間以上前に出した未約定の指値注文をキャンセルする"""
+    if PAPER_TRADE:
+        return
     try:
         orders  = gmo.get_active_orders(symbol)
         now_ms  = int(time.time() * 1000)
         for order in orders:
-            # GMO API は timestamp をミリ秒 Unix 時刻で返す
             order_ts = int(order.get("timestamp", now_ms))
             age_h    = (now_ms - order_ts) / 3_600_000
             if age_h >= 1:
@@ -215,11 +267,20 @@ def _cancel_stale_orders(symbol: str) -> None:
 
 # ── メインループ ──────────────────────────────────────────────────────────
 def run_bot() -> None:
-    logging.info("=== GMO FXボット起動 ===")
+    mode_label = "📝ペーパートレード" if PAPER_TRADE else "🚀本番トレード"
+    logging.info(f"=== GMO FXボット起動 [{mode_label}] ===")
 
-    cash = gmo.get_cash_jpy()
-    logging.info(f"有効証拠金: ¥{cash:,.0f}")
-    send_line(f"🤖 GMO FXボット起動\n有効証拠金: ¥{cash:,.0f}\n対象ペア: {', '.join(SYMBOLS)}")
+    if PAPER_TRADE:
+        cash_str = "（ペーパー）"
+    else:
+        cash     = gmo.get_cash_jpy()
+        cash_str = f"¥{cash:,.0f}"
+
+    send_telegram(
+        f"🤖 GMO FXボット起動 [{mode_label}]\n"
+        f"有効証拠金: {cash_str}\n"
+        f"対象ペア: {', '.join(SYMBOLS)}"
+    )
 
     symbol_params = load_params()
     logging.info(f"パラメータ読み込み完了: {list(symbol_params.keys())}")
@@ -237,26 +298,27 @@ def run_bot() -> None:
         p = symbol_params[symbol]
 
         try:
-            # 期限切れ指値注文を先にキャンセル
             _cancel_stale_orders(symbol)
 
             bars        = get_market_data(symbol, symbol_params)
-            # ポジション状態は常にAPIから取得（ローカル管理なし）
             position    = get_position(symbol)
             poly_signal = get_polymarket_signal(symbol)
 
-            # 市場環境（通貨ペア自身のトレンドで判断）
             market = get_market_condition(bars)
             logging.info(f"市場環境({symbol}): {market}")
             logging.info(f"Polymarket({symbol}): risk_block={poly_signal['risk_block']}  surge={poly_signal['surge_detected']}")
 
             # ポジション保有中に急変検知 → 即決済
             if position and poly_signal.get("surge_detected"):
-                close_side = "SELL" if position["side"] == "BUY" else "BUY"
-                gmo.close_position(position["positionId"], symbol, close_side, int(position["size"]))
-                msg = f"⚡ Polymarket急変検知のため即決済\n{symbol} @ {float(bars.iloc[-1]['close']):.5f}"
-                logging.info(msg)
-                send_line(msg)
+                exit_price = float(bars.iloc[-1]["close"])
+                if PAPER_TRADE:
+                    close_position_paper(symbol, exit_price, "Polymarket急変検知")
+                else:
+                    close_side = "SELL" if position["side"] == "BUY" else "BUY"
+                    gmo.close_position(position["positionId"], symbol, close_side, int(position["size"]))
+                    msg = f"⚡ Polymarket急変検知のため即決済\n{symbol} @ {exit_price:.5f}"
+                    logging.info(msg)
+                    send_telegram(msg)
                 sell_count += 1
                 summary_lines.append(f"  {symbol}: Polymarket急変決済")
                 continue
@@ -266,11 +328,8 @@ def run_bot() -> None:
             logging.info(f"Claudeの判断: {decision['action']} - {decision['reason']}")
 
             price = float(bars.iloc[-1]["close"])
-            size  = calc_trade_size(cash, price)
+            size  = calc_trade_size(gmo.get_cash_jpy() if not PAPER_TRADE else 1_000_000, price)
 
-            logging.info(f"{symbol} 価格: {price}, 取引数量: {size}ロット, ポジション: {position}")
-
-            # ATRベースのSL/TP算出（ロング・ショートで上下反転）
             atr         = float(bars.iloc[-1]["ATR"])
             atr_sl_mult = p.get("atr_sl_mult", 1.5)
             atr_tp_mult = p.get("atr_tp_mult", 2.5)
@@ -279,73 +338,82 @@ def run_bot() -> None:
             short_sl = round(price + atr * atr_sl_mult, 5)
             short_tp = round(price - atr * atr_tp_mult, 5)
 
-            # 指値価格（BB バンドに合わせる）
             long_limit  = round(float(bars.iloc[-1]["BB_lower"]), 5)
             short_limit = round(float(bars.iloc[-1]["BB_upper"]), 5)
 
             pos_side = position["side"] if position else None
 
-            # ── 新規ロング（指値: BB下限）──────────────────────────────
+            # ── 新規ロング ─────────────────────────────────────────────
             if decision["action"] == "buy" and position is None and market == "bull":
                 if should_block_entry(poly_signal):
                     logging.info(f"{symbol} Polymarketリスクブロック: ロングスキップ")
                     summary_lines.append(f"  {symbol}: Polymarketリスクブロックでスキップ")
                     continue
-
                 if _is_high_spread_period():
                     logging.info(f"{symbol} 高スプレッド時間帯: ロングエントリーをスキップ")
                     summary_lines.append(f"  {symbol}: 高スプレッド時間帯スキップ")
                     continue
 
-                gmo.place_order(symbol, "BUY", size, order_type="LIMIT", price=long_limit)
-                logging.info(f"指値ロング発注: {symbol} {size}ロット @ {long_limit}  SL={long_sl}  TP={long_tp}")
-                send_line(
-                    f"📈 指値ロング発注\n通貨ペア: {symbol}\n指値: {long_limit:.5f}\n"
-                    f"数量: {size}ロット\nATR: {atr:.5f}\n"
-                    f"利確: {long_tp:.5f}  損切: {long_sl:.5f}\n理由: {decision['reason']}"
-                )
+                if PAPER_TRADE:
+                    place_order_paper(symbol, "BUY", size, long_limit, long_sl, long_tp)
+                else:
+                    gmo.place_order(symbol, "BUY", size, order_type="LIMIT", price=long_limit)
+                    send_telegram(
+                        f"📈 指値ロング発注\n通貨ペア: {symbol}\n指値: {long_limit:.5f}\n"
+                        f"数量: {size}ロット\nATR: {atr:.5f}\n"
+                        f"利確: {long_tp:.5f}  損切: {long_sl:.5f}\n理由: {decision['reason']}"
+                    )
+                logging.info(f"ロング発注: {symbol} {size}ロット @ {long_limit}  SL={long_sl}  TP={long_tp}")
                 buy_count += 1
-                summary_lines.append(f"  {symbol}: 指値ロング @ {long_limit:.5f}")
+                summary_lines.append(f"  {symbol}: {'[PAPER]' if PAPER_TRADE else ''}指値ロング @ {long_limit:.5f}")
 
-            # ── 新規ショート（指値: BB上限）────────────────────────────
+            # ── 新規ショート ────────────────────────────────────────────
             elif decision["action"] == "sell" and position is None and market == "bear":
                 if should_block_entry(poly_signal):
                     logging.info(f"{symbol} Polymarketリスクブロック: ショートスキップ")
                     summary_lines.append(f"  {symbol}: Polymarketリスクブロックでスキップ")
                     continue
-
                 if _is_high_spread_period():
                     logging.info(f"{symbol} 高スプレッド時間帯: ショートエントリーをスキップ")
                     summary_lines.append(f"  {symbol}: 高スプレッド時間帯スキップ")
                     continue
 
-                gmo.place_order(symbol, "SELL", size, order_type="LIMIT", price=short_limit)
-                logging.info(f"指値ショート発注: {symbol} {size}ロット @ {short_limit}  SL={short_sl}  TP={short_tp}")
-                send_line(
-                    f"📉 指値ショート発注\n通貨ペア: {symbol}\n指値: {short_limit:.5f}\n"
-                    f"数量: {size}ロット\nATR: {atr:.5f}\n"
-                    f"利確: {short_tp:.5f}  損切: {short_sl:.5f}\n理由: {decision['reason']}"
-                )
+                if PAPER_TRADE:
+                    place_order_paper(symbol, "SELL", size, short_limit, short_sl, short_tp)
+                else:
+                    gmo.place_order(symbol, "SELL", size, order_type="LIMIT", price=short_limit)
+                    send_telegram(
+                        f"📉 指値ショート発注\n通貨ペア: {symbol}\n指値: {short_limit:.5f}\n"
+                        f"数量: {size}ロット\nATR: {atr:.5f}\n"
+                        f"利確: {short_tp:.5f}  損切: {short_sl:.5f}\n理由: {decision['reason']}"
+                    )
+                logging.info(f"ショート発注: {symbol} {size}ロット @ {short_limit}  SL={short_sl}  TP={short_tp}")
                 sell_count += 1
-                summary_lines.append(f"  {symbol}: 指値ショート @ {short_limit:.5f}")
+                summary_lines.append(f"  {symbol}: {'[PAPER]' if PAPER_TRADE else ''}指値ショート @ {short_limit:.5f}")
 
-            # ── ロング決済（Claudeがsell判断 かつ ロング保有中）──────────
+            # ── ロング決済 ──────────────────────────────────────────────
             elif decision["action"] == "sell" and pos_side == "BUY":
-                gmo.close_position(position["positionId"], symbol, "SELL", int(position["size"]))
-                logging.info(f"ロング決済: {symbol} {position['size']}ロット @ {price:.5f}")
-                send_line(
-                    f"✅ ロング決済\n通貨ペア: {symbol}\n価格: {price:.5f}\n理由: {decision['reason']}"
-                )
+                if PAPER_TRADE:
+                    close_position_paper(symbol, price, decision["reason"])
+                else:
+                    gmo.close_position(position["positionId"], symbol, "SELL", int(position["size"]))
+                    send_telegram(
+                        f"✅ ロング決済\n通貨ペア: {symbol}\n価格: {price:.5f}\n理由: {decision['reason']}"
+                    )
+                logging.info(f"ロング決済: {symbol} @ {price:.5f}")
                 sell_count += 1
                 summary_lines.append(f"  {symbol}: ロング決済 @ {price:.5f}")
 
-            # ── ショート決済（Claudeがbuy判断 かつ ショート保有中）────────
+            # ── ショート決済 ────────────────────────────────────────────
             elif decision["action"] == "buy" and pos_side == "SELL":
-                gmo.close_position(position["positionId"], symbol, "BUY", int(position["size"]))
-                logging.info(f"ショート決済: {symbol} {position['size']}ロット @ {price:.5f}")
-                send_line(
-                    f"✅ ショート決済\n通貨ペア: {symbol}\n価格: {price:.5f}\n理由: {decision['reason']}"
-                )
+                if PAPER_TRADE:
+                    close_position_paper(symbol, price, decision["reason"])
+                else:
+                    gmo.close_position(position["positionId"], symbol, "BUY", int(position["size"]))
+                    send_telegram(
+                        f"✅ ショート決済\n通貨ペア: {symbol}\n価格: {price:.5f}\n理由: {decision['reason']}"
+                    )
+                logging.info(f"ショート決済: {symbol} @ {price:.5f}")
                 buy_count += 1
                 summary_lines.append(f"  {symbol}: ショート決済 @ {price:.5f}")
 
@@ -356,18 +424,23 @@ def run_bot() -> None:
         except Exception as e:
             error_msg = f"⚠️ エラー発生\n通貨ペア: {symbol}\n内容: {str(e)}"
             logging.error(error_msg)
-            send_line(error_msg)
+            send_telegram(error_msg)
 
     # サマリー通知
-    cash = gmo.get_cash_jpy()
+    if not PAPER_TRADE:
+        cash = gmo.get_cash_jpy()
+        cash_str = f"¥{cash:,.0f}"
+    else:
+        cash_str = "（ペーパー）"
+
     summary = (
-        f"📊 本日のサマリー\n"
-        f"有効証拠金: ¥{cash:,.0f}\n"
+        f"📊 {'[PAPER] ' if PAPER_TRADE else ''}本日のサマリー\n"
+        f"有効証拠金: {cash_str}\n"
         f"買い注文: {buy_count}件\n"
         f"決済注文: {sell_count}件\n"
         f"取引詳細:\n" + "\n".join(summary_lines)
     )
-    send_line(summary)
+    send_telegram(summary)
     logging.info("=== ボット終了 ===")
 
 

@@ -4,9 +4,11 @@ wss://forex-api.coin.z.com/ws/public/v1
 
 各通貨ペアの ticker を購読し、ATR ベースの SL/TP ラインと
 現在価格を比較して、ラインを超えたら即決済する。
+ペーパートレードモード時は paper_positions.json を監視する。
 """
 import json
 import logging
+import os
 import time
 
 import websocket
@@ -14,10 +16,14 @@ import websocket
 from config import (
     GMO_API_KEY, GMO_SECRET_KEY,
     LOG_FILE, PARAMS_FILE, SYMBOLS,
-    LINE_CHANNEL_TOKEN, LINE_USER_ID,
 )
 from gmo_client import GmoFxClient
-from trade_bot import send_line
+from notifier import send_telegram
+from trade_bot import (
+    PAPER_TRADE,
+    load_paper_position,
+    close_position_paper,
+)
 
 WS_URL        = "wss://forex-api.coin.z.com/ws/public/v1"
 RECONNECT_SEC = 5
@@ -28,7 +34,7 @@ logging.basicConfig(
     format="%(asctime)s %(message)s",
 )
 
-gmo = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY, notify_fn=send_line)
+gmo = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY, notify_fn=send_telegram)
 
 
 def _load_params() -> dict:
@@ -40,61 +46,86 @@ def _load_params() -> dict:
 
 
 def _check_sl_tp(symbol: str, current_price: float) -> None:
-    """現在価格が ATR ベースの SL/TP ラインを超えていれば即決済"""
+    """現在価格が SL/TP ラインを超えていれば即決済。
+    ペーパーモード: paper_positions.json を参照。
+    本番モード: GMO API のポジション情報を参照。
+    """
     params = _load_params()
     p = params.get(symbol)
     if not p:
         return
 
-    positions = gmo.get_open_positions(symbol)
-    if not positions:
-        return
+    if PAPER_TRADE:
+        # ── ペーパーモード ──────────────────────────────────────────
+        pos = load_paper_position(symbol)
+        if not pos:
+            return
 
-    pos         = positions[0]
-    # 建値・数量は毎回 API のポジション情報から取得（ローカル管理なし）
-    entry_price = float(pos.get("price", current_price))
-    atr_sl_mult = p.get("atr_sl_mult", 1.5)
-    atr_tp_mult = p.get("atr_tp_mult", 2.5)
+        sl = pos.get("sl")
+        tp = pos.get("tp")
+        if sl is None or tp is None:
+            return
 
-    # ATR は直近3日の1時間足から再計算
-    try:
-        from utils import calculate_atr
-        import pandas as pd
-        bars      = gmo.get_klines_range(symbol, interval="1hour", days=3)
-        atr_series = calculate_atr(bars["high"], bars["low"], bars["close"],
-                                   period=p.get("atr_period", 14))
-        atr = float(atr_series.iloc[-1])
-    except Exception:
-        # ATR 取得失敗時はスキップ
-        return
+        if pos["side"] == "BUY":
+            hit_sl = current_price <= sl
+            hit_tp = current_price >= tp
+        else:
+            hit_sl = current_price >= sl
+            hit_tp = current_price <= tp
 
-    if pos["side"] == "BUY":
-        sl = entry_price - atr * atr_sl_mult
-        tp = entry_price + atr * atr_tp_mult
-        hit_sl = current_price <= sl
-        hit_tp = current_price >= tp
+        if hit_sl or hit_tp:
+            trigger = "TP到達" if hit_tp else "SL到達"
+            close_position_paper(symbol, current_price, trigger)
+            logging.info(f"[PAPER] {trigger}: {symbol} @ {current_price:.5f}")
+
     else:
-        sl = entry_price + atr * atr_sl_mult
-        tp = entry_price - atr * atr_tp_mult
-        hit_sl = current_price >= sl
-        hit_tp = current_price <= tp
+        # ── 本番モード ──────────────────────────────────────────────
+        positions = gmo.get_open_positions(symbol)
+        if not positions:
+            return
 
-    if hit_sl or hit_tp:
-        trigger    = "TP到達" if hit_tp else "SL到達"
-        close_side = "SELL" if pos["side"] == "BUY" else "BUY"
+        pos         = positions[0]
+        entry_price = float(pos.get("price", current_price))
+        atr_sl_mult = p.get("atr_sl_mult", 1.5)
+        atr_tp_mult = p.get("atr_tp_mult", 2.5)
+
         try:
-            gmo.close_position(pos["positionId"], symbol, close_side, int(pos["size"]))
-            msg = (
-                f"🔔 [{trigger}] WebSocket即決済\n"
-                f"通貨ペア: {symbol}\n"
-                f"現在値: {current_price:.5f}\n"
-                f"建値: {entry_price:.5f}\n"
-                f"SL: {sl:.5f} / TP: {tp:.5f}"
-            )
-            logging.info(msg)
-            send_line(msg)
-        except Exception as e:
-            logging.error(f"ws_monitor 決済エラー ({symbol}): {e}")
+            from utils import calculate_atr
+            import pandas as pd
+            bars       = gmo.get_klines_range(symbol, interval="1hour", days=3)
+            atr_series = calculate_atr(bars["high"], bars["low"], bars["close"],
+                                       period=p.get("atr_period", 14))
+            atr = float(atr_series.iloc[-1])
+        except Exception:
+            return
+
+        if pos["side"] == "BUY":
+            sl = entry_price - atr * atr_sl_mult
+            tp = entry_price + atr * atr_tp_mult
+            hit_sl = current_price <= sl
+            hit_tp = current_price >= tp
+        else:
+            sl = entry_price + atr * atr_sl_mult
+            tp = entry_price - atr * atr_tp_mult
+            hit_sl = current_price >= sl
+            hit_tp = current_price <= tp
+
+        if hit_sl or hit_tp:
+            trigger    = "TP到達" if hit_tp else "SL到達"
+            close_side = "SELL" if pos["side"] == "BUY" else "BUY"
+            try:
+                gmo.close_position(pos["positionId"], symbol, close_side, int(pos["size"]))
+                msg = (
+                    f"🔔 [{trigger}] WebSocket即決済\n"
+                    f"通貨ペア: {symbol}\n"
+                    f"現在値: {current_price:.5f}\n"
+                    f"建値: {entry_price:.5f}\n"
+                    f"SL: {sl:.5f} / TP: {tp:.5f}"
+                )
+                logging.info(msg)
+                send_telegram(msg)
+            except Exception as e:
+                logging.error(f"ws_monitor 決済エラー ({symbol}): {e}")
 
 
 # ── WebSocket ハンドラ ────────────────────────────────────────────────────
@@ -118,7 +149,6 @@ def _on_message(ws: websocket.WebSocketApp, message: str) -> None:
         if not symbol or symbol not in SYMBOLS:
             return
 
-        # ticker チャンネルの現在価格（ask/bid の中値を使用）
         ask = data.get("ask")
         bid = data.get("bid")
         if ask is None or bid is None:
