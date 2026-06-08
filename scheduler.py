@@ -29,7 +29,8 @@ BT_CONFIG_FILE = os.path.join(BASE_DIR, "backtest_config.json")
 logging.basicConfig(
     filename=LOG_FILE,
     level=logging.INFO,
-    format="%(asctime)s %(message)s",
+    format="%(asctime)s %(levelname)s %(message)s",
+    datefmt="%y/%m/%d %H:%M:%S",
 )
 
 

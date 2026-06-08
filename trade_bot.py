@@ -29,7 +29,8 @@ JST = timezone(timedelta(hours=9))
 logging.basicConfig(
     filename=LOG_FILE,
     level=logging.INFO,
-    format="%(asctime)s %(message)s",
+    format="%(asctime)s %(levelname)s %(message)s",
+    datefmt="%y/%m/%d %H:%M:%S",
 )
 
 BASE_DIR             = os.path.dirname(os.path.abspath(__file__))

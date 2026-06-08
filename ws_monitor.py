@@ -31,7 +31,8 @@ RECONNECT_SEC = 5
 logging.basicConfig(
     filename=LOG_FILE,
     level=logging.INFO,
-    format="%(asctime)s %(message)s",
+    format="%(asctime)s %(levelname)s %(message)s",
+    datefmt="%y/%m/%d %H:%M:%S",
 )
 
 gmo = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY, notify_fn=send_telegram)

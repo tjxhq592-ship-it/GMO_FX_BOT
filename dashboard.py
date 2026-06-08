@@ -191,7 +191,8 @@ with st.sidebar:
          "⚙️ 設定",
          "🚀 バックテスト実行",
          "🔍 グリッドサーチ",
-         "📝 ペーパートレード"],
+         "📝 ペーパートレード",
+         "📋 ログ"],
         label_visibility="collapsed",
     )
 
@@ -960,6 +961,78 @@ def show_paper_trade():
         st.info("取引履歴がありません。グリッドサーチ後にボットを起動してください。")
 
 
+# ==================== ページ: ログ ====================
+
+def show_log():
+    st.subheader("📋 トレードボットログ")
+    st_autorefresh(interval=3000, key="log_refresh")
+
+    # ── フィルタ & ダウンロードボタン ────────────────────────────────────
+    col_filter, col_dl = st.columns([3, 1])
+    with col_filter:
+        log_filter = st.selectbox(
+            "フィルタ",
+            ["すべて", "ERRORのみ", "WARNINGのみ", "Claudeの判断のみ", "Polymarketのみ"],
+            label_visibility="collapsed",
+        )
+
+    # ── ログ読み込み ─────────────────────────────────────────────────────
+    raw_lines: list[str] = []
+    if os.path.exists(LOG_FILE):
+        try:
+            with open(LOG_FILE, "r", encoding="utf-8", errors="replace") as f:
+                raw_lines = f.readlines()
+        except Exception as e:
+            st.error(f"ログ読み込みエラー: {e}")
+
+    with col_dl:
+        st.download_button(
+            label="⬇ ダウンロード",
+            data="".join(raw_lines).encode("utf-8"),
+            file_name="trade_log.txt",
+            mime="text/plain",
+            use_container_width=True,
+        )
+
+    # ── フィルタリング ────────────────────────────────────────────────────
+    def _match(line: str) -> bool:
+        if log_filter == "すべて":
+            return True
+        if log_filter == "ERRORのみ":
+            return "ERROR" in line
+        if log_filter == "WARNINGのみ":
+            return "WARNING" in line
+        if log_filter == "Claudeの判断のみ":
+            return "Claude" in line
+        if log_filter == "Polymarketのみ":
+            return "Polymarket" in line or "polymarket" in line
+        return True
+
+    filtered = [ln.rstrip() for ln in raw_lines if ln.strip() and _match(ln)]
+
+    # 新しい順に最大200行表示
+    display_lines = list(reversed(filtered))[:200]
+
+    if not display_lines:
+        st.info("ログが見つかりません。")
+        return
+
+    st.caption(f"表示: {len(display_lines)} 行（最新順）")
+
+    # ── 色分け表示 ────────────────────────────────────────────────────────
+    for line in display_lines:
+        if "ERROR" in line:
+            st.error(line)
+        elif "WARNING" in line:
+            st.warning(line)
+        elif "Claude" in line:
+            st.info(line)
+        elif "Polymarket" in line or "polymarket" in line:
+            st.success(line)
+        else:
+            st.text(line)
+
+
 # ==================== ページルーティング ====================
 
 if page == "📊 ダッシュボード":
@@ -972,3 +1045,5 @@ elif page == "🔍 グリッドサーチ":
     show_grid_search()
 elif page == "📝 ペーパートレード":
     show_paper_trade()
+elif page == "📋 ログ":
+    show_log()
