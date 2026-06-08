@@ -1,50 +1,29 @@
 {
-  "updated_at": "2026-06-07 23:05:57",
-  "params": {
-    "EUR_GBP": {
-      "bb_period": 10,
-      "bb_std": 1.5,
-      "rsi_period": 14,
-      "rsi_upper": 75,
-      "rsi_lower": 25,
-      "atr_period": 14,
-      "atr_sl_mult": 1.5,
-      "atr_tp_mult": 1.5
-    },
-    "GBP_USD": {
-      "bb_period": 25,
-      "bb_std": 2.0,
-      "rsi_period": 14,
-      "rsi_upper": 80,
-      "rsi_lower": 20,
-      "atr_period": 14,
-      "atr_sl_mult": 2.5,
-      "atr_tp_mult": 1.5
-    },
-    "GBP_CHF": {
-      "bb_period": 35,
-      "bb_std": 1.0,
-      "rsi_period": 14,
-      "rsi_upper": 65,
-      "rsi_lower": 20,
-      "atr_period": 14,
-      "atr_sl_mult": 1.5,
-      "atr_tp_mult": 1.5
-    }
-  },
+  "updated_at": "2026-06-08 14:25:46",
+  "params": {},
   "excluded": [
-    "AUD_USD(top_3圏外(score=3.9195))",
     "EUR_AUD(top_3圏外(score=3.7798))",
-    "EUR_JPY(PF(0.71) < 最小値(0.8))",
-    "NZD_JPY(top_3圏外(score=3.4114))",
-    "EUR_USD(top_3圏外(score=3.1616))",
     "EUR_CHF(top_3圏外(score=3.0447))",
-    "USD_JPY(top_3圏外(score=2.9852))",
-    "GBP_JPY(top_3圏外(score=2.8852))",
-    "CAD_JPY(top_3圏外(score=2.7605))",
-    "AUD_JPY(PF(0.64) < 最小値(0.8))",
-    "AUD_NZD(top_3圏外(score=1.7047))",
-    "CHF_JPY(top_3圏外(score=1.6666))",
-    "ZAR_JPY(全パターンでスコア0)"
+    "USD_JPY(全パターンでスコア0)",
+    "EUR_JPY(全パターンでスコア0)",
+    "GBP_JPY(全パターンでスコア0)",
+    "AUD_JPY(全パターンでスコア0)",
+    "NZD_JPY(全パターンでスコア0)",
+    "CAD_JPY(全パターンでスコア0)",
+    "CHF_JPY(全パターンでスコア0)",
+    "TRY_JPY(全パターンでスコア0)",
+    "ZAR_JPY(全パターンでスコア0)",
+    "MXN_JPY(全パターンでスコア0)",
+    "EUR_USD(全パターンでスコア0)",
+    "GBP_USD(全パターンでスコア0)",
+    "AUD_USD(全パターンでスコア0)",
+    "NZD_USD(全パターンでスコア0)",
+    "EUR_GBP(全パターンでスコア0)",
+    "AUD_NZD(全パターンでスコア0)",
+    "AUD_CAD(全パターンでスコア0)",
+    "NZD_CAD(全パターンでスコア0)",
+    "HUF_JPY(全パターンでスコア0)",
+    "SEK_JPY(全パターンでスコア0)",
+    "NOK_SEK(全パターンでスコア0)"
   ]
 }
