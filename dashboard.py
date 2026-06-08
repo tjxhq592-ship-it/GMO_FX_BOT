@@ -339,7 +339,7 @@ def show_settings():
     cfg      = load_config()
     gs_cfg   = load_gs_config()
     sw       = gs_cfg.get("score_weights", {})
-    _cpu_max = max(1, (os.cpu_count() or 4) - 2)
+    _cpu_max = max(2, (os.cpu_count() or 1))
 
     _available = cfg.get("available_symbols", [
         "USD_JPY", "EUR_JPY", "GBP_JPY", "AUD_JPY",
@@ -451,13 +451,14 @@ def show_settings():
     atr_tp = st.multiselect("ATR利確倍率 (atr_tp_mult)", options=_atr_tp_opts, default=_atr_tp_def)
 
     st.markdown("#### 並列ワーカー数")
-    _saved_mw = max(1, min(int(gs_cfg.get("max_workers", 1)), _cpu_max))
+    _saved_mw = min(int(gs_cfg.get("max_workers", 1)), _cpu_max)
+    _saved_mw = max(1, _saved_mw)
     max_workers_val = st.slider(
         "並列ワーカー数",
         min_value=1,
         max_value=_cpu_max,
         value=_saved_mw,
-        help=f"グリッドサーチ・バックテストの並列処理数。CPUコア数({os.cpu_count()})の上限-2={_cpu_max}まで設定可能。大きいほど速いが負荷も高い",
+        help="大きいほど速いがPC負荷が上がる（グリッドサーチはローカルPCで実行推奨）",
         key="gs_max_workers",
     )
 
