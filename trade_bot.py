@@ -157,7 +157,7 @@ def close_position_paper(symbol: str, exit_price: float, reason: str) -> None:
 # ── 市場データ取得 ────────────────────────────────────────────────────────
 def get_market_data(symbol: str, symbol_params: dict) -> object:
     p    = symbol_params[symbol]
-    bars = gmo.get_klines_range(symbol, interval="1day", days=90)
+    bars = gmo.get_klines_bulk(symbol, interval="4hour", years=1)
 
     bb_period = p.get("bb_period", 20)
     bb_std    = p.get("bb_std", 2.0)

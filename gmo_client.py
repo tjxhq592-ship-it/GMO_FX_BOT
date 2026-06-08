@@ -169,21 +169,12 @@ class GmoFxClient:
     def get_klines_range(
         self,
         symbol: str,
-        interval: str = "1day",
+        interval: str = "4hour",
         days: int = 90,
     ) -> pd.DataFrame:
-        """複数日の KLine を結合して返す"""
-        frames = []
-        for i in range(days, 0, -1):
-            d = (datetime.now() - timedelta(days=i)).strftime("%Y%m%d")
-            try:
-                frames.append(self.get_klines(symbol, interval, d))
-            except Exception:
-                pass
-            time.sleep(0.2)
-        if not frames:
-            raise RuntimeError("KLine取得失敗")
-        return pd.concat(frames).sort_index().drop_duplicates()
+        """後方互換ラッパー: days を years に変換して get_klines_bulk を呼び出す"""
+        years = max(1, days // 365 + 1)
+        return self.get_klines_bulk(symbol, interval=interval, years=years)
 
     def get_klines_bulk(
         self,
