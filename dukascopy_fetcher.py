@@ -30,13 +30,13 @@ try:
         INSTRUMENT_FX_MAJORS_AUD_USD,
         INSTRUMENT_FX_MAJORS_NZD_USD,
     )
-    _DUKASCOPY_AVAILABLE = True
+    DUKASCOPY_AVAILABLE = True
 except ImportError:
-    _DUKASCOPY_AVAILABLE = False
+    DUKASCOPY_AVAILABLE = False
 
 # ── シンボルマッピング ────────────────────────────────────────────────────
 SYMBOL_MAP: dict = {}
-if _DUKASCOPY_AVAILABLE:
+if DUKASCOPY_AVAILABLE:
     SYMBOL_MAP = {
         "USD_JPY": INSTRUMENT_FX_MAJORS_USD_JPY,
         "EUR_JPY": INSTRUMENT_FX_MAJORS_EUR_JPY,
@@ -54,7 +54,7 @@ if _DUKASCOPY_AVAILABLE:
 # ── 時間足マッピング ──────────────────────────────────────────────────────
 def _interval_const(interval: str):
     """interval 文字列を dukascopy_python の定数に変換する"""
-    if not _DUKASCOPY_AVAILABLE:
+    if not DUKASCOPY_AVAILABLE:
         raise ImportError("dukascopy-python がインストールされていません")
     mapping = {
         "30min": dukascopy_python.INTERVAL_MIN_30,
@@ -105,7 +105,7 @@ def fetch_dukascopy(
     pd.DataFrame  columns: Open / High / Low / Close / Volume
                   index  : openTime (tz-naive)
     """
-    if not _DUKASCOPY_AVAILABLE:
+    if not DUKASCOPY_AVAILABLE:
         raise ImportError(
             "dukascopy-python がインストールされていません。\n"
             "pip install dukascopy-python を実行してください。"
