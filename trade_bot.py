@@ -32,9 +32,10 @@ logging.basicConfig(
     format="%(asctime)s %(message)s",
 )
 
-BASE_DIR            = os.path.dirname(os.path.abspath(__file__))
-BT_CONFIG_FILE      = os.path.join(BASE_DIR, "backtest_config.json")
+BASE_DIR             = os.path.dirname(os.path.abspath(__file__))
+BT_CONFIG_FILE       = os.path.join(BASE_DIR, "backtest_config.json")
 PAPER_POSITIONS_FILE = os.path.join(BASE_DIR, "paper_positions.json")
+PAPER_LOG_FILE       = os.path.join(BASE_DIR, "paper_trade_log.json")
 
 
 # ── 設定読み込み ──────────────────────────────────────────────────────────
@@ -105,8 +106,23 @@ def place_order_paper(
         f"TP: {tp}"
     )
 
+def _append_paper_log(trade: dict) -> None:
+    """paper_trade_log.json に取引結果を追記する。"""
+    try:
+        if os.path.exists(PAPER_LOG_FILE):
+            with open(PAPER_LOG_FILE, "r", encoding="utf-8") as f:
+                log = json.load(f)
+        else:
+            log = {"trades": []}
+        log.setdefault("trades", []).append(trade)
+        with open(PAPER_LOG_FILE, "w", encoding="utf-8") as f:
+            json.dump(log, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        logging.error(f"paper_trade_log.json 書き込みエラー: {e}")
+
+
 def close_position_paper(symbol: str, exit_price: float, reason: str) -> None:
-    """ペーパーポジションを決済して損益を通知。"""
+    """ペーパーポジションを決済して損益を通知し、ログに記録する。"""
     pos = load_paper_position(symbol)
     if not pos:
         return
@@ -120,6 +136,17 @@ def close_position_paper(symbol: str, exit_price: float, reason: str) -> None:
         f"理由: {reason}\n"
         f"損益: {pnl:+.0f}円"
     )
+    # ログ追記
+    _append_paper_log({
+        "datetime":    datetime.now().isoformat(),
+        "symbol":      symbol,
+        "side":        pos["side"],
+        "size":        pos["size"],
+        "entry_price": pos["entry_price"],
+        "exit_price":  exit_price,
+        "pnl":         round(pnl, 2),
+        "reason":      reason,
+    })
     positions = _load_paper_positions()
     positions.pop(symbol, None)
     _save_paper_positions(positions)

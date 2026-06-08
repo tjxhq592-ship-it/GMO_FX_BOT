@@ -1,0 +1,114 @@
+2026-06-08 16:03:47,149 \U0001f4dd ペーパートレードモードで起動
+監視ペア: USD_JPY / EUR_JPY / CHF_JPY
+次回エントリー判断: 17:00
+※実際の発注は行いません
+2026-06-08 16:03:48,341 WebSocket監視スレッド 起動
+2026-06-08 16:03:48,343 スケジューラ 起動完了
+2026-06-08 16:03:48,429 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:03:48,429 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:03:48,429 WebSocket 切断: None None
+2026-06-08 16:03:48,430 WebSocket 5秒後に再接続...
+2026-06-08 16:03:53,492 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:03:53,492 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:03:53,492 WebSocket 切断: None None
+2026-06-08 16:03:53,492 WebSocket 5秒後に再接続...
+2026-06-08 16:03:58,565 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:03:58,566 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:03:58,566 WebSocket 切断: None None
+2026-06-08 16:03:58,566 WebSocket 5秒後に再接続...
+2026-06-08 16:04:03,654 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:04:03,655 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:04:03,655 WebSocket 切断: None None
+2026-06-08 16:04:03,655 WebSocket 5秒後に再接続...
+2026-06-08 16:04:08,703 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:04:08,703 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:04:08,703 WebSocket 切断: None None
+2026-06-08 16:04:08,703 WebSocket 5秒後に再接続...
+2026-06-08 16:04:13,739 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:04:13,739 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:04:13,739 WebSocket 切断: None None
+2026-06-08 16:04:13,739 WebSocket 5秒後に再接続...
+2026-06-08 16:04:18,800 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:04:18,800 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:04:18,800 WebSocket 切断: None None
+2026-06-08 16:04:18,800 WebSocket 5秒後に再接続...
+2026-06-08 16:04:23,880 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:04:23,880 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:04:23,880 WebSocket 切断: None None
+2026-06-08 16:04:23,881 WebSocket 5秒後に再接続...
+2026-06-08 16:04:28,915 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:04:28,915 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:04:28,915 WebSocket 切断: None None
+2026-06-08 16:04:28,916 WebSocket 5秒後に再接続...
+2026-06-08 16:04:33,992 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:04:33,992 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:04:33,993 WebSocket 切断: None None
+2026-06-08 16:04:33,993 WebSocket 5秒後に再接続...
+2026-06-08 16:04:39,068 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:04:39,068 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:04:39,068 WebSocket 切断: None None
+2026-06-08 16:04:39,069 WebSocket 5秒後に再接続...
+2026-06-08 16:04:44,129 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:04:44,129 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:04:44,129 WebSocket 切断: None None
+2026-06-08 16:04:44,129 WebSocket 5秒後に再接続...
+2026-06-08 16:04:49,164 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:04:49,164 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:04:49,164 WebSocket 切断: None None
+2026-06-08 16:04:49,164 WebSocket 5秒後に再接続...
+2026-06-08 16:04:54,202 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:04:54,202 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:04:54,202 WebSocket 切断: None None
+2026-06-08 16:04:54,202 WebSocket 5秒後に再接続...
+2026-06-08 16:04:59,241 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:04:59,241 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:04:59,241 WebSocket 切断: None None
+2026-06-08 16:04:59,241 WebSocket 5秒後に再接続...
+2026-06-08 16:05:04,348 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:05:04,348 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:05:04,348 WebSocket 切断: None None
+2026-06-08 16:05:04,348 WebSocket 5秒後に再接続...
+2026-06-08 16:05:09,383 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:05:09,383 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:05:09,383 WebSocket 切断: None None
+2026-06-08 16:05:09,383 WebSocket 5秒後に再接続...
+2026-06-08 16:05:14,418 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:05:14,418 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:05:14,418 WebSocket 切断: None None
+2026-06-08 16:05:14,418 WebSocket 5秒後に再接続...
+2026-06-08 16:05:19,474 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:05:19,474 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:05:19,475 WebSocket 切断: None None
+2026-06-08 16:05:19,475 WebSocket 5秒後に再接続...
+2026-06-08 16:05:24,536 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:05:24,536 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:05:24,536 WebSocket 切断: None None
+2026-06-08 16:05:24,536 WebSocket 5秒後に再接続...
+2026-06-08 16:05:29,592 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:05:29,592 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:05:29,592 WebSocket 切断: None None
+2026-06-08 16:05:29,592 WebSocket 5秒後に再接続...
+2026-06-08 16:05:34,638 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:05:34,638 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:05:34,638 WebSocket 切断: None None
+2026-06-08 16:05:34,639 WebSocket 5秒後に再接続...
+2026-06-08 16:05:39,721 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:05:39,721 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:05:39,722 WebSocket 切断: None None
+2026-06-08 16:05:39,722 WebSocket 5秒後に再接続...
+2026-06-08 16:05:44,764 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:05:44,764 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:05:44,764 WebSocket 切断: None None
+2026-06-08 16:05:44,764 WebSocket 5秒後に再接続...
+2026-06-08 16:05:49,805 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:05:49,805 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:05:49,806 WebSocket 切断: None None
+2026-06-08 16:05:49,806 WebSocket 5秒後に再接続...
+2026-06-08 16:05:54,876 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:05:54,876 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:05:54,876 WebSocket 切断: None None
+2026-06-08 16:05:54,876 WebSocket 5秒後に再接続...
+2026-06-08 16:05:59,972 WebSocket エラー: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:05:59,972 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:05:59,972 WebSocket 切断: None None
+2026-06-08 16:05:59,973 WebSocket 5秒後に再接続...

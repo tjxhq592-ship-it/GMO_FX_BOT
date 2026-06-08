@@ -17,16 +17,18 @@ from streamlit_autorefresh import st_autorefresh
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 os.chdir(BASE_DIR)
 
-PARAMS_FILE      = os.path.join(BASE_DIR, "params.json")
-RESULTS_FILE     = os.path.join(BASE_DIR, "backtest_results.json")
-LOG_FILE         = os.path.join(BASE_DIR, "trade_log.txt")
-CONFIG_FILE      = os.path.join(BASE_DIR, "backtest_config.json")
-GS_PROGRESS_FILE = os.path.join(BASE_DIR, "grid_search_progress.json")
-GS_RESULTS_FILE  = os.path.join(BASE_DIR, "grid_search_results.json")
-GS_CONFIG_FILE   = os.path.join(BASE_DIR, "grid_search_config.json")
-GS_PID_FILE      = os.path.join(BASE_DIR, "grid_search_pid.json")
-BT_PROGRESS_FILE = os.path.join(BASE_DIR, "backtest_progress.json")
-BT_PID_FILE      = os.path.join(BASE_DIR, "backtest_pid.json")
+PARAMS_FILE          = os.path.join(BASE_DIR, "params.json")
+RESULTS_FILE         = os.path.join(BASE_DIR, "backtest_results.json")
+LOG_FILE             = os.path.join(BASE_DIR, "trade_log.txt")
+CONFIG_FILE          = os.path.join(BASE_DIR, "backtest_config.json")
+GS_PROGRESS_FILE     = os.path.join(BASE_DIR, "grid_search_progress.json")
+GS_RESULTS_FILE      = os.path.join(BASE_DIR, "grid_search_results.json")
+GS_CONFIG_FILE       = os.path.join(BASE_DIR, "grid_search_config.json")
+GS_PID_FILE          = os.path.join(BASE_DIR, "grid_search_pid.json")
+BT_PROGRESS_FILE     = os.path.join(BASE_DIR, "backtest_progress.json")
+BT_PID_FILE          = os.path.join(BASE_DIR, "backtest_pid.json")
+PAPER_POSITIONS_FILE = os.path.join(BASE_DIR, "paper_positions.json")
+PAPER_LOG_FILE       = os.path.join(BASE_DIR, "paper_trade_log.json")
 
 
 def _launch_detached(cmd: list[str]) -> subprocess.Popen:
@@ -188,7 +190,8 @@ with st.sidebar:
         ["📊 ダッシュボード",
          "⚙️ 設定",
          "🚀 バックテスト実行",
-         "🔍 グリッドサーチ"],
+         "🔍 グリッドサーチ",
+         "📝 ペーパートレード"],
         label_visibility="collapsed",
     )
 
@@ -835,6 +838,128 @@ def show_grid_search():
         st.error(f"params.json 読み込みエラー: {e}")
 
 
+# ==================== ページ: ペーパートレード ====================
+
+def show_paper_trade():
+    st.subheader("📝 ペーパートレード")
+    st_autorefresh(interval=3000, key="paper_refresh")
+
+    # ── GMOクライアント（リアルタイム価格取得用）────────────────────────
+    try:
+        from config import GMO_API_KEY, GMO_SECRET_KEY
+        from gmo_client import GmoFxClient
+        _gmo = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY)
+    except Exception:
+        _gmo = None
+
+    # ── 現在のポジション ─────────────────────────────────────────────────
+    st.markdown("### 現在のポジション")
+    try:
+        if os.path.exists(PAPER_POSITIONS_FILE):
+            with open(PAPER_POSITIONS_FILE, encoding="utf-8") as f:
+                positions = json.load(f)
+        else:
+            positions = {}
+
+        if positions:
+            pos_rows = []
+            for symbol, pos in positions.items():
+                # リアルタイム価格取得
+                current_price = None
+                if _gmo:
+                    try:
+                        ticker = _gmo.get_ticker(symbol)
+                        current_price = (float(ticker["ask"]) + float(ticker["bid"])) / 2
+                    except Exception:
+                        pass
+
+                if current_price is not None:
+                    pnl = (current_price - pos["entry_price"]) * pos["size"]
+                    if pos["side"] == "SELL":
+                        pnl = -pnl
+                    pnl_str = f"{pnl:+.0f}円"
+                else:
+                    current_price = None
+                    pnl_str = "取得失敗"
+
+                pos_rows.append({
+                    "銘柄":       symbol,
+                    "サイド":     pos["side"],
+                    "数量":       pos["size"],
+                    "建値":       pos["entry_price"],
+                    "現在価格":   f"{current_price:.5f}" if current_price else "—",
+                    "含み損益":   pnl_str,
+                    "SL":         pos.get("sl", "—"),
+                    "TP":         pos.get("tp", "—"),
+                    "建玉時刻":   pos.get("entry_time", "—")[:19],
+                })
+
+            df_pos = pd.DataFrame(pos_rows)
+            st.dataframe(df_pos, use_container_width=True, hide_index=True)
+        else:
+            st.info("現在ポジションなし")
+
+    except Exception as e:
+        st.error(f"ポジション読み込みエラー: {e}")
+
+    st.divider()
+
+    # ── 取引履歴 & 累積損益 ──────────────────────────────────────────────
+    st.markdown("### 累積損益サマリー")
+    try:
+        if os.path.exists(PAPER_LOG_FILE):
+            with open(PAPER_LOG_FILE, encoding="utf-8") as f:
+                log_data = json.load(f)
+            trades = log_data.get("trades", [])
+        else:
+            trades = []
+
+        if trades:
+            pnls      = [t["pnl"] for t in trades]
+            wins      = [p for p in pnls if p > 0]
+            losses    = [p for p in pnls if p <= 0]
+            win_rate  = len(wins) / len(pnls) * 100 if pnls else 0
+            total_pnl = sum(pnls)
+            max_win   = max(pnls) if pnls else 0
+            max_loss  = min(pnls) if pnls else 0
+
+            c1, c2, c3, c4, c5, c6 = st.columns(6)
+            c1.metric("総取引回数",  len(trades))
+            c2.metric("勝ち",        len(wins))
+            c3.metric("負け",        len(losses))
+            c4.metric("勝率",        f"{win_rate:.1f}%")
+            c5.metric("総損益",      f"{total_pnl:+.0f}円")
+            c6.metric("最大利益 / 最大損失",
+                       f"{max_win:+.0f} / {max_loss:+.0f}円")
+        else:
+            st.info("取引履歴なし")
+
+    except Exception as e:
+        st.error(f"ログ読み込みエラー: {e}")
+        trades = []
+
+    st.divider()
+
+    # ── 取引履歴テーブル ─────────────────────────────────────────────────
+    st.markdown("### 取引履歴")
+    if trades:
+        df_log = pd.DataFrame([
+            {
+                "日時":     t.get("datetime", "")[:19],
+                "銘柄":     t.get("symbol", ""),
+                "サイド":   t.get("side", ""),
+                "建値":     t.get("entry_price"),
+                "決済価格": t.get("exit_price"),
+                "損益(円)": t.get("pnl"),
+                "理由":     t.get("reason", ""),
+            }
+            for t in reversed(trades)   # 新しい順
+        ])
+        st.dataframe(df_log, use_container_width=True, hide_index=True)
+    else:
+        st.info("取引履歴がありません。グリッドサーチ後にボットを起動してください。")
+
+
 # ==================== ページルーティング ====================
 
 if page == "📊 ダッシュボード":
@@ -845,3 +970,5 @@ elif page == "🚀 バックテスト実行":
     show_backtest()
 elif page == "🔍 グリッドサーチ":
     show_grid_search()
+elif page == "📝 ペーパートレード":
+    show_paper_trade()
