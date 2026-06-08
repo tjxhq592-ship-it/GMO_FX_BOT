@@ -91,6 +91,17 @@ def check_scheduler_status() -> bool:
     return psutil.pid_exists(int(pid))
 
 
+def get_bot_pid():
+    """scheduler.py を実行しているプロセスの PID を取得"""
+    for proc in psutil.process_iter(['pid', 'cmdline']):
+        try:
+            if 'scheduler.py' in ' '.join(proc.info['cmdline'] or []):
+                return proc.info['pid']
+        except Exception:
+            pass
+    return None
+
+
 st.set_page_config(page_title="GMO FX Bot Dashboard", layout="wide")
 
 # ===== 認証ゲート =====
@@ -215,17 +226,21 @@ with st.sidebar:
 
     st.divider()
 
-    st.caption("接続状態")
-    if check_scheduler_status():
-        st.success("🟢 ボット稼働中")
+    pid = get_bot_pid()
+    if pid:
+        st.success(f"🟢 ボット稼働中 (PID: {pid})")
+        if st.button("⏹ ボット停止", key="stop_bot", use_container_width=True):
+            os.kill(pid, signal.SIGTERM)
+            st.rerun()
     else:
-        st.warning("🔴 ボット停止中")
-
-    st.divider()
-
-    if st.button("🚪 ログアウト", use_container_width=True):
-        st.session_state.clear()
-        st.rerun()
+        st.error("🔴 ボット停止中")
+        if st.button("▶ ボット起動", key="start_bot", use_container_width=True):
+            subprocess.Popen(
+                ["python", "scheduler.py"],
+                cwd=BASE_DIR,
+                start_new_session=True,
+            )
+            st.rerun()
 
 
 # ==================== ページ: ダッシュボード ====================
