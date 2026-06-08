@@ -96,6 +96,8 @@ def search_one_symbol(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
     _ensure_valid_stream("stdout")
     _ensure_valid_stream("stderr")
 
+    print(f"[{symbol}] 処理開始 コンボ数: {len(combos)}", flush=True)
+
     from datetime import datetime as _dt
     wft_cutoff = _dt.fromtimestamp(wft_cutoff_ts)
 
@@ -103,6 +105,7 @@ def search_one_symbol(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
     try:
         sym_data       = get_historical_data(symbol)
         sym_train_data = sym_data[sym_data.index < wft_cutoff]
+        print(f"[{symbol}] データ取得完了 {len(sym_data)}件", flush=True)
     except Exception as e:
         result_queue.put({
             "symbol":      symbol,
@@ -794,6 +797,11 @@ def main(debug: bool = False) -> None:
         symbols = valid_symbols
         total   = len(combos) * len(symbols)  # 有効シンボルで再計算
 
+        # データ取得完了を通知（ダッシュボードに「処理開始」を表示させる）
+        log("全データ取得完了 処理開始...")
+        _write_progress(0, total, 0.0, {}, int(time.time() - start_t), 0,
+                        log_lines + ["全データ取得完了 処理開始..."])
+
         # ── 動的ワーカー数を決定 ─────────────────────────────────────────────
         max_workers_cfg = int(gs_cfg.get("max_workers", 4))
         max_workers     = get_optimal_workers(symbols, max_workers_cfg)
@@ -872,10 +880,16 @@ def main(debug: bool = False) -> None:
                         args=(sym, combos, wt_wft, wt_is, wt_pf, wt_trades,
                               wft_cutoff.timestamp(), PROGRESS_FILE,
                               result_queue, progress_queue),
+                        name=f"gs-{sym}",
                         daemon=False,
                     )
                     p.start()
                     processes.append((sym, p))
+
+                # 起動直後にプロセス生存確認
+                time.sleep(1)
+                for sym, p in processes:
+                    log(f"プロセス {p.name}: alive={p.is_alive()} pid={p.pid}")
 
                 # バッチ内の全プロセスが完了するまでポーリング
                 alive = dict(processes)  # sym -> process
