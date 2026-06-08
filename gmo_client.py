@@ -156,7 +156,7 @@ class GmoFxClient:
         data = self._request(
             "GET",
             f"{BASE_PUBLIC}/v1/klines",
-            params={"symbol": symbol, "interval": interval, "date": date},
+            params={"symbol": symbol, "priceType": "BID", "interval": interval, "date": date},
         )
         rows = data["data"]
         df = pd.DataFrame(rows, columns=["openTime", "open", "high", "low", "close", "volume"])
@@ -190,6 +190,7 @@ class GmoFxClient:
         symbol: str,
         interval: str = "4hour",
         years: int = 2,
+        price_type: str = "BID",
     ) -> pd.DataFrame:
         """複数年分の KLine データを取得して結合する。
 
