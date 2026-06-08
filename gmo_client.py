@@ -185,6 +185,35 @@ class GmoFxClient:
             raise RuntimeError("KLine取得失敗")
         return pd.concat(frames).sort_index().drop_duplicates()
 
+    def get_klines_bulk(
+        self,
+        symbol: str,
+        interval: str = "4hour",
+        years: int = 2,
+    ) -> pd.DataFrame:
+        """複数年分の KLine データを取得して結合する。
+
+        Parameters
+        ----------
+        symbol   : 通貨ペア（例: "EUR_GBP"）
+        interval : 足種（例: "4hour"）
+        years    : 取得年数（直近 N 年分）
+        """
+        frames = []
+        current_year = datetime.now().year
+        for year in range(current_year - years, current_year + 1):
+            try:
+                df = self.get_klines(symbol, interval, str(year))
+                frames.append(df)
+                time.sleep(0.3)  # レート制限対策
+            except Exception as e:
+                print(f"  {year}年データ取得失敗: {e}")
+
+        if not frames:
+            raise RuntimeError(f"{symbol} のデータ取得失敗")
+
+        return pd.concat(frames).sort_index().drop_duplicates()
+
     # ── Private API ──────────────────────────────────────────────────────
     def get_assets(self) -> dict:
         """資産残高取得"""

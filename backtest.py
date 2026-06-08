@@ -14,7 +14,6 @@ import pandas as pd
 import pickle
 import json
 import time
-import yfinance as yf
 from utils import (
     calculate_rsi as _calculate_rsi,
     calculate_atr as _calculate_atr,
@@ -38,7 +37,6 @@ _ensure_valid_stream("stdout")
 _ensure_valid_stream("stderr")
 
 # ログ・警告の抑制
-logging.getLogger("yfinance").setLevel(logging.CRITICAL)
 logging.getLogger("peewee").setLevel(logging.CRITICAL)
 warnings.filterwarnings("ignore")
 
@@ -75,9 +73,12 @@ def _load_config() -> dict:
 _cfg = _load_config()
 
 # 日付
-_start_str = _cfg.get("start_date", "2024-06-16")
-START_DATE  = datetime.strptime(_start_str, "%Y-%m-%d")
-END_DATE    = datetime.now() - timedelta(days=1)   # end_date="auto"
+_start_str = _cfg.get("start_date", "auto")
+END_DATE   = datetime.now() - timedelta(days=1)   # end_date="auto"
+if _start_str == "auto":
+    START_DATE = END_DATE - relativedelta(years=2)
+else:
+    START_DATE = datetime.strptime(_start_str, "%Y-%m-%d")
 
 FW_START_DATE = datetime.now() - timedelta(days=90)
 FW_END_DATE   = datetime.now() - timedelta(days=1)
@@ -96,7 +97,7 @@ SHARPE_THRESHOLD = float(_cfg.get("min_wft_sharpe", 0.0))
 
 INITIAL_CASH = 1_000_000  # 円（固定）
 CACHE_DIR    = ".cache"
-CACHE_TTL    = 3600
+CACHE_TTL    = 4 * 3600   # 4時間（4時間足のため）
 PARAMS_FILE  = "params.json"
 RESULTS_FILE = "backtest_results.json"
 
@@ -150,72 +151,46 @@ def calc_commission(symbol: str, price: float) -> float:
 
 # 対象シンボル: active_symbols（グリッドサーチ採用済みでトレード対象）
 SYMBOLS = _cfg.get("active_symbols", _cfg.get("symbols", ["AUD_NZD"]))
-SYMBOL_MAP = {
-    "USD_JPY": "USDJPY=X",
-    "EUR_JPY": "EURJPY=X",
-    "GBP_JPY": "GBPJPY=X",
-    "AUD_JPY": "AUDJPY=X",
-    "NZD_JPY": "NZDJPY=X",
-    "CAD_JPY": "CADJPY=X",
-    "CHF_JPY": "CHFJPY=X",
-    "ZAR_JPY": "ZARJPY=X",
-    "EUR_USD": "EURUSD=X",
-    "GBP_USD": "GBPUSD=X",
-    "AUD_USD": "AUDUSD=X",
-    "EUR_GBP": "EURGBP=X",
-    "AUD_NZD": "AUDNZD=X",
-    "EUR_CHF": "EURCHF=X",
-    "GBP_CHF": "GBPCHF=X",
-    "EUR_AUD": "EURAUD=X",
-}
+
+# === GMO FX クライアント ===
+from config import GMO_API_KEY, GMO_SECRET_KEY
+from gmo_client import GmoFxClient
+_gmo_client = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY)
 
 # === データキャッシュ ===
-def _cache_path(symbol, start, end):
-    key = f"{symbol}_{start.date()}_{end.date()}"
+def _cache_path(symbol: str) -> str:
+    """シンボル単位のキャッシュパス（日付なし・TTL で鮮度管理）"""
+    key = f"gmo_{symbol}_4hour"
     return os.path.join(CACHE_DIR, hashlib.md5(key.encode()).hexdigest() + ".pkl")
 
-def _download(symbol, start, end):
-    """yfinance からダウンロードして OHLCV DataFrame を返す"""
-    yf_symbol = SYMBOL_MAP[symbol]
-    df = yf.download(
-        yf_symbol,
-        start=start.strftime("%Y-%m-%d"),
-        end=end.strftime("%Y-%m-%d"),
-        interval="1h",
-        auto_adjust=True,
-        progress=False,
-    )
+def _download_gmo(symbol: str) -> pd.DataFrame:
+    """GMO KLine API から直近2年分の4時間足を取得して返す"""
+    df = _gmo_client.get_klines_bulk(symbol, interval="4hour", years=2)
     if df.empty:
-        raise ValueError(f"{symbol} ({yf_symbol}): データ取得失敗")
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = df.columns.get_level_values(0)
-    idx = pd.to_datetime(df.index)
-    df.index = idx.tz_convert(None) if idx.tz is not None else idx.tz_localize(None)
+        raise ValueError(f"{symbol}: GMO APIからデータ取得失敗")
+    # backtesting ライブラリ用に列名を大文字化
+    df.columns = [c.capitalize() for c in df.columns]
+    # タイムゾーン除去
+    if df.index.tz is not None:
+        df.index = df.index.tz_convert(None)
     return df[["Open", "High", "Low", "Close", "Volume"]].dropna()
 
-def get_historical_data(symbol):
-    """バックテスト期間（START_DATE〜END_DATE）のデータを取得"""
+def get_historical_data(symbol: str) -> pd.DataFrame:
+    """バックテスト用データを取得（TTLキャッシュ付き）"""
     os.makedirs(CACHE_DIR, exist_ok=True)
-    path = _cache_path(symbol, START_DATE, END_DATE)
+    path = _cache_path(symbol)
     if os.path.exists(path) and time.time() - os.path.getmtime(path) < CACHE_TTL:
         with open(path, "rb") as f:
             return pickle.load(f)
-    df = _download(symbol, START_DATE, END_DATE)
+    df = _download_gmo(symbol)
     with open(path, "wb") as f:
         pickle.dump(df, f)
     return df
 
-def get_forward_data(symbol):
-    """フォワードテスト期間（FW_START_DATE〜FW_END_DATE）のデータを取得"""
-    os.makedirs(CACHE_DIR, exist_ok=True)
-    path = _cache_path(symbol, FW_START_DATE, FW_END_DATE)
-    if os.path.exists(path) and time.time() - os.path.getmtime(path) < CACHE_TTL:
-        with open(path, "rb") as f:
-            return pickle.load(f)
-    df = _download(symbol, FW_START_DATE, FW_END_DATE)
-    with open(path, "wb") as f:
-        pickle.dump(df, f)
-    return df
+def get_forward_data(symbol: str) -> pd.DataFrame:
+    """フォワードテスト期間（直近90日）のデータを取得"""
+    df = get_historical_data(symbol)
+    return df[df.index >= pd.Timestamp(FW_START_DATE)]
 
 # === 戦略: ボリンジャーバンド + RSI 逆張り ===
 class ImprovedStrategy(Strategy):
