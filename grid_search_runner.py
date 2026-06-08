@@ -3,7 +3,7 @@
 起動コマンド:
   python grid_search_runner.py            # 通常実行（並列）
   python grid_search_runner.py --debug    # 最初の1パターンのみテスト実行
-  python grid_search_runner.py --diagnose # EUR_AUD 先頭10パターン詳細診断
+  python grid_search_runner.py --diagnose # EUR_GBP 先頭10パターン詳細診断
 
 プランB: 1コア1銘柄の multiprocessing.Process 直接並列化（ProcessPoolExecutor廃止）。
 各ワーカーは担当銘柄の全コンボをシングルスレッドで処理し、
@@ -544,7 +544,7 @@ def debug_run(config: dict, score_weights: dict) -> None:
         "atr_tp_mult": 1.5,
     }
 
-    symbol     = "EUR_AUD"
+    symbol     = "EUR_GBP"
     wft_cutoff = END_DATE - relativedelta(months=WF_TEST_MONTHS)
 
     # 除外条件（backtest_config.json から読み込み）
@@ -1104,12 +1104,12 @@ def main(debug: bool = False) -> None:
 # ── 詳細診断モード ───────────────────────────────────────────────────────
 
 def diagnose_run(config: dict, score_weights: dict) -> None:
-    """EUR_AUD の最初10パターンをシングルスレッドで実行し、詳細診断を表示"""
+    """EUR_GBP の最初10パターンをシングルスレッドで実行し、詳細診断を表示"""
     print("=" * 60)
-    print("=== 詳細診断モード: EUR_AUD 最初10パターン（シングルスレッド） ===")
+    print("=== 詳細診断モード: EUR_GBP 最初10パターン（シングルスレッド） ===")
     print("=" * 60)
 
-    symbol     = "EUR_AUD"
+    symbol     = "EUR_GBP"
     wft_cutoff = END_DATE - relativedelta(months=WF_TEST_MONTHS)
 
     min_trades     = int(config.get("min_trades",      20))
@@ -1265,7 +1265,7 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action="store_true",
                         help="最初の1パターンのみ実行して詳細デバッグ情報を表示")
     parser.add_argument("--diagnose", action="store_true",
-                        help="EUR_AUD 先頭10パターンをシングルスレッドで実行して詳細診断")
+                        help="EUR_GBP 先頭10パターンをシングルスレッドで実行して詳細診断")
     args = parser.parse_args()
 
     if args.diagnose:
