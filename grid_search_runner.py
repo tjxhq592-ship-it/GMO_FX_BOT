@@ -206,7 +206,7 @@ def _worker_task(args: tuple) -> tuple:
         err_msg = f"WFT 例外: {type(e).__name__}: {e}"
         wft_r = None
 
-    # スコアリング
+    # スコアリング（除外条件は後段の _save_to_params で判定するためここでは NaN チェックのみ）
     score = 0.0
     if is_s:
         n          = is_s["n_trades"]
@@ -215,7 +215,7 @@ def _worker_task(args: tuple) -> tuple:
         wft_sharpe = wft_r["sharpe"] if wft_r else float("nan")
         nan_check  = wft_sharpe != wft_sharpe
 
-        if n >= 50 and not nan_check and wft_sharpe >= 0:
+        if n >= 50 and not nan_check:
             score = (
                 wft_sharpe           * wt_wft +
                 max(is_sharpe, 0.0)  * wt_is  +
@@ -278,7 +278,7 @@ def _run_symbol_search(args: tuple) -> dict:
         except Exception:
             wft_r = None
 
-        # スコアリング
+        # スコアリング（除外条件は後段で判定するため NaN チェックのみ）
         score = 0.0
         if is_s:
             n          = is_s["n_trades"]
@@ -286,7 +286,7 @@ def _run_symbol_search(args: tuple) -> dict:
             is_sharpe  = is_s["sharpe"]
             wft_sharpe = wft_r["sharpe"] if wft_r else float("nan")
             nan_check  = wft_sharpe != wft_sharpe
-            if n >= 50 and not nan_check and wft_sharpe >= 0:
+            if n >= 50 and not nan_check:
                 score = (
                     wft_sharpe           * wt_wft +
                     max(is_sharpe, 0.0)  * wt_is  +
@@ -509,7 +509,7 @@ def _run_single(train_data, data, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
         is_sharpe  = is_s["sharpe"]
         wft_sharpe = wft_r["sharpe"] if wft_r else float("nan")
         nan_check  = wft_sharpe != wft_sharpe
-        if n >= 50 and not nan_check and wft_sharpe >= 0:
+        if n >= 50 and not nan_check:
             score = (
                 wft_sharpe           * wt_wft +
                 max(is_sharpe, 0.0)  * wt_is  +
@@ -518,10 +518,8 @@ def _run_single(train_data, data, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
             )
         elif debug:
             reasons = []
-            if n < 50:           reasons.append(f"取引回数不足({n}<50)")
-            if nan_check:        reasons.append("WFTシャープNaN")
-            if not nan_check and wft_sharpe < 0:
-                reasons.append(f"WFTシャープマイナス({wft_sharpe:.3f})")
+            if n < 50:    reasons.append(f"取引回数不足({n}<50)")
+            if nan_check: reasons.append("WFTシャープNaN")
             print(f"  スコア0の理由: {', '.join(reasons)}")
 
     return is_s, wft_r, score, err_msg
@@ -675,6 +673,31 @@ def debug_run(config: dict, score_weights: dict) -> None:
 
     if not score_zero_reasons:
         print("  スコアゼロの条件に該当なし → スコア計算済み")
+
+    # ── [6.5] スコア計算詳細 ────────────────────────────────────────────────
+    if is_s and wft_r:
+        _wft_sharpe = wft_r["sharpe"]
+        _is_sharpe  = is_s["sharpe"]
+        _pf         = is_s["pf"] or 0.0
+        _n_trades   = is_s["n_trades"]
+        _wt_wft    = wt_wft
+        _wt_is     = wt_is
+        _wt_pf     = wt_pf
+        _wt_trades = wt_trades
+        print(f"\n  スコア計算詳細:")
+        print(f"    wft_sharpe={_wft_sharpe:.4f} × {_wt_wft} = {max(_wft_sharpe,0)*_wt_wft:.4f}")
+        print(f"    is_sharpe ={_is_sharpe:.4f} × {_wt_is} = {max(_is_sharpe,0)*_wt_is:.4f}")
+        print(f"    pf        ={_pf:.4f} × {_wt_pf} = {max(_pf,0)*_wt_pf:.4f}")
+        print(f"    trades    ={_n_trades} × {_wt_trades} = {min(_n_trades/200,1)*_wt_trades:.4f}")
+        _calc_score = (
+            max(_wft_sharpe, 0) * _wt_wft +
+            max(_is_sharpe,  0) * _wt_is  +
+            max(_pf,         0) * _wt_pf  +
+            min(_n_trades / 200.0, 1.0) * _wt_trades
+        )
+        print(f"    合計      ={_calc_score:.4f}  (ask_claude返却score={score:.4f})")
+        if abs(_calc_score - score) > 1e-6:
+            print(f"    ⚠️  計算値と返却値が不一致！スコアリング条件を再確認してください")
 
     # ── [7] 最終スコア ──────────────────────────────────────────────────────
     print(f"\n[7] 最終結果")
