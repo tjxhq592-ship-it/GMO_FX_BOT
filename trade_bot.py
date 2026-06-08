@@ -31,6 +31,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
     datefmt="%y/%m/%d %H:%M:%S",
+    encoding="utf-8",
 )
 
 BASE_DIR             = os.path.dirname(os.path.abspath(__file__))

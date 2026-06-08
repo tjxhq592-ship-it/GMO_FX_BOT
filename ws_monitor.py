@@ -9,6 +9,7 @@ wss://forex-api.coin.z.com/ws/public/v1
 import json
 import logging
 import os
+import ssl
 import time
 
 import websocket
@@ -33,6 +34,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(message)s",
     datefmt="%y/%m/%d %H:%M:%S",
+    encoding="utf-8",
 )
 
 gmo = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY, notify_fn=send_telegram)
@@ -183,7 +185,11 @@ def start_ws_monitor() -> None:
                 on_error=_on_error,
                 on_close=_on_close,
             )
-            ws.run_forever(ping_interval=30, ping_timeout=10)
+            ws.run_forever(
+                ping_interval=30,
+                ping_timeout=10,
+                sslopt={"cert_reqs": ssl.CERT_NONE},
+            )
         except Exception as e:
             logging.error(f"WebSocket 予期せぬエラー: {e}")
 
