@@ -153,9 +153,19 @@ def calc_commission(symbol: str, price: float) -> float:
 SYMBOLS = _cfg.get("active_symbols", _cfg.get("symbols", ["AUD_NZD"]))
 
 # === GMO FX クライアント ===
-from config import GMO_API_KEY, GMO_SECRET_KEY
+from config import GMO_API_KEY, GMO_SECRET_KEY, LOG_FILE
 from gmo_client import GmoFxClient
 _gmo_client = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY)
+
+# trade_log.txt へのログ出力設定
+logging.basicConfig(
+    filename=str(LOG_FILE),
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    datefmt="%y/%m/%d %H:%M:%S",
+    encoding="utf-8",
+)
+bt_logger = logging.getLogger("backtest")
 
 # === データキャッシュ ===
 def _cache_path(symbol: str) -> str:
@@ -395,7 +405,7 @@ BT_PROGRESS_FILE     = "backtest_progress.json"
 _bt_log_lines: list = []
 
 def _bt_log(msg: str) -> None:
-    """print しつつ backtest_progress.json 用のログバッファに追記。
+    """print しつつ backtest_progress.json 用のログバッファと trade_log.txt に追記。
     デタッチドプロセス等で sys.stdout が None の場合は print をスキップ。"""
     try:
         if sys.stdout is not None:
@@ -403,6 +413,7 @@ def _bt_log(msg: str) -> None:
     except Exception:
         pass
     _bt_log_lines.append(msg)
+    bt_logger.info(msg)
 
 def _write_bt_progress(current: int, total: int, symbol: str, status: str) -> None:
     data = {
