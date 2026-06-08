@@ -1,5 +1,6 @@
 # 起動: streamlit run dashboard.py
 
+import platform
 import signal
 import subprocess
 import sys
@@ -93,20 +94,46 @@ def check_scheduler_status() -> bool:
 
 
 def get_bot_status() -> bool:
-    """systemd サービスの稼働状態を確認"""
-    result = subprocess.run(
-        ["systemctl", "is-active", "gmo-fx-bot"],
-        capture_output=True, text=True
-    )
-    return result.stdout.strip() == "active"
+    """ボットの稼働状態を確認（Windows: psutil / Linux: systemctl）"""
+    if platform.system() == "Windows":
+        for proc in psutil.process_iter(['pid', 'cmdline']):
+            try:
+                if 'scheduler.py' in ' '.join(proc.info['cmdline'] or []):
+                    return True
+            except Exception:
+                pass
+        return False
+    else:
+        result = subprocess.run(
+            ["systemctl", "is-active", "gmo-fx-bot"],
+            capture_output=True, text=True
+        )
+        return result.stdout.strip() == "active"
 
 
 def start_bot():
-    subprocess.run(["sudo", "systemctl", "start", "gmo-fx-bot"])
+    """ボットを起動（Windows: subprocess.Popen / Linux: systemctl）"""
+    if platform.system() == "Windows":
+        subprocess.Popen(
+            [sys.executable, "scheduler.py"],
+            cwd=BASE_DIR,
+            start_new_session=True,
+        )
+    else:
+        subprocess.run(["sudo", "systemctl", "start", "gmo-fx-bot"])
 
 
 def stop_bot():
-    subprocess.run(["sudo", "systemctl", "stop", "gmo-fx-bot"])
+    """ボットを停止（Windows: psutil.terminate / Linux: systemctl）"""
+    if platform.system() == "Windows":
+        for proc in psutil.process_iter(['pid', 'cmdline']):
+            try:
+                if 'scheduler.py' in ' '.join(proc.info['cmdline'] or []):
+                    proc.terminate()
+            except Exception:
+                pass
+    else:
+        subprocess.run(["sudo", "systemctl", "stop", "gmo-fx-bot"])
 
 
 st.set_page_config(page_title="GMO FX Bot Dashboard", layout="wide")
