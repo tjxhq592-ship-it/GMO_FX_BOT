@@ -198,16 +198,40 @@ class GmoFxClient:
         symbol   : 通貨ペア（例: "EUR_GBP"）
         interval : 足種（例: "4hour"）
         years    : 取得年数（直近 N 年分）
+
+        Note
+        ----
+        日足以上は年単位（YYYY）、4時間足以下は日単位（YYYYMMDD）で
+        date パラメータを指定する必要がある。
+        2年分の日単位取得は約730リクエスト。キャッシュが効くため
+        2回目以降は高速。
         """
         frames = []
-        current_year = datetime.now().year
-        for year in range(current_year - years, current_year + 1):
-            try:
-                df = self.get_klines(symbol, interval, str(year))
-                frames.append(df)
-                time.sleep(0.3)  # レート制限対策
-            except Exception as e:
-                print(f"  {year}年データ取得失敗: {e}")
+
+        if interval in ("1day", "1week", "1month"):
+            # 日足以上は年単位で取得
+            current_year = datetime.now().year
+            for year in range(current_year - years, current_year + 1):
+                try:
+                    df = self.get_klines(symbol, interval, str(year))
+                    frames.append(df)
+                    time.sleep(0.3)
+                except Exception as e:
+                    print(f"  {year}年データ取得失敗: {e}")
+        else:
+            # 4時間足以下は日単位で取得
+            start   = datetime.now() - timedelta(days=365 * years)
+            current = start
+            while current <= datetime.now():
+                date_str = current.strftime("%Y%m%d")
+                try:
+                    df = self.get_klines(symbol, interval, date_str)
+                    if not df.empty:
+                        frames.append(df)
+                except Exception:
+                    pass
+                current += timedelta(days=1)
+                time.sleep(0.05)  # レート制限対策
 
         if not frames:
             raise RuntimeError(f"{symbol} のデータ取得失敗")
