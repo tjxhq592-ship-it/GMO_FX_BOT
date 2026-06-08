@@ -210,10 +210,11 @@ def ask_claude(bars, symbol: str, symbol_params: dict, poly_signal: dict) -> dic
 
     poly_context = build_polymarket_context(poly_signal)
 
-    atr_now   = latest["ATR"]
-    atr_avg   = latest["ATR_avg20"]
-    in_range  = (atr_now < atr_avg * p.get("atr_range_mult", 1.0)) if pd.notna(atr_avg) else False
-    range_str = "レンジ相場" if in_range else "トレンド相場"
+    atr_now     = latest["ATR"]
+    atr_avg     = latest["ATR_avg20"]
+    atr_avg_str = f"{atr_avg:.5f}" if pd.notna(atr_avg) else "N/A"
+    in_range    = (atr_now < atr_avg * p.get("atr_range_mult", 1.0)) if pd.notna(atr_avg) else False
+    range_str   = "レンジ相場" if in_range else "トレンド相場"
 
     prompt = f"""
 あなたはFXトレードAIです。ボリンジャーバンド+RSI逆張り戦略でレンジ相場の売買判断をしてください。
@@ -224,7 +225,7 @@ BB上限: {latest['BB_upper']:.5f}
 BB中心: {latest['BB_mid']:.5f}
 BB下限: {latest['BB_lower']:.5f}
 RSI({p.get('rsi_period', 14)}): {latest['RSI']:.1f}
-ATR: {atr_now:.5f} / ATR20期間平均: {atr_avg:.5f if pd.notna(atr_avg) else 'N/A'}
+ATR: {atr_now:.5f} / ATR20期間平均: {atr_avg_str}
 相場環境: {range_str}
 
 【直近5日間の推移】
