@@ -208,19 +208,11 @@ class GmoFxClient:
         """
         frames = []
 
-        if interval in ("1day", "1week", "1month"):
-            # 日足以上は年単位で取得
-            current_year = datetime.now().year
-            for year in range(current_year - years, current_year + 1):
-                try:
-                    df = self.get_klines(symbol, interval, str(year))
-                    frames.append(df)
-                    time.sleep(0.3)
-                except Exception as e:
-                    print(f"  {year}年データ取得失敗: {e}")
-        else:
-            # 4時間足以下は日単位で取得
+        if interval in ("1min", "5min", "10min", "15min", "30min", "1hour"):
+            # 1時間足以下: 日単位で取得（YYYYMMDDフォーマット）
+            # ※20231028以降のみ取得可能
             start   = datetime.now() - timedelta(days=365 * years)
+            start   = max(start, datetime(2023, 10, 28))  # 取扱開始日
             current = start
             while current <= datetime.now():
                 date_str = current.strftime("%Y%m%d")
@@ -231,7 +223,18 @@ class GmoFxClient:
                 except Exception:
                     pass
                 current += timedelta(days=1)
-                time.sleep(0.05)  # レート制限対策
+                time.sleep(0.05)
+        else:
+            # 4時間足以上: 年単位で取得（YYYYフォーマット）
+            current_year = datetime.now().year
+            for year in range(current_year - years, current_year + 1):
+                try:
+                    df = self.get_klines(symbol, interval, str(year))
+                    if not df.empty:
+                        frames.append(df)
+                    time.sleep(0.3)
+                except Exception as e:
+                    print(f"  {year}年データ取得失敗: {e}")
 
         if not frames:
             raise RuntimeError(f"{symbol} のデータ取得失敗")
