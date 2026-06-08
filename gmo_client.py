@@ -176,10 +176,14 @@ class GmoFxClient:
         years = max(1, days // 365 + 1)
         return self.get_klines_bulk(symbol, interval=interval, years=years)
 
+    # GMO API の date パラメータ形式によって取得単位が異なる
+    _DAILY_INTERVALS  = {"1min", "5min", "10min", "15min", "30min", "1hour"}
+    _YEARLY_INTERVALS = {"4hour", "8hour", "12hour", "1day", "1week", "1month"}
+
     def get_klines_bulk(
         self,
         symbol: str,
-        interval: str = "4hour",
+        interval: str = "30min",
         years: int = 2,
         price_type: str = "BID",
     ) -> pd.DataFrame:
@@ -187,21 +191,21 @@ class GmoFxClient:
 
         Parameters
         ----------
-        symbol   : 通貨ペア（例: "EUR_GBP"）
-        interval : 足種（例: "4hour"）
+        symbol   : 通貨ペア（例: "USD_JPY"）
+        interval : 足種（1min/5min/15min/30min/1hour/4hour/1day など）
         years    : 取得年数（直近 N 年分）
 
         Note
         ----
-        日足以上は年単位（YYYY）、4時間足以下は日単位（YYYYMMDD）で
-        date パラメータを指定する必要がある。
+        _DAILY_INTERVALS  → 日単位（YYYYMMDD）でリクエスト
+        _YEARLY_INTERVALS → 年単位（YYYY）でリクエスト
         2年分の日単位取得は約730リクエスト。キャッシュが効くため
         2回目以降は高速。
         """
         frames = []
 
-        if interval in ("1min", "5min", "10min", "15min", "30min", "1hour"):
-            # 1時間足以下: 日単位で取得（YYYYMMDDフォーマット）
+        if interval in self._DAILY_INTERVALS:
+            # 日単位で取得（YYYYMMDDフォーマット）
             # ※20231028以降のみ取得可能
             start   = datetime.now() - timedelta(days=365 * years)
             start   = max(start, datetime(2023, 10, 28))  # 取扱開始日
@@ -217,7 +221,7 @@ class GmoFxClient:
                 current += timedelta(days=1)
                 time.sleep(0.05)
         else:
-            # 4時間足以上: 年単位で取得（YYYYフォーマット）
+            # 年単位で取得（YYYYフォーマット）
             current_year = datetime.now().year
             for year in range(current_year - years, current_year + 1):
                 try:

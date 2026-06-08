@@ -112,3 +112,1406 @@
 2026-06-08 16:05:59,972 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
 2026-06-08 16:05:59,972 WebSocket Ø’f: None None
 2026-06-08 16:05:59,973 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:06:05,016 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:06:05,016 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:06:05,016 WebSocket Ø’f: None None
+2026-06-08 16:06:05,016 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:06:10,108 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:06:10,109 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:06:10,109 WebSocket Ø’f: None None
+2026-06-08 16:06:10,109 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:06:15,154 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:06:15,154 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:06:15,154 WebSocket Ø’f: None None
+2026-06-08 16:06:15,154 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:06:20,239 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:06:20,239 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:06:20,239 WebSocket Ø’f: None None
+2026-06-08 16:06:20,240 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:06:25,276 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:06:25,276 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:06:25,277 WebSocket Ø’f: None None
+2026-06-08 16:06:25,277 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:06:30,360 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:06:30,360 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:06:30,361 WebSocket Ø’f: None None
+2026-06-08 16:06:30,361 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:06:35,459 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:06:35,459 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:06:35,459 WebSocket Ø’f: None None
+2026-06-08 16:06:35,460 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:06:40,535 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:06:40,535 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:06:40,535 WebSocket Ø’f: None None
+2026-06-08 16:06:40,536 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:06:45,611 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:06:45,611 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:06:45,611 WebSocket Ø’f: None None
+2026-06-08 16:06:45,612 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:06:50,654 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:06:50,654 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:06:50,655 WebSocket Ø’f: None None
+2026-06-08 16:06:50,655 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:06:55,741 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:06:55,742 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:06:55,742 WebSocket Ø’f: None None
+2026-06-08 16:06:55,742 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:07:00,832 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:07:00,832 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:07:00,832 WebSocket Ø’f: None None
+2026-06-08 16:07:00,832 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:07:05,870 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:07:05,870 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:07:05,870 WebSocket Ø’f: None None
+2026-06-08 16:07:05,871 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:07:10,908 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:07:10,908 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:07:10,908 WebSocket Ø’f: None None
+2026-06-08 16:07:10,909 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:07:15,943 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:07:15,943 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:07:15,943 WebSocket Ø’f: None None
+2026-06-08 16:07:15,943 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:07:21,035 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:07:21,035 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:07:21,035 WebSocket Ø’f: None None
+2026-06-08 16:07:21,036 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:07:26,126 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:07:26,127 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:07:26,127 WebSocket Ø’f: None None
+2026-06-08 16:07:26,127 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:07:31,203 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:07:31,203 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:07:31,203 WebSocket Ø’f: None None
+2026-06-08 16:07:31,204 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:07:36,256 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:07:36,257 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:07:36,257 WebSocket Ø’f: None None
+2026-06-08 16:07:36,257 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:07:41,312 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:07:41,312 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:07:41,312 WebSocket Ø’f: None None
+2026-06-08 16:07:41,313 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:07:46,385 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:07:46,385 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:07:46,385 WebSocket Ø’f: None None
+2026-06-08 16:07:46,385 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:07:51,492 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:07:51,492 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:07:51,492 WebSocket Ø’f: None None
+2026-06-08 16:07:51,492 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:07:56,583 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:07:56,584 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:07:56,584 WebSocket Ø’f: None None
+2026-06-08 16:07:56,584 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:08:01,691 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:08:01,691 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:08:01,691 WebSocket Ø’f: None None
+2026-06-08 16:08:01,691 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:08:06,781 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:08:06,781 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:08:06,781 WebSocket Ø’f: None None
+2026-06-08 16:08:06,782 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:08:11,819 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:08:11,819 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:08:11,819 WebSocket Ø’f: None None
+2026-06-08 16:08:11,819 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:08:16,924 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:08:16,924 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:08:16,924 WebSocket Ø’f: None None
+2026-06-08 16:08:16,924 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:08:21,996 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:08:21,996 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:08:21,996 WebSocket Ø’f: None None
+2026-06-08 16:08:21,997 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:08:27,090 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:08:27,090 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:08:27,090 WebSocket Ø’f: None None
+2026-06-08 16:08:27,090 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:08:32,152 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:08:32,152 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:08:32,152 WebSocket Ø’f: None None
+2026-06-08 16:08:32,153 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:08:37,240 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:08:37,241 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:08:37,241 WebSocket Ø’f: None None
+2026-06-08 16:08:37,241 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:08:42,330 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:08:42,330 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:08:42,330 WebSocket Ø’f: None None
+2026-06-08 16:08:42,330 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:08:47,396 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:08:47,397 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:08:47,397 WebSocket Ø’f: None None
+2026-06-08 16:08:47,397 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:08:52,479 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:08:52,479 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:08:52,479 WebSocket Ø’f: None None
+2026-06-08 16:08:52,479 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:08:57,558 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:08:57,558 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:08:57,558 WebSocket Ø’f: None None
+2026-06-08 16:08:57,558 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:09:02,620 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:09:02,620 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:09:02,620 WebSocket Ø’f: None None
+2026-06-08 16:09:02,621 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:09:07,710 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:09:07,710 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:09:07,710 WebSocket Ø’f: None None
+2026-06-08 16:09:07,710 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:09:12,771 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:09:12,772 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:09:12,772 WebSocket Ø’f: None None
+2026-06-08 16:09:12,772 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:09:17,850 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:09:17,851 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:09:17,851 WebSocket Ø’f: None None
+2026-06-08 16:09:17,851 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:09:22,929 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:09:22,929 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:09:22,929 WebSocket Ø’f: None None
+2026-06-08 16:09:22,929 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:09:28,024 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:09:28,024 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:09:28,024 WebSocket Ø’f: None None
+2026-06-08 16:09:28,025 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:09:33,100 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:09:33,100 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:09:33,100 WebSocket Ø’f: None None
+2026-06-08 16:09:33,100 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:09:38,169 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:09:38,169 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:09:38,169 WebSocket Ø’f: None None
+2026-06-08 16:09:38,169 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:09:43,258 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:09:43,258 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:09:43,258 WebSocket Ø’f: None None
+2026-06-08 16:09:43,258 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:09:48,361 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:09:48,361 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:09:48,361 WebSocket Ø’f: None None
+2026-06-08 16:09:48,361 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:09:53,435 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:09:53,435 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:09:53,435 WebSocket Ø’f: None None
+2026-06-08 16:09:53,435 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:09:58,510 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:09:58,510 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:09:58,510 WebSocket Ø’f: None None
+2026-06-08 16:09:58,510 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:10:03,598 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:10:03,598 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:10:03,598 WebSocket Ø’f: None None
+2026-06-08 16:10:03,599 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:10:08,663 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:10:08,663 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:10:08,664 WebSocket Ø’f: None None
+2026-06-08 16:10:08,664 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:10:13,740 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:10:13,740 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:10:13,740 WebSocket Ø’f: None None
+2026-06-08 16:10:13,740 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:10:18,807 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:10:18,807 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:10:18,807 WebSocket Ø’f: None None
+2026-06-08 16:10:18,808 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:10:23,861 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:10:23,861 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:10:23,861 WebSocket Ø’f: None None
+2026-06-08 16:10:23,861 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:10:28,946 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:10:28,946 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:10:28,946 WebSocket Ø’f: None None
+2026-06-08 16:10:28,946 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:10:34,001 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:10:34,001 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:10:34,001 WebSocket Ø’f: None None
+2026-06-08 16:10:34,001 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:10:39,072 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:10:39,072 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:10:39,072 WebSocket Ø’f: None None
+2026-06-08 16:10:39,072 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:10:44,156 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:10:44,156 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:10:44,156 WebSocket Ø’f: None None
+2026-06-08 16:10:44,157 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:10:49,261 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:10:49,261 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:10:49,261 WebSocket Ø’f: None None
+2026-06-08 16:10:49,262 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:10:54,345 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:10:54,345 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:10:54,345 WebSocket Ø’f: None None
+2026-06-08 16:10:54,346 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:10:59,405 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:10:59,405 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:10:59,405 WebSocket Ø’f: None None
+2026-06-08 16:10:59,406 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:11:04,450 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:11:04,450 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:11:04,450 WebSocket Ø’f: None None
+2026-06-08 16:11:04,450 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:11:09,546 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:11:09,546 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:11:09,546 WebSocket Ø’f: None None
+2026-06-08 16:11:09,546 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:11:14,643 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:11:14,643 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:11:14,643 WebSocket Ø’f: None None
+2026-06-08 16:11:14,643 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:11:19,721 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:11:19,722 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:11:19,722 WebSocket Ø’f: None None
+2026-06-08 16:11:19,722 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:11:24,818 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:11:24,819 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:11:24,819 WebSocket Ø’f: None None
+2026-06-08 16:11:24,819 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:11:29,919 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:11:29,919 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:11:29,919 WebSocket Ø’f: None None
+2026-06-08 16:11:29,919 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:11:35,008 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:11:35,008 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:11:35,008 WebSocket Ø’f: None None
+2026-06-08 16:11:35,008 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:11:40,075 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:11:40,075 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:11:40,075 WebSocket Ø’f: None None
+2026-06-08 16:11:40,076 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:11:45,146 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:11:45,146 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:11:45,146 WebSocket Ø’f: None None
+2026-06-08 16:11:45,146 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:11:50,201 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:11:50,201 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:11:50,201 WebSocket Ø’f: None None
+2026-06-08 16:11:50,202 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:11:55,248 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:11:55,248 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:11:55,248 WebSocket Ø’f: None None
+2026-06-08 16:11:55,248 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:12:00,315 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:12:00,315 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:12:00,315 WebSocket Ø’f: None None
+2026-06-08 16:12:00,316 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:12:05,409 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:12:05,409 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:12:05,409 WebSocket Ø’f: None None
+2026-06-08 16:12:05,409 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:12:10,499 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:12:10,499 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:12:10,499 WebSocket Ø’f: None None
+2026-06-08 16:12:10,499 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:12:15,554 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:12:15,554 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:12:15,554 WebSocket Ø’f: None None
+2026-06-08 16:12:15,554 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:12:20,639 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:12:20,639 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:12:20,639 WebSocket Ø’f: None None
+2026-06-08 16:12:20,639 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:12:25,717 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:12:25,717 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:12:25,717 WebSocket Ø’f: None None
+2026-06-08 16:12:25,718 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:12:30,789 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:12:30,789 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:12:30,789 WebSocket Ø’f: None None
+2026-06-08 16:12:30,789 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:12:35,878 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:12:35,878 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:12:35,878 WebSocket Ø’f: None None
+2026-06-08 16:12:35,879 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:12:40,982 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:12:40,982 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:12:40,982 WebSocket Ø’f: None None
+2026-06-08 16:12:40,982 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:12:46,078 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:12:46,078 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:12:46,078 WebSocket Ø’f: None None
+2026-06-08 16:12:46,078 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:12:51,163 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:12:51,163 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:12:51,163 WebSocket Ø’f: None None
+2026-06-08 16:12:51,164 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:12:56,233 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:12:56,234 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:12:56,234 WebSocket Ø’f: None None
+2026-06-08 16:12:56,234 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:13:01,340 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:13:01,340 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:13:01,340 WebSocket Ø’f: None None
+2026-06-08 16:13:01,341 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:13:06,398 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:13:06,398 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:13:06,398 WebSocket Ø’f: None None
+2026-06-08 16:13:06,399 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:13:11,477 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:13:11,478 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:13:11,478 WebSocket Ø’f: None None
+2026-06-08 16:13:11,478 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:13:16,530 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:13:16,530 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:13:16,530 WebSocket Ø’f: None None
+2026-06-08 16:13:16,530 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:13:21,574 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:13:21,575 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:13:21,575 WebSocket Ø’f: None None
+2026-06-08 16:13:21,575 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:13:26,611 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:13:26,611 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:13:26,611 WebSocket Ø’f: None None
+2026-06-08 16:13:26,612 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:13:31,684 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:13:31,684 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:13:31,684 WebSocket Ø’f: None None
+2026-06-08 16:13:31,685 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:13:36,748 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:13:36,748 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:13:36,748 WebSocket Ø’f: None None
+2026-06-08 16:13:36,748 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:13:41,810 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:13:41,810 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:13:41,810 WebSocket Ø’f: None None
+2026-06-08 16:13:41,810 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:13:46,866 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:13:46,866 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:13:46,866 WebSocket Ø’f: None None
+2026-06-08 16:13:46,867 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:13:51,931 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:13:51,932 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:13:51,932 WebSocket Ø’f: None None
+2026-06-08 16:13:51,932 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:13:56,975 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:13:56,975 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:13:56,976 WebSocket Ø’f: None None
+2026-06-08 16:13:56,976 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:14:02,038 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:14:02,038 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:14:02,038 WebSocket Ø’f: None None
+2026-06-08 16:14:02,038 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:14:07,090 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:14:07,090 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:14:07,090 WebSocket Ø’f: None None
+2026-06-08 16:14:07,090 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:14:12,130 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:14:12,130 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:14:12,131 WebSocket Ø’f: None None
+2026-06-08 16:14:12,131 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:14:17,195 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:14:17,195 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:14:17,195 WebSocket Ø’f: None None
+2026-06-08 16:14:17,196 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:14:22,268 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:14:22,268 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:14:22,268 WebSocket Ø’f: None None
+2026-06-08 16:14:22,268 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:14:27,360 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:14:27,360 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:14:27,360 WebSocket Ø’f: None None
+2026-06-08 16:14:27,361 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:14:32,415 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:14:32,415 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:14:32,415 WebSocket Ø’f: None None
+2026-06-08 16:14:32,415 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:14:37,478 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:14:37,478 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:14:37,478 WebSocket Ø’f: None None
+2026-06-08 16:14:37,478 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:14:42,560 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:14:42,560 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:14:42,560 WebSocket Ø’f: None None
+2026-06-08 16:14:42,561 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:14:47,660 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:14:47,661 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:14:47,661 WebSocket Ø’f: None None
+2026-06-08 16:14:47,661 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:14:52,723 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:14:52,723 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:14:52,723 WebSocket Ø’f: None None
+2026-06-08 16:14:52,723 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:14:57,816 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:14:57,816 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:14:57,816 WebSocket Ø’f: None None
+2026-06-08 16:14:57,817 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:15:02,878 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:15:02,878 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:15:02,878 WebSocket Ø’f: None None
+2026-06-08 16:15:02,879 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:15:07,957 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:15:07,957 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:15:07,957 WebSocket Ø’f: None None
+2026-06-08 16:15:07,958 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:15:13,034 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:15:13,034 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:15:13,034 WebSocket Ø’f: None None
+2026-06-08 16:15:13,035 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:15:18,102 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:15:18,102 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:15:18,102 WebSocket Ø’f: None None
+2026-06-08 16:15:18,102 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:15:23,188 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:15:23,188 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:15:23,188 WebSocket Ø’f: None None
+2026-06-08 16:15:23,189 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:15:28,251 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:15:28,251 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:15:28,252 WebSocket Ø’f: None None
+2026-06-08 16:15:28,252 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:15:33,312 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:15:33,312 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:15:33,312 WebSocket Ø’f: None None
+2026-06-08 16:15:33,312 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:15:38,399 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:15:38,399 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:15:38,399 WebSocket Ø’f: None None
+2026-06-08 16:15:38,400 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:15:43,477 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:15:43,477 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:15:43,477 WebSocket Ø’f: None None
+2026-06-08 16:15:43,477 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:15:48,572 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:15:48,572 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:15:48,572 WebSocket Ø’f: None None
+2026-06-08 16:15:48,573 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:15:53,633 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:15:53,633 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:15:53,633 WebSocket Ø’f: None None
+2026-06-08 16:15:53,634 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:15:58,746 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:15:58,746 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:15:58,746 WebSocket Ø’f: None None
+2026-06-08 16:15:58,747 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:16:03,819 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:16:03,819 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:16:03,819 WebSocket Ø’f: None None
+2026-06-08 16:16:03,820 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:16:08,901 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:16:08,901 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:16:08,901 WebSocket Ø’f: None None
+2026-06-08 16:16:08,902 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:16:13,990 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:16:13,991 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:16:13,991 WebSocket Ø’f: None None
+2026-06-08 16:16:13,991 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:16:19,033 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:16:19,033 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:16:19,033 WebSocket Ø’f: None None
+2026-06-08 16:16:19,034 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:16:24,069 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:16:24,069 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:16:24,069 WebSocket Ø’f: None None
+2026-06-08 16:16:24,069 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:16:29,105 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:16:29,105 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:16:29,105 WebSocket Ø’f: None None
+2026-06-08 16:16:29,106 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:16:34,140 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:16:34,140 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:16:34,140 WebSocket Ø’f: None None
+2026-06-08 16:16:34,141 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:16:39,208 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:16:39,208 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:16:39,208 WebSocket Ø’f: None None
+2026-06-08 16:16:39,209 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:16:44,257 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:16:44,257 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:16:44,257 WebSocket Ø’f: None None
+2026-06-08 16:16:44,258 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:16:49,346 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:16:49,346 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:16:49,346 WebSocket Ø’f: None None
+2026-06-08 16:16:49,346 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:16:54,423 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:16:54,423 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:16:54,423 WebSocket Ø’f: None None
+2026-06-08 16:16:54,423 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:16:59,478 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:16:59,478 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:16:59,478 WebSocket Ø’f: None None
+2026-06-08 16:16:59,479 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:17:04,562 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:17:04,562 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:17:04,562 WebSocket Ø’f: None None
+2026-06-08 16:17:04,562 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:17:09,608 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:17:09,608 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:17:09,608 WebSocket Ø’f: None None
+2026-06-08 16:17:09,608 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:17:14,645 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:17:14,645 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:17:14,645 WebSocket Ø’f: None None
+2026-06-08 16:17:14,646 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:17:19,712 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:17:19,712 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:17:19,712 WebSocket Ø’f: None None
+2026-06-08 16:17:19,712 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:17:24,758 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:17:24,758 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:17:24,758 WebSocket Ø’f: None None
+2026-06-08 16:17:24,758 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:17:29,847 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:17:29,848 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:17:29,848 WebSocket Ø’f: None None
+2026-06-08 16:17:29,848 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:17:34,891 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:17:34,892 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:17:34,892 WebSocket Ø’f: None None
+2026-06-08 16:17:34,892 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:17:39,927 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:17:39,927 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:17:39,927 WebSocket Ø’f: None None
+2026-06-08 16:17:39,928 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:17:45,034 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:17:45,034 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:17:45,034 WebSocket Ø’f: None None
+2026-06-08 16:17:45,035 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:17:50,115 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:17:50,115 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:17:50,115 WebSocket Ø’f: None None
+2026-06-08 16:17:50,116 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:17:55,168 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:17:55,169 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:17:55,169 WebSocket Ø’f: None None
+2026-06-08 16:17:55,169 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:18:00,270 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:18:00,270 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:18:00,270 WebSocket Ø’f: None None
+2026-06-08 16:18:00,270 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:18:05,320 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:18:05,320 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:18:05,321 WebSocket Ø’f: None None
+2026-06-08 16:18:05,321 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:18:10,370 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:18:10,370 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:18:10,370 WebSocket Ø’f: None None
+2026-06-08 16:18:10,370 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:18:15,462 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:18:15,462 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:18:15,462 WebSocket Ø’f: None None
+2026-06-08 16:18:15,463 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:18:20,554 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:18:20,554 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:18:20,555 WebSocket Ø’f: None None
+2026-06-08 16:18:20,555 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:18:25,647 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:18:25,647 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:18:25,647 WebSocket Ø’f: None None
+2026-06-08 16:18:25,647 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:18:30,681 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:18:30,681 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:18:30,682 WebSocket Ø’f: None None
+2026-06-08 16:18:30,682 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:18:35,722 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:18:35,722 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:18:35,722 WebSocket Ø’f: None None
+2026-06-08 16:18:35,722 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:18:40,780 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:18:40,781 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:18:40,781 WebSocket Ø’f: None None
+2026-06-08 16:18:40,781 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:18:45,964 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:18:45,964 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:18:45,964 WebSocket Ø’f: None None
+2026-06-08 16:18:45,965 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:18:51,035 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:18:51,035 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:18:51,035 WebSocket Ø’f: None None
+2026-06-08 16:18:51,035 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:18:56,094 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:18:56,094 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:18:56,094 WebSocket Ø’f: None None
+2026-06-08 16:18:56,094 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:19:01,134 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:19:01,134 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:19:01,134 WebSocket Ø’f: None None
+2026-06-08 16:19:01,135 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:19:06,176 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:19:06,176 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:19:06,176 WebSocket Ø’f: None None
+2026-06-08 16:19:06,177 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:19:11,217 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:19:11,217 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:19:11,218 WebSocket Ø’f: None None
+2026-06-08 16:19:11,218 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:19:16,293 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:19:16,293 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:19:16,294 WebSocket Ø’f: None None
+2026-06-08 16:19:16,294 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:19:21,363 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:19:21,364 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:19:21,364 WebSocket Ø’f: None None
+2026-06-08 16:19:21,364 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:19:26,436 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:19:26,436 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:19:26,436 WebSocket Ø’f: None None
+2026-06-08 16:19:26,436 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:19:31,543 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:19:31,544 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:19:31,544 WebSocket Ø’f: None None
+2026-06-08 16:19:31,545 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:19:36,606 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:19:36,607 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:19:36,607 WebSocket Ø’f: None None
+2026-06-08 16:19:36,607 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:19:41,683 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:19:41,683 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:19:41,683 WebSocket Ø’f: None None
+2026-06-08 16:19:41,684 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:19:46,749 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:19:46,749 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:19:46,749 WebSocket Ø’f: None None
+2026-06-08 16:19:46,750 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:19:51,811 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:19:51,811 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:19:51,811 WebSocket Ø’f: None None
+2026-06-08 16:19:51,812 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:19:56,846 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:19:56,846 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:19:56,847 WebSocket Ø’f: None None
+2026-06-08 16:19:56,847 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:20:01,889 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:20:01,890 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:20:01,890 WebSocket Ø’f: None None
+2026-06-08 16:20:01,891 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:20:06,931 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:20:06,931 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:20:06,931 WebSocket Ø’f: None None
+2026-06-08 16:20:06,932 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:20:11,991 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:20:11,991 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:20:11,991 WebSocket Ø’f: None None
+2026-06-08 16:20:11,992 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:20:17,081 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:20:17,081 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:20:17,081 WebSocket Ø’f: None None
+2026-06-08 16:20:17,082 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:20:22,161 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:20:22,161 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:20:22,161 WebSocket Ø’f: None None
+2026-06-08 16:20:22,162 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:20:27,215 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:20:27,215 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:20:27,215 WebSocket Ø’f: None None
+2026-06-08 16:20:27,215 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:20:32,278 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:20:32,278 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:20:32,278 WebSocket Ø’f: None None
+2026-06-08 16:20:32,278 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:20:37,374 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:20:37,375 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:20:37,375 WebSocket Ø’f: None None
+2026-06-08 16:20:37,375 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:20:42,457 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:20:42,457 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:20:42,457 WebSocket Ø’f: None None
+2026-06-08 16:20:42,458 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:20:47,567 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:20:47,567 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:20:47,567 WebSocket Ø’f: None None
+2026-06-08 16:20:47,567 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:20:52,636 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:20:52,636 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:20:52,636 WebSocket Ø’f: None None
+2026-06-08 16:20:52,636 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:20:57,691 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:20:57,691 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:20:57,691 WebSocket Ø’f: None None
+2026-06-08 16:20:57,691 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:21:02,768 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:21:02,769 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:21:02,769 WebSocket Ø’f: None None
+2026-06-08 16:21:02,769 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:21:07,868 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:21:07,868 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:21:07,868 WebSocket Ø’f: None None
+2026-06-08 16:21:07,869 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:21:12,920 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:21:12,920 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:21:12,920 WebSocket Ø’f: None None
+2026-06-08 16:21:12,921 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:21:17,959 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:21:17,960 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:21:17,960 WebSocket Ø’f: None None
+2026-06-08 16:21:17,960 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:21:22,997 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:21:22,997 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:21:22,997 WebSocket Ø’f: None None
+2026-06-08 16:21:22,997 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:21:28,084 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:21:28,084 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:21:28,084 WebSocket Ø’f: None None
+2026-06-08 16:21:28,085 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:21:33,162 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:21:33,162 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:21:33,162 WebSocket Ø’f: None None
+2026-06-08 16:21:33,163 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:21:38,209 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:21:38,209 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:21:38,209 WebSocket Ø’f: None None
+2026-06-08 16:21:38,209 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:21:43,293 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:21:43,293 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:21:43,293 WebSocket Ø’f: None None
+2026-06-08 16:21:43,294 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:21:48,425 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:21:48,426 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:21:48,426 WebSocket Ø’f: None None
+2026-06-08 16:21:48,426 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:21:53,509 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:21:53,509 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:21:53,509 WebSocket Ø’f: None None
+2026-06-08 16:21:53,510 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:21:58,570 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:21:58,571 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:21:58,571 WebSocket Ø’f: None None
+2026-06-08 16:21:58,571 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:22:03,651 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:22:03,651 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:22:03,651 WebSocket Ø’f: None None
+2026-06-08 16:22:03,651 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:22:08,720 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:22:08,720 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:22:08,720 WebSocket Ø’f: None None
+2026-06-08 16:22:08,721 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:22:13,801 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:22:13,801 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:22:13,801 WebSocket Ø’f: None None
+2026-06-08 16:22:13,802 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:22:18,896 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:22:18,896 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:22:18,896 WebSocket Ø’f: None None
+2026-06-08 16:22:18,897 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:22:23,987 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:22:23,987 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:22:23,988 WebSocket Ø’f: None None
+2026-06-08 16:22:23,988 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:22:29,076 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:22:29,076 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:22:29,076 WebSocket Ø’f: None None
+2026-06-08 16:22:29,076 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:22:34,114 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:22:34,114 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:22:34,115 WebSocket Ø’f: None None
+2026-06-08 16:22:34,115 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:22:39,184 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:22:39,184 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:22:39,184 WebSocket Ø’f: None None
+2026-06-08 16:22:39,185 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:22:44,220 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:22:44,220 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:22:44,220 WebSocket Ø’f: None None
+2026-06-08 16:22:44,220 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:22:49,317 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:22:49,317 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:22:49,317 WebSocket Ø’f: None None
+2026-06-08 16:22:49,318 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:22:54,366 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:22:54,366 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:22:54,366 WebSocket Ø’f: None None
+2026-06-08 16:22:54,366 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:22:59,445 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:22:59,446 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:22:59,446 WebSocket Ø’f: None None
+2026-06-08 16:22:59,446 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:23:04,501 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:23:04,501 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:23:04,501 WebSocket Ø’f: None None
+2026-06-08 16:23:04,501 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:23:09,579 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:23:09,579 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:23:09,579 WebSocket Ø’f: None None
+2026-06-08 16:23:09,580 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:23:14,672 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:23:14,672 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:23:14,672 WebSocket Ø’f: None None
+2026-06-08 16:23:14,673 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:23:19,748 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:23:19,748 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:23:19,749 WebSocket Ø’f: None None
+2026-06-08 16:23:19,749 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:23:24,837 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:23:24,837 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:23:24,837 WebSocket Ø’f: None None
+2026-06-08 16:23:24,837 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:23:29,890 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:23:29,890 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:23:29,890 WebSocket Ø’f: None None
+2026-06-08 16:23:29,890 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:23:34,961 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:23:34,961 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:23:34,961 WebSocket Ø’f: None None
+2026-06-08 16:23:34,962 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:23:40,037 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:23:40,037 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:23:40,037 WebSocket Ø’f: None None
+2026-06-08 16:23:40,038 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:23:45,120 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:23:45,120 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:23:45,120 WebSocket Ø’f: None None
+2026-06-08 16:23:45,121 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:23:50,202 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:23:50,202 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:23:50,202 WebSocket Ø’f: None None
+2026-06-08 16:23:50,202 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:23:55,243 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:23:55,243 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:23:55,243 WebSocket Ø’f: None None
+2026-06-08 16:23:55,243 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:24:00,347 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:24:00,347 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:24:00,347 WebSocket Ø’f: None None
+2026-06-08 16:24:00,348 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:24:05,425 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:24:05,425 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:24:05,425 WebSocket Ø’f: None None
+2026-06-08 16:24:05,425 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:24:10,492 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:24:10,492 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:24:10,492 WebSocket Ø’f: None None
+2026-06-08 16:24:10,492 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:24:15,549 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:24:15,549 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:24:15,549 WebSocket Ø’f: None None
+2026-06-08 16:24:15,549 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:24:20,654 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:24:20,654 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:24:20,654 WebSocket Ø’f: None None
+2026-06-08 16:24:20,655 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:24:25,715 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:24:25,715 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:24:25,715 WebSocket Ø’f: None None
+2026-06-08 16:24:25,715 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:24:30,789 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:24:30,789 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:24:30,789 WebSocket Ø’f: None None
+2026-06-08 16:24:30,790 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:24:35,861 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:24:35,861 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:24:35,861 WebSocket Ø’f: None None
+2026-06-08 16:24:35,861 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:24:40,948 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:24:40,948 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:24:40,949 WebSocket Ø’f: None None
+2026-06-08 16:24:40,949 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:24:46,013 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:24:46,013 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:24:46,013 WebSocket Ø’f: None None
+2026-06-08 16:24:46,014 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:24:51,103 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:24:51,103 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:24:51,103 WebSocket Ø’f: None None
+2026-06-08 16:24:51,103 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:24:56,212 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:24:56,212 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:24:56,212 WebSocket Ø’f: None None
+2026-06-08 16:24:56,212 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:25:01,272 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:25:01,273 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:25:01,273 WebSocket Ø’f: None None
+2026-06-08 16:25:01,273 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:25:06,337 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:25:06,337 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:25:06,337 WebSocket Ø’f: None None
+2026-06-08 16:25:06,338 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:25:11,436 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:25:11,437 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:25:11,437 WebSocket Ø’f: None None
+2026-06-08 16:25:11,437 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:25:16,506 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:25:16,506 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:25:16,506 WebSocket Ø’f: None None
+2026-06-08 16:25:16,507 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:25:21,545 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:25:21,545 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:25:21,545 WebSocket Ø’f: None None
+2026-06-08 16:25:21,546 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:25:26,642 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:25:26,642 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:25:26,642 WebSocket Ø’f: None None
+2026-06-08 16:25:26,642 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:25:31,716 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:25:31,716 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:25:31,716 WebSocket Ø’f: None None
+2026-06-08 16:25:31,716 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:25:36,796 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:25:36,797 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:25:36,797 WebSocket Ø’f: None None
+2026-06-08 16:25:36,797 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:25:41,879 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:25:41,879 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:25:41,879 WebSocket Ø’f: None None
+2026-06-08 16:25:41,879 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:25:46,963 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:25:46,963 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:25:46,963 WebSocket Ø’f: None None
+2026-06-08 16:25:46,964 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:25:52,022 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:25:52,022 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:25:52,022 WebSocket Ø’f: None None
+2026-06-08 16:25:52,022 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:25:57,097 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:25:57,097 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:25:57,097 WebSocket Ø’f: None None
+2026-06-08 16:25:57,097 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:26:02,132 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:26:02,132 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:26:02,132 WebSocket Ø’f: None None
+2026-06-08 16:26:02,132 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:26:07,216 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:26:07,217 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:26:07,217 WebSocket Ø’f: None None
+2026-06-08 16:26:07,217 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:26:12,302 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:26:12,302 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:26:12,303 WebSocket Ø’f: None None
+2026-06-08 16:26:12,303 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:26:17,390 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:26:17,390 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:26:17,391 WebSocket Ø’f: None None
+2026-06-08 16:26:17,391 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:26:22,456 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:26:22,456 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:26:22,456 WebSocket Ø’f: None None
+2026-06-08 16:26:22,457 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:26:27,521 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:26:27,521 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:26:27,521 WebSocket Ø’f: None None
+2026-06-08 16:26:27,521 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:26:32,591 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:26:32,591 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:26:32,591 WebSocket Ø’f: None None
+2026-06-08 16:26:32,591 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:26:37,667 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:26:37,667 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:26:37,667 WebSocket Ø’f: None None
+2026-06-08 16:26:37,667 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:26:42,738 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:26:42,738 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:26:42,738 WebSocket Ø’f: None None
+2026-06-08 16:26:42,739 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:26:47,819 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:26:47,819 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:26:47,819 WebSocket Ø’f: None None
+2026-06-08 16:26:47,819 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:26:52,918 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:26:52,918 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:26:52,918 WebSocket Ø’f: None None
+2026-06-08 16:26:52,918 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:26:57,994 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:26:57,994 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:26:57,994 WebSocket Ø’f: None None
+2026-06-08 16:26:57,995 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:27:03,095 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:27:03,095 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:27:03,095 WebSocket Ø’f: None None
+2026-06-08 16:27:03,096 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:27:08,180 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:27:08,180 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:27:08,180 WebSocket Ø’f: None None
+2026-06-08 16:27:08,180 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:27:13,245 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:27:13,245 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:27:13,245 WebSocket Ø’f: None None
+2026-06-08 16:27:13,246 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:27:18,307 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:27:18,307 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:27:18,307 WebSocket Ø’f: None None
+2026-06-08 16:27:18,308 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:27:23,361 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:27:23,361 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:27:23,361 WebSocket Ø’f: None None
+2026-06-08 16:27:23,362 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:27:28,422 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:27:28,422 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:27:28,422 WebSocket Ø’f: None None
+2026-06-08 16:27:28,423 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:27:33,487 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:27:33,487 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:27:33,487 WebSocket Ø’f: None None
+2026-06-08 16:27:33,487 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:27:38,606 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:27:38,606 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:27:38,606 WebSocket Ø’f: None None
+2026-06-08 16:27:38,606 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:27:43,673 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:27:43,673 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:27:43,673 WebSocket Ø’f: None None
+2026-06-08 16:27:43,674 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:27:48,743 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:27:48,743 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:27:48,743 WebSocket Ø’f: None None
+2026-06-08 16:27:48,744 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:27:53,814 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:27:53,814 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:27:53,814 WebSocket Ø’f: None None
+2026-06-08 16:27:53,814 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:27:58,885 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:27:58,885 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:27:58,885 WebSocket Ø’f: None None
+2026-06-08 16:27:58,886 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:28:03,963 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:28:03,963 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:28:03,963 WebSocket Ø’f: None None
+2026-06-08 16:28:03,963 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:28:09,038 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:28:09,038 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:28:09,038 WebSocket Ø’f: None None
+2026-06-08 16:28:09,039 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:28:14,122 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:28:14,122 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:28:14,122 WebSocket Ø’f: None None
+2026-06-08 16:28:14,122 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:28:19,184 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:28:19,184 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:28:19,184 WebSocket Ø’f: None None
+2026-06-08 16:28:19,185 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:28:24,242 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:28:24,242 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:28:24,243 WebSocket Ø’f: None None
+2026-06-08 16:28:24,243 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:28:29,336 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:28:29,336 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:28:29,336 WebSocket Ø’f: None None
+2026-06-08 16:28:29,337 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:28:34,417 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:28:34,417 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:28:34,417 WebSocket Ø’f: None None
+2026-06-08 16:28:34,418 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:28:39,507 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:28:39,507 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:28:39,507 WebSocket Ø’f: None None
+2026-06-08 16:28:39,508 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:28:44,572 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:28:44,572 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:28:44,572 WebSocket Ø’f: None None
+2026-06-08 16:28:44,572 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:28:49,654 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:28:49,654 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:28:49,654 WebSocket Ø’f: None None
+2026-06-08 16:28:49,655 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:28:54,724 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:28:54,724 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:28:54,724 WebSocket Ø’f: None None
+2026-06-08 16:28:54,724 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:28:59,787 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:28:59,787 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:28:59,787 WebSocket Ø’f: None None
+2026-06-08 16:28:59,787 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:29:04,857 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:29:04,857 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:29:04,857 WebSocket Ø’f: None None
+2026-06-08 16:29:04,858 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:29:09,923 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:29:09,923 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:29:09,923 WebSocket Ø’f: None None
+2026-06-08 16:29:09,924 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:29:15,006 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:29:15,006 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:29:15,006 WebSocket Ø’f: None None
+2026-06-08 16:29:15,007 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:29:20,055 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:29:20,056 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:29:20,056 WebSocket Ø’f: None None
+2026-06-08 16:29:20,056 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:29:25,141 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:29:25,141 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:29:25,141 WebSocket Ø’f: None None
+2026-06-08 16:29:25,142 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:29:30,177 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:29:30,178 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:29:30,178 WebSocket Ø’f: None None
+2026-06-08 16:29:30,178 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:29:35,283 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:29:35,283 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:29:35,283 WebSocket Ø’f: None None
+2026-06-08 16:29:35,283 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:29:40,347 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:29:40,347 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:29:40,347 WebSocket Ø’f: None None
+2026-06-08 16:29:40,347 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:29:45,420 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:29:45,420 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:29:45,420 WebSocket Ø’f: None None
+2026-06-08 16:29:45,421 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:29:50,502 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:29:50,502 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:29:50,502 WebSocket Ø’f: None None
+2026-06-08 16:29:50,503 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:29:55,561 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:29:55,562 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:29:55,562 WebSocket Ø’f: None None
+2026-06-08 16:29:55,562 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:30:00,612 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:30:00,612 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:30:00,612 WebSocket Ø’f: None None
+2026-06-08 16:30:00,612 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:30:05,655 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:30:05,655 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:30:05,655 WebSocket Ø’f: None None
+2026-06-08 16:30:05,655 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:30:10,723 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:30:10,723 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:30:10,723 WebSocket Ø’f: None None
+2026-06-08 16:30:10,723 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:30:15,767 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:30:15,767 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:30:15,767 WebSocket Ø’f: None None
+2026-06-08 16:30:15,767 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:30:20,809 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:30:20,809 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:30:20,809 WebSocket Ø’f: None None
+2026-06-08 16:30:20,810 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:30:25,848 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:30:25,848 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:30:25,848 WebSocket Ø’f: None None
+2026-06-08 16:30:25,848 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:30:30,893 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:30:30,893 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:30:30,893 WebSocket Ø’f: None None
+2026-06-08 16:30:30,893 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:30:35,942 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:30:35,942 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:30:35,943 WebSocket Ø’f: None None
+2026-06-08 16:30:35,943 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:30:40,989 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:30:40,990 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:30:40,990 WebSocket Ø’f: None None
+2026-06-08 16:30:40,990 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:30:46,070 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:30:46,070 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:30:46,070 WebSocket Ø’f: None None
+2026-06-08 16:30:46,071 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:30:51,111 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:30:51,111 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:30:51,111 WebSocket Ø’f: None None
+2026-06-08 16:30:51,112 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:30:56,152 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:30:56,152 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:30:56,152 WebSocket Ø’f: None None
+2026-06-08 16:30:56,152 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:31:01,189 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:31:01,189 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:31:01,189 WebSocket Ø’f: None None
+2026-06-08 16:31:01,189 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:31:06,260 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:31:06,260 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:31:06,260 WebSocket Ø’f: None None
+2026-06-08 16:31:06,261 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:31:11,299 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:31:11,299 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:31:11,299 WebSocket Ø’f: None None
+2026-06-08 16:31:11,300 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:31:16,337 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:31:16,337 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:31:16,337 WebSocket Ø’f: None None
+2026-06-08 16:31:16,337 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:31:21,375 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:31:21,375 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:31:21,375 WebSocket Ø’f: None None
+2026-06-08 16:31:21,375 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:31:26,466 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:31:26,467 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:31:26,467 WebSocket Ø’f: None None
+2026-06-08 16:31:26,467 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:31:31,508 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:31:31,508 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:31:31,508 WebSocket Ø’f: None None
+2026-06-08 16:31:31,508 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:31:36,545 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:31:36,546 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:31:36,546 WebSocket Ø’f: None None
+2026-06-08 16:31:36,546 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:31:41,585 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:31:41,585 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:31:41,585 WebSocket Ø’f: None None
+2026-06-08 16:31:41,586 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:31:46,669 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:31:46,669 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:31:46,669 WebSocket Ø’f: None None
+2026-06-08 16:31:46,670 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:31:51,716 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:31:51,716 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:31:51,716 WebSocket Ø’f: None None
+2026-06-08 16:31:51,717 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:31:56,760 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:31:56,760 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:31:56,760 WebSocket Ø’f: None None
+2026-06-08 16:31:56,761 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:32:01,806 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:32:01,806 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:32:01,806 WebSocket Ø’f: None None
+2026-06-08 16:32:01,806 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:32:06,854 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:32:06,854 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:32:06,854 WebSocket Ø’f: None None
+2026-06-08 16:32:06,855 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:32:11,895 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:32:11,895 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:32:11,895 WebSocket Ø’f: None None
+2026-06-08 16:32:11,895 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:32:16,934 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:32:16,934 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:32:16,935 WebSocket Ø’f: None None
+2026-06-08 16:32:16,935 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:32:21,970 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:32:21,970 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:32:21,971 WebSocket Ø’f: None None
+2026-06-08 16:32:21,971 WebSocket 5•bŒã‚ÉÄÚ‘±...
+2026-06-08 16:32:27,055 WebSocket ƒGƒ‰[: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081)
+2026-06-08 16:32:27,055 [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1081) - goodbye
+2026-06-08 16:32:27,055 WebSocket Ø’f: None None
+2026-06-08 16:32:27,055 WebSocket 5•bŒã‚ÉÄÚ‘±...
+26/06/08 16:32:32 INFO ğŸ“ ãƒšãƒ¼ãƒ‘ãƒ¼ãƒˆãƒ¬ãƒ¼ãƒ‰ãƒ¢ãƒ¼ãƒ‰ã§èµ·å‹•
+ç›£è¦–ãƒšã‚¢: USD_JPY / EUR_JPY / CHF_JPY
+æ¬¡å›ã‚¨ãƒ³ãƒˆãƒªãƒ¼åˆ¤æ–­: 17:00
+â€»å®Ÿéš›ã®ç™ºæ³¨ã¯è¡Œã„ã¾ã›ã‚“
+26/06/08 16:32:43 INFO WebSocketç›£è¦–ã‚¹ãƒ¬ãƒƒãƒ‰ èµ·å‹•
+26/06/08 16:32:43 INFO ã‚¹ã‚±ã‚¸ãƒ¥ãƒ¼ãƒ© èµ·å‹•å®Œäº†
+26/06/08 16:32:43 INFO Websocket connected
+26/06/08 16:32:43 INFO WebSocket æ¥ç¶šå®Œäº†
+26/06/08 16:32:43 INFO   è³¼èª­é–‹å§‹: USD_JPY
+26/06/08 16:32:43 INFO   è³¼èª­é–‹å§‹: EUR_JPY
+26/06/08 16:32:43 INFO   è³¼èª­é–‹å§‹: CHF_JPY
+26/06/08 19:25:36 INFO ãƒãƒƒã‚¯ãƒ†ã‚¹ãƒˆæœŸé–“ : 2024-06-07 ã€œ 2026-06-07
+26/06/08 19:25:36 INFO WFT cutoff       : 2026-04-07
+26/06/08 19:25:36 INFO ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆ : 2026-03-10 ã€œ 2026-06-07
+26/06/08 19:25:36 INFO å¯¾è±¡ãƒšã‚¢         : ['USD_JPY', 'EUR_JPY', 'CHF_JPY', 'AUD_USD', 'GBP_JPY', 'GBP_USD', 'CAD_JPY', 'AUD_JPY', 'EUR_USD', 'NZD_JPY']
+26/06/08 19:25:36 INFO ï¼ˆæœ€é©åŒ–ãªã—: params.json ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã§ç›´æ¥ runï¼‰
+26/06/08 19:25:36 INFO 
+26/06/08 19:25:36 INFO 
+==================================================
+26/06/08 19:25:36 INFO [1/10] USD_JPY é–‹å§‹...
+26/06/08 19:25:36 INFO [1/10] USD_JPY å®Œäº†
+26/06/08 19:25:36 INFO 
+==================================================
+26/06/08 19:25:36 INFO [2/10] EUR_JPY é–‹å§‹...
+26/06/08 19:25:36 INFO [2/10] EUR_JPY å®Œäº†
+26/06/08 19:25:36 INFO 
+==================================================
+26/06/08 19:25:36 INFO [3/10] CHF_JPY é–‹å§‹...
+26/06/08 19:25:36 INFO [3/10] CHF_JPY å®Œäº†
+26/06/08 19:25:36 INFO 
+==================================================
+26/06/08 19:25:36 INFO [4/10] AUD_USD é–‹å§‹...
+26/06/08 19:25:36 INFO [4/10] AUD_USD å®Œäº†
+26/06/08 19:25:36 INFO 
+==================================================
+26/06/08 19:25:36 INFO [5/10] GBP_JPY é–‹å§‹...
+26/06/08 19:25:36 INFO [5/10] GBP_JPY å®Œäº†
+26/06/08 19:25:36 INFO 
+==================================================
+26/06/08 19:25:36 INFO [6/10] GBP_USD é–‹å§‹...
+26/06/08 19:25:36 INFO [6/10] GBP_USD å®Œäº†
+26/06/08 19:25:36 INFO 
+==================================================
+26/06/08 19:25:36 INFO [7/10] CAD_JPY é–‹å§‹...
+26/06/08 19:25:36 INFO [7/10] CAD_JPY å®Œäº†
+26/06/08 19:25:36 INFO 
+==================================================
+26/06/08 19:25:36 INFO [8/10] AUD_JPY é–‹å§‹...
+26/06/08 19:25:37 INFO [8/10] AUD_JPY å®Œäº†
+26/06/08 19:25:37 INFO 
+==================================================
+26/06/08 19:25:37 INFO [9/10] EUR_USD é–‹å§‹...
+26/06/08 19:25:37 INFO [9/10] EUR_USD å®Œäº†
+26/06/08 19:25:37 INFO 
+==================================================
+26/06/08 19:25:37 INFO [10/10] NZD_JPY é–‹å§‹...
+26/06/08 19:25:37 INFO [10/10] NZD_JPY å®Œäº†
+26/06/08 19:25:37 INFO 
+==================================================
+26/06/08 19:25:37 INFO ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆé–‹å§‹
+26/06/08 19:25:37 INFO [1/10] USD_JPY ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:37 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=4.08  PF=5.05  æœ€å¤§DD=-0.2%  å‹ç‡=84.6%  å–å¼•=13å›
+26/06/08 19:25:37 INFO [2/10] EUR_JPY ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:37 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=3.36  PF=3.02  æœ€å¤§DD=-0.2%  å‹ç‡=66.7%  å–å¼•=15å›
+26/06/08 19:25:37 INFO [3/10] CHF_JPY ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:37 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=1.69  PF=1.44  æœ€å¤§DD=-0.3%  å‹ç‡=50.0%  å–å¼•=32å›
+26/06/08 19:25:37 INFO [4/10] AUD_USD ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:37 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=0.59  PF=1.27  æœ€å¤§DD=-0.5%  å‹ç‡=63.6%  å–å¼•=11å›
+26/06/08 19:25:37 INFO [5/10] GBP_JPY ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:37 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=1.37  PF=1.64  æœ€å¤§DD=-0.1%  å‹ç‡=62.5%  å–å¼•=16å›
+26/06/08 19:25:37 INFO [6/10] GBP_USD ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:37 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=2.89  PF=1.96  æœ€å¤§DD=-0.2%  å‹ç‡=69.2%  å–å¼•=26å›
+26/06/08 19:25:37 INFO [7/10] CAD_JPY ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:37 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=2.97  PF=N/A  æœ€å¤§DD=-0.0%  å‹ç‡=100.0%  å–å¼•=3å›
+26/06/08 19:25:37 INFO [8/10] AUD_JPY ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:37 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=3.63  PF=8.53  æœ€å¤§DD=-0.1%  å‹ç‡=85.7%  å–å¼•=7å›
+26/06/08 19:25:37 INFO [9/10] EUR_USD ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:37 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=-0.21  PF=0.92  æœ€å¤§DD=-0.4%  å‹ç‡=31.2%  å–å¼•=16å›
+26/06/08 19:25:37 INFO [10/10] NZD_JPY ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:37 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=1.24  PF=1.47  æœ€å¤§DD=-0.3%  å‹ç‡=75.0%  å–å¼•=16å›
+26/06/08 19:25:37 INFO backtest_results.json ã«ä¿å­˜ã—ã¾ã—ãŸã€‚
+26/06/08 19:25:55 INFO ãƒãƒƒã‚¯ãƒ†ã‚¹ãƒˆæœŸé–“ : 2024-06-07 ã€œ 2026-06-07
+26/06/08 19:25:55 INFO WFT cutoff       : 2026-04-07
+26/06/08 19:25:55 INFO ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆ : 2026-03-10 ã€œ 2026-06-07
+26/06/08 19:25:55 INFO å¯¾è±¡ãƒšã‚¢         : ['USD_JPY', 'EUR_JPY', 'CHF_JPY', 'AUD_USD', 'GBP_JPY', 'GBP_USD', 'CAD_JPY', 'AUD_JPY', 'EUR_USD', 'NZD_JPY']
+26/06/08 19:25:55 INFO ï¼ˆæœ€é©åŒ–ãªã—: params.json ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã§ç›´æ¥ runï¼‰
+26/06/08 19:25:55 INFO 
+26/06/08 19:25:55 INFO 
+==================================================
+26/06/08 19:25:55 INFO [1/10] USD_JPY é–‹å§‹...
+26/06/08 19:25:55 INFO [1/10] USD_JPY å®Œäº†
+26/06/08 19:25:55 INFO 
+==================================================
+26/06/08 19:25:55 INFO [2/10] EUR_JPY é–‹å§‹...
+26/06/08 19:25:55 INFO [2/10] EUR_JPY å®Œäº†
+26/06/08 19:25:55 INFO 
+==================================================
+26/06/08 19:25:55 INFO [3/10] CHF_JPY é–‹å§‹...
+26/06/08 19:25:56 INFO [3/10] CHF_JPY å®Œäº†
+26/06/08 19:25:56 INFO 
+==================================================
+26/06/08 19:25:56 INFO [4/10] AUD_USD é–‹å§‹...
+26/06/08 19:25:56 INFO [4/10] AUD_USD å®Œäº†
+26/06/08 19:25:56 INFO 
+==================================================
+26/06/08 19:25:56 INFO [5/10] GBP_JPY é–‹å§‹...
+26/06/08 19:25:56 INFO [5/10] GBP_JPY å®Œäº†
+26/06/08 19:25:56 INFO 
+==================================================
+26/06/08 19:25:56 INFO [6/10] GBP_USD é–‹å§‹...
+26/06/08 19:25:56 INFO [6/10] GBP_USD å®Œäº†
+26/06/08 19:25:56 INFO 
+==================================================
+26/06/08 19:25:56 INFO [7/10] CAD_JPY é–‹å§‹...
+26/06/08 19:25:56 INFO [7/10] CAD_JPY å®Œäº†
+26/06/08 19:25:56 INFO 
+==================================================
+26/06/08 19:25:56 INFO [8/10] AUD_JPY é–‹å§‹...
+26/06/08 19:25:56 INFO [8/10] AUD_JPY å®Œäº†
+26/06/08 19:25:56 INFO 
+==================================================
+26/06/08 19:25:56 INFO [9/10] EUR_USD é–‹å§‹...
+26/06/08 19:25:56 INFO [9/10] EUR_USD å®Œäº†
+26/06/08 19:25:56 INFO 
+==================================================
+26/06/08 19:25:56 INFO [10/10] NZD_JPY é–‹å§‹...
+26/06/08 19:25:56 INFO [10/10] NZD_JPY å®Œäº†
+26/06/08 19:25:56 INFO 
+==================================================
+26/06/08 19:25:56 INFO ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆé–‹å§‹
+26/06/08 19:25:56 INFO [1/10] USD_JPY ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:57 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=4.08  PF=5.05  æœ€å¤§DD=-0.2%  å‹ç‡=84.6%  å–å¼•=13å›
+26/06/08 19:25:57 INFO [2/10] EUR_JPY ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:57 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=3.36  PF=3.02  æœ€å¤§DD=-0.2%  å‹ç‡=66.7%  å–å¼•=15å›
+26/06/08 19:25:57 INFO [3/10] CHF_JPY ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:57 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=1.69  PF=1.44  æœ€å¤§DD=-0.3%  å‹ç‡=50.0%  å–å¼•=32å›
+26/06/08 19:25:57 INFO [4/10] AUD_USD ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:57 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=0.59  PF=1.27  æœ€å¤§DD=-0.5%  å‹ç‡=63.6%  å–å¼•=11å›
+26/06/08 19:25:57 INFO [5/10] GBP_JPY ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:57 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=1.37  PF=1.64  æœ€å¤§DD=-0.1%  å‹ç‡=62.5%  å–å¼•=16å›
+26/06/08 19:25:57 INFO [6/10] GBP_USD ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:57 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=2.89  PF=1.96  æœ€å¤§DD=-0.2%  å‹ç‡=69.2%  å–å¼•=26å›
+26/06/08 19:25:57 INFO [7/10] CAD_JPY ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:57 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=2.97  PF=N/A  æœ€å¤§DD=-0.0%  å‹ç‡=100.0%  å–å¼•=3å›
+26/06/08 19:25:57 INFO [8/10] AUD_JPY ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:57 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=3.63  PF=8.53  æœ€å¤§DD=-0.1%  å‹ç‡=85.7%  å–å¼•=7å›
+26/06/08 19:25:57 INFO [9/10] EUR_USD ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:57 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=-0.21  PF=0.92  æœ€å¤§DD=-0.4%  å‹ç‡=31.2%  å–å¼•=16å›
+26/06/08 19:25:57 INFO [10/10] NZD_JPY ãƒ•ã‚©ãƒ¯ãƒ¼ãƒ‰ãƒ†ã‚¹ãƒˆä¸­...
+26/06/08 19:25:57 INFO   å®Œäº† â€” ã‚·ãƒ£ãƒ¼ãƒ—=1.24  PF=1.47  æœ€å¤§DD=-0.3%  å‹ç‡=75.0%  å–å¼•=16å›
+26/06/08 19:25:57 INFO backtest_results.json ã«ä¿å­˜ã—ã¾ã—ãŸã€‚

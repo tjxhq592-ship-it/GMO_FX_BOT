@@ -13,7 +13,7 @@
     "atr_tp_mult": 2.0,
     "symbol": "USD_JPY"
   },
-  "elapsed": 2588,
+  "elapsed": 2566,
   "remaining": 0,
   "status": "completed",
   "log": [
@@ -21,47 +21,47 @@
     "  NZD_USD: 3914件 OK",
     "=== プランB: 1コア1銘柄の並列グリッドサーチ ===",
     "対象ペア (14件): ['USD_JPY', 'EUR_JPY', 'GBP_JPY', 'AUD_JPY', 'NZD_JPY', 'CAD_JPY', 'CHF_JPY', 'TRY_JPY', 'ZAR_JPY', 'MXN_JPY', 'EUR_USD', 'GBP_USD', 'AUD_USD', 'NZD_USD']",
-    "ワーカー数: 14  (CPU=16 / 使用率=0% / MEM=73%)",
+    "ワーカー数: 14  (CPU=16 / 使用率=0% / MEM=70%)",
     "[TRY_JPY] 完了 (1/14)  ベスト=0.0000  コンボ=9600/9600",
-    "[ZAR_JPY] 完了 (2/14)  ベスト=0.1342  コンボ=9600/9600",
-    "[MXN_JPY] 完了 (3/14)  ベスト=1.8601  コンボ=9600/9600",
-    "[NZD_JPY] 完了 (4/14)  ベスト=2.6969  コンボ=9600/9600",
-    "[AUD_USD] 完了 (5/14)  ベスト=3.3711  コンボ=9600/9600",
-    "[GBP_JPY] 完了 (6/14)  ベスト=3.1345  コンボ=9600/9600",
-    "[CHF_JPY] 完了 (7/14)  ベスト=3.6715  コンボ=9600/9600",
-    "[EUR_JPY] 完了 (8/14)  ベスト=3.6825  コンボ=9600/9600",
+    "[ZAR_JPY] 完了 (2/14)  ベスト=0.1412  コンボ=9600/9600",
+    "[NZD_JPY] 完了 (3/14)  ベスト=2.6969  コンボ=9600/9600",
+    "[MXN_JPY] 完了 (4/14)  ベスト=1.8639  コンボ=9600/9600",
+    "[EUR_JPY] 完了 (5/14)  ベスト=3.6825  コンボ=9600/9600",
+    "[GBP_JPY] 完了 (6/14)  ベスト=3.1346  コンボ=9600/9600",
+    "[NZD_USD] 完了 (7/14)  ベスト=2.6513  コンボ=9600/9600",
+    "[AUD_JPY] 完了 (8/14)  ベスト=2.9638  コンボ=9600/9600",
     "[USD_JPY] 完了 (9/14)  ベスト=3.8082  コンボ=9600/9600",
-    "[AUD_JPY] 完了 (10/14)  ベスト=2.9638  コンボ=9600/9600",
-    "[NZD_USD] 完了 (11/14)  ベスト=2.6511  コンボ=9600/9600",
-    "[EUR_USD] 完了 (12/14)  ベスト=2.8234  コンボ=9600/9600",
-    "[GBP_USD] 完了 (13/14)  ベスト=3.1336  コンボ=9600/9600",
-    "[CAD_JPY] 完了 (14/14)  ベスト=2.9801  コンボ=9600/9600",
-    "\n=== top_N=3 採用判定 ===",
+    "[AUD_USD] 完了 (10/14)  ベスト=3.3711  コンボ=9600/9600",
+    "[CHF_JPY] 完了 (11/14)  ベスト=3.6715  コンボ=9600/9600",
+    "[GBP_USD] 完了 (12/14)  ベスト=3.1338  コンボ=9600/9600",
+    "[EUR_USD] 完了 (13/14)  ベスト=2.8235  コンボ=9600/9600",
+    "[CAD_JPY] 完了 (14/14)  ベスト=2.9800  コンボ=9600/9600",
+    "\n=== top_N=10 採用判定 ===",
     "  #1 USD_JPY: score=3.8082  → adopted",
     "  [ADOPTED] USD_JPY params.json に保存",
     "  #2 EUR_JPY: score=3.6825  → adopted",
     "  [ADOPTED] EUR_JPY params.json に保存",
     "  #3 CHF_JPY: score=3.6715  → adopted",
     "  [ADOPTED] CHF_JPY params.json に保存",
-    "  #4 AUD_USD: score=3.3711  → excluded",
-    "  [EXCLUDED] AUD_USD: top_3圏外(score=3.3711)",
-    "  #5 GBP_JPY: score=3.1345  → excluded",
-    "  [EXCLUDED] GBP_JPY: top_3圏外(score=3.1345)",
-    "  #6 GBP_USD: score=3.1336  → excluded",
-    "  [EXCLUDED] GBP_USD: top_3圏外(score=3.1336)",
-    "  #7 CAD_JPY: score=2.9801  → excluded",
-    "  [EXCLUDED] CAD_JPY: top_3圏外(score=2.9801)",
-    "  #8 AUD_JPY: score=2.9638  → excluded",
-    "  [EXCLUDED] AUD_JPY: top_3圏外(score=2.9638)",
-    "  #9 EUR_USD: score=2.8234  → excluded",
-    "  [EXCLUDED] EUR_USD: top_3圏外(score=2.8234)",
-    "  #10 NZD_JPY: score=2.6969  → excluded",
-    "  [EXCLUDED] NZD_JPY: top_3圏外(score=2.6969)",
-    "  #11 NZD_USD: score=2.6511  → excluded",
-    "  [EXCLUDED] NZD_USD: top_3圏外(score=2.6511)",
-    "  #12 MXN_JPY: score=1.8601  → excluded",
+    "  #4 AUD_USD: score=3.3711  → adopted",
+    "  [ADOPTED] AUD_USD params.json に保存",
+    "  #5 GBP_JPY: score=3.1346  → adopted",
+    "  [ADOPTED] GBP_JPY params.json に保存",
+    "  #6 GBP_USD: score=3.1338  → adopted",
+    "  [ADOPTED] GBP_USD params.json に保存",
+    "  #7 CAD_JPY: score=2.9800  → adopted",
+    "  [ADOPTED] CAD_JPY params.json に保存",
+    "  #8 AUD_JPY: score=2.9638  → adopted",
+    "  [ADOPTED] AUD_JPY params.json に保存",
+    "  #9 EUR_USD: score=2.8235  → adopted",
+    "  [ADOPTED] EUR_USD params.json に保存",
+    "  #10 NZD_JPY: score=2.6969  → adopted",
+    "  [ADOPTED] NZD_JPY params.json に保存",
+    "  #11 NZD_USD: score=2.6513  → excluded",
+    "  [EXCLUDED] NZD_USD: top_10圏外(score=2.6513)",
+    "  #12 MXN_JPY: score=1.8639  → excluded",
     "  [EXCLUDED] MXN_JPY: PF(0.20) < 最小値(0.8)",
-    "  #13 ZAR_JPY: score=0.1342  → excluded",
+    "  #13 ZAR_JPY: score=0.1412  → excluded",
     "  [EXCLUDED] ZAR_JPY: PF(0.02) < 最小値(0.8)",
     "  #14 TRY_JPY: score=0.0000  → excluded",
     "  [EXCLUDED] TRY_JPY: 全パターンでスコア0",
@@ -78,7 +78,7 @@
     "ZAR_JPY": {
       "status": "excluded",
       "reason": "PF(0.02) < 最小値(0.8)",
-      "best_score": 0.1342,
+      "best_score": 0.1412,
       "best_params": {
         "bb_period": 30,
         "bb_std": 1.5,
@@ -90,24 +90,9 @@
         "atr_tp_mult": 3.5
       }
     },
-    "MXN_JPY": {
-      "status": "excluded",
-      "reason": "PF(0.20) < 最小値(0.8)",
-      "best_score": 1.8601,
-      "best_params": {
-        "bb_period": 35,
-        "bb_std": 2.0,
-        "rsi_period": 14,
-        "rsi_upper": 70,
-        "rsi_lower": 25,
-        "atr_period": 14,
-        "atr_sl_mult": 1.0,
-        "atr_tp_mult": 2.5
-      }
-    },
     "NZD_JPY": {
-      "status": "excluded",
-      "reason": "top_3圏外(score=2.6969)",
+      "status": "saved",
+      "reason": "",
       "best_score": 2.6969,
       "best_params": {
         "bb_period": 10,
@@ -120,49 +105,19 @@
         "atr_tp_mult": 1.5
       }
     },
-    "AUD_USD": {
+    "MXN_JPY": {
       "status": "excluded",
-      "reason": "top_3圏外(score=3.3711)",
-      "best_score": 3.3711,
+      "reason": "PF(0.20) < 最小値(0.8)",
+      "best_score": 1.8639,
       "best_params": {
-        "bb_period": 30,
-        "bb_std": 1.5,
+        "bb_period": 35,
+        "bb_std": 2.0,
         "rsi_period": 14,
-        "rsi_upper": 65,
-        "rsi_lower": 20,
-        "atr_period": 14,
-        "atr_sl_mult": 2.5,
-        "atr_tp_mult": 3.5
-      }
-    },
-    "GBP_JPY": {
-      "status": "excluded",
-      "reason": "top_3圏外(score=3.1345)",
-      "best_score": 3.1345,
-      "best_params": {
-        "bb_period": 25,
-        "bb_std": 1.0,
-        "rsi_period": 14,
-        "rsi_upper": 80,
-        "rsi_lower": 35,
-        "atr_period": 14,
-        "atr_sl_mult": 1.5,
-        "atr_tp_mult": 1.5
-      }
-    },
-    "CHF_JPY": {
-      "status": "saved",
-      "reason": "",
-      "best_score": 3.6715,
-      "best_params": {
-        "bb_period": 20,
-        "bb_std": 1.0,
-        "rsi_period": 14,
-        "rsi_upper": 80,
-        "rsi_lower": 35,
+        "rsi_upper": 70,
+        "rsi_lower": 25,
         "atr_period": 14,
         "atr_sl_mult": 1.0,
-        "atr_tp_mult": 1.5
+        "atr_tp_mult": 2.5
       }
     },
     "EUR_JPY": {
@@ -180,6 +135,51 @@
         "atr_tp_mult": 3.5
       }
     },
+    "GBP_JPY": {
+      "status": "saved",
+      "reason": "",
+      "best_score": 3.1346,
+      "best_params": {
+        "bb_period": 25,
+        "bb_std": 1.0,
+        "rsi_period": 14,
+        "rsi_upper": 80,
+        "rsi_lower": 35,
+        "atr_period": 14,
+        "atr_sl_mult": 1.5,
+        "atr_tp_mult": 1.5
+      }
+    },
+    "NZD_USD": {
+      "status": "excluded",
+      "reason": "top_10圏外(score=2.6513)",
+      "best_score": 2.6513,
+      "best_params": {
+        "bb_period": 35,
+        "bb_std": 1.5,
+        "rsi_period": 14,
+        "rsi_upper": 70,
+        "rsi_lower": 20,
+        "atr_period": 14,
+        "atr_sl_mult": 2.5,
+        "atr_tp_mult": 3.5
+      }
+    },
+    "AUD_JPY": {
+      "status": "saved",
+      "reason": "",
+      "best_score": 2.9638,
+      "best_params": {
+        "bb_period": 20,
+        "bb_std": 2.0,
+        "rsi_period": 14,
+        "rsi_upper": 80,
+        "rsi_lower": 30,
+        "atr_period": 14,
+        "atr_sl_mult": 2.0,
+        "atr_tp_mult": 2.5
+      }
+    },
     "USD_JPY": {
       "status": "saved",
       "reason": "",
@@ -195,55 +195,40 @@
         "atr_tp_mult": 2.0
       }
     },
-    "AUD_JPY": {
-      "status": "excluded",
-      "reason": "top_3圏外(score=2.9638)",
-      "best_score": 2.9638,
+    "AUD_USD": {
+      "status": "saved",
+      "reason": "",
+      "best_score": 3.3711,
       "best_params": {
-        "bb_period": 20,
-        "bb_std": 2.0,
-        "rsi_period": 14,
-        "rsi_upper": 80,
-        "rsi_lower": 30,
-        "atr_period": 14,
-        "atr_sl_mult": 2.0,
-        "atr_tp_mult": 2.5
-      }
-    },
-    "NZD_USD": {
-      "status": "excluded",
-      "reason": "top_3圏外(score=2.6511)",
-      "best_score": 2.6511,
-      "best_params": {
-        "bb_period": 35,
+        "bb_period": 30,
         "bb_std": 1.5,
         "rsi_period": 14,
-        "rsi_upper": 70,
+        "rsi_upper": 65,
         "rsi_lower": 20,
         "atr_period": 14,
         "atr_sl_mult": 2.5,
         "atr_tp_mult": 3.5
       }
     },
-    "EUR_USD": {
-      "status": "excluded",
-      "reason": "top_3圏外(score=2.8234)",
-      "best_score": 2.8234,
+    "CHF_JPY": {
+      "status": "saved",
+      "reason": "",
+      "best_score": 3.6715,
       "best_params": {
-        "bb_period": 30,
+        "bb_period": 20,
         "bb_std": 1.0,
         "rsi_period": 14,
-        "rsi_upper": 70,
-        "rsi_lower": 20,
+        "rsi_upper": 80,
+        "rsi_lower": 35,
         "atr_period": 14,
         "atr_sl_mult": 1.0,
-        "atr_tp_mult": 3.5
+        "atr_tp_mult": 1.5
       }
     },
     "GBP_USD": {
-      "status": "excluded",
-      "reason": "top_3圏外(score=3.1336)",
-      "best_score": 3.1336,
+      "status": "saved",
+      "reason": "",
+      "best_score": 3.1338,
       "best_params": {
         "bb_period": 15,
         "bb_std": 1.0,
@@ -255,10 +240,25 @@
         "atr_tp_mult": 1.5
       }
     },
+    "EUR_USD": {
+      "status": "saved",
+      "reason": "",
+      "best_score": 2.8235,
+      "best_params": {
+        "bb_period": 30,
+        "bb_std": 1.0,
+        "rsi_period": 14,
+        "rsi_upper": 70,
+        "rsi_lower": 20,
+        "atr_period": 14,
+        "atr_sl_mult": 1.0,
+        "atr_tp_mult": 3.5
+      }
+    },
     "CAD_JPY": {
-      "status": "excluded",
-      "reason": "top_3圏外(score=2.9801)",
-      "best_score": 2.9801,
+      "status": "saved",
+      "reason": "",
+      "best_score": 2.98,
       "best_params": {
         "bb_period": 35,
         "bb_std": 2.5,
@@ -297,60 +297,60 @@
       "rank": 4,
       "symbol": "AUD_USD",
       "score": 3.3711,
-      "status": "excluded"
+      "status": "adopted"
     },
     {
       "rank": 5,
       "symbol": "GBP_JPY",
-      "score": 3.1345,
-      "status": "excluded"
+      "score": 3.1346,
+      "status": "adopted"
     },
     {
       "rank": 6,
       "symbol": "GBP_USD",
-      "score": 3.1336,
-      "status": "excluded"
+      "score": 3.1338,
+      "status": "adopted"
     },
     {
       "rank": 7,
       "symbol": "CAD_JPY",
-      "score": 2.9801,
-      "status": "excluded"
+      "score": 2.98,
+      "status": "adopted"
     },
     {
       "rank": 8,
       "symbol": "AUD_JPY",
       "score": 2.9638,
-      "status": "excluded"
+      "status": "adopted"
     },
     {
       "rank": 9,
       "symbol": "EUR_USD",
-      "score": 2.8234,
-      "status": "excluded"
+      "score": 2.8235,
+      "status": "adopted"
     },
     {
       "rank": 10,
       "symbol": "NZD_JPY",
       "score": 2.6969,
-      "status": "excluded"
+      "status": "adopted"
     },
     {
       "rank": 11,
       "symbol": "NZD_USD",
-      "score": 2.6511,
+      "score": 2.6513,
       "status": "excluded"
     },
     {
       "rank": 12,
       "symbol": "MXN_JPY",
-      "score": 1.8601,
+      "score": 1.8639,
       "status": "excluded"
     },
     {
       "rank": 13,
       "symbol": "ZAR_JPY",
-      "score": 0.1342,
+      "score": 0.1412,
       "status": "excluded"
     },
     {

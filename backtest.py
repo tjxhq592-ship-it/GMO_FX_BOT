@@ -95,9 +95,10 @@ MIN_TRADES       = int(_cfg.get("min_trades",     200))
 PF_THRESHOLD     = float(_cfg.get("min_pf",       1.2))
 SHARPE_THRESHOLD = float(_cfg.get("min_wft_sharpe", 0.0))
 
+INTERVAL     = _cfg.get("interval", "30min")
 INITIAL_CASH = 1_000_000  # 円（固定）
-CACHE_DIR    = ".cache"
-CACHE_TTL    = 4 * 3600   # 4時間（4時間足のため）
+CACHE_DIR    = os.path.join(".cache", INTERVAL)   # interval 別キャッシュ
+CACHE_TTL    = 4 * 3600   # 4時間
 PARAMS_FILE  = "params.json"
 RESULTS_FILE = "backtest_results.json"
 
@@ -169,13 +170,13 @@ bt_logger = logging.getLogger("backtest")
 
 # === データキャッシュ ===
 def _cache_path(symbol: str) -> str:
-    """シンボル単位のキャッシュパス（日付なし・TTL で鮮度管理）"""
-    key = f"gmo_{symbol}_4hour"
+    """シンボル単位のキャッシュパス（interval 別ディレクトリ・TTL で鮮度管理）"""
+    key = f"gmo_{symbol}_{INTERVAL}"
     return os.path.join(CACHE_DIR, hashlib.md5(key.encode()).hexdigest() + ".pkl")
 
 def _download_gmo(symbol: str) -> pd.DataFrame:
-    """GMO KLine API から直近2年分の4時間足を取得して返す"""
-    df = _gmo_client.get_klines_bulk(symbol, interval="4hour", years=2)
+    """GMO KLine API から直近データを取得して返す（interval は INTERVAL 定数に従う）"""
+    df = _gmo_client.get_klines_bulk(symbol, interval=INTERVAL, years=2)
     if df.empty:
         raise ValueError(f"{symbol}: GMO APIからデータ取得失敗")
     # backtesting ライブラリ用に列名を大文字化

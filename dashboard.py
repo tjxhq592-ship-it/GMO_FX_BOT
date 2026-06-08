@@ -415,6 +415,16 @@ def show_settings():
     with d_col2:
         st.text_input("終了日", value="auto（昨日）", disabled=True)
 
+    _interval_options = ["1min", "5min", "15min", "30min", "1hour", "4hour", "1day"]
+    _interval_current = cfg.get("interval", "30min")
+    _interval_idx     = _interval_options.index(_interval_current) if _interval_current in _interval_options else 3
+    interval = st.selectbox(
+        "時間足",
+        options=_interval_options,
+        index=_interval_idx,
+        help="バックテスト・グリッドサーチで使用する時間足",
+    )
+
     st.markdown("---")
 
     # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -585,6 +595,7 @@ def show_settings():
             "min_wft_sharpe":      float(min_wft_sharpe),
             "max_workers":         max_workers_val,
             "paper_trade":         paper_trade,
+            "interval":            interval,
         }
         try:
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
