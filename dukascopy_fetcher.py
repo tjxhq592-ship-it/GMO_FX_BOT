@@ -31,7 +31,10 @@ try:
         INSTRUMENT_FX_MAJORS_NZD_USD,
     )
     DUKASCOPY_AVAILABLE = True
-except ImportError:
+except Exception as e:
+    import sys
+    print(f"[dukascopy_fetcher] インポート失敗: {type(e).__name__}: {e}",
+          file=sys.stderr)
     DUKASCOPY_AVAILABLE = False
 
 # ── シンボルマッピング ────────────────────────────────────────────────────
