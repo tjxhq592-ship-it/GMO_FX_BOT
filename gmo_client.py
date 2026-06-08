@@ -139,7 +139,10 @@ class GmoFxClient:
             f"{BASE_PUBLIC}/v1/ticker",
             params={"symbol": symbol},
         )
-        return data["data"][0]
+        for item in data["data"]:
+            if item["symbol"] == symbol:
+                return item
+        raise GmoApiError(f"シンボルが見つかりません: {symbol}")
 
     def get_klines(
         self,
