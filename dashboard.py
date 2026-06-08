@@ -10,6 +10,7 @@ import pandas as pd
 import re
 import json
 import os
+from config import DASHBOARD_AUTH_ENABLED
 from datetime import date, datetime
 from streamlit_autorefresh import st_autorefresh
 
@@ -113,15 +114,16 @@ st.set_page_config(page_title="GMO FX Bot Dashboard", layout="wide")
 # ===== 認証ゲート =====
 _ALLOWED_USERS = {"tjxhq592@gmail.com"}
 
-if not st.user.is_logged_in:
-    st.title("GMO FX Bot ダッシュボード")
-    st.button("Googleでログイン", on_click=st.login)
-    st.stop()
+if DASHBOARD_AUTH_ENABLED:
+    if not st.user.is_logged_in:
+        st.title("GMO FX Bot ダッシュボード")
+        st.button("Googleでログイン", on_click=st.login)
+        st.stop()
 
-if st.user.email not in _ALLOWED_USERS:
-    st.error(f"アクセス権限がありません: {st.user.email}")
-    st.button("ログアウト", on_click=st.logout)
-    st.stop()
+    if st.user.email not in _ALLOWED_USERS:
+        st.error(f"アクセス権限がありません: {st.user.email}")
+        st.button("ログアウト", on_click=st.logout)
+        st.stop()
 # ===== 認証ゲートここまで =====
 
 
@@ -214,9 +216,10 @@ def load_log():
 
 with st.sidebar:
     st.title("GMO FX Bot")
-    st.markdown(f"👤 {st.user.email}")
-    if st.button("ログアウト", key="logout_btn"):
-        st.logout()
+    if DASHBOARD_AUTH_ENABLED:
+        st.markdown(f"👤 {st.user.email}")
+        if st.button("ログアウト", key="logout_btn"):
+            st.logout()
     st.divider()
 
     page = st.radio(

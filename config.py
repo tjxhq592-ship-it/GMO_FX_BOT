@@ -18,6 +18,9 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID")
 
+# ダッシュボード認証
+DASHBOARD_AUTH_ENABLED = os.getenv("DASHBOARD_AUTH_ENABLED", "false").lower() == "true"
+
 # ファイルパス
 PARAMS_FILE = BASE_DIR / "params.json"
 LOG_FILE    = BASE_DIR / "trade_log.txt"
