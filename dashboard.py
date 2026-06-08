@@ -93,6 +93,20 @@ def check_scheduler_status() -> bool:
 
 st.set_page_config(page_title="GMO FX Bot Dashboard", layout="wide")
 
+# ===== 認証ゲート =====
+_ALLOWED_USERS = {"tjxhq592@gmail.com"}
+
+if not st.user.is_logged_in:
+    st.title("GMO FX Bot ダッシュボード")
+    st.button("Googleでログイン", on_click=st.login)
+    st.stop()
+
+if st.user.email not in _ALLOWED_USERS:
+    st.error(f"アクセス権限がありません: {st.user.email}")
+    st.button("ログアウト", on_click=st.logout)
+    st.stop()
+# ===== 認証ゲートここまで =====
+
 
 # ==================== データ読込ユーティリティ ====================
 
@@ -183,6 +197,9 @@ def load_log():
 
 with st.sidebar:
     st.title("GMO FX Bot")
+    st.markdown(f"👤 {st.user.email}")
+    if st.button("ログアウト", key="logout_btn"):
+        st.logout()
     st.divider()
 
     page = st.radio(
