@@ -1,0 +1,22 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: 153.126.148.31
+          username: trader
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /home/trader/GMO_FX_BOT
+            git pull origin main
+            sudo systemctl restart gmo-fx-bot
+            sudo systemctl restart gmo-fx-dashboard
+            echo "デプロイ完了"
