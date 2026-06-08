@@ -46,17 +46,30 @@ CANDIDATE_SYMBOLS = _bt_cfg.get("available_symbols", [
     "AUD_NZD", "EUR_CHF", "GBP_CHF", "EUR_AUD",
 ])
 
-_REQUIRED_KEYS = {
-    "GMO_API_KEY":        GMO_API_KEY,
-    "GMO_SECRET_KEY":     GMO_SECRET_KEY,
+# バックテスト・グリッドサーチに必須
+_REQUIRED_BASIC = {
+    "GMO_API_KEY":    GMO_API_KEY,
+    "GMO_SECRET_KEY": GMO_SECRET_KEY,
+}
+
+# トレードボット稼働時に必須
+_REQUIRED_TRADE = {
     "ANTHROPIC_API_KEY":  ANTHROPIC_API_KEY,
     "LINE_CHANNEL_TOKEN": LINE_CHANNEL_TOKEN,
     "LINE_USER_ID":       LINE_USER_ID,
 }
 
-_missing = [k for k, v in _REQUIRED_KEYS.items() if not v]
-if _missing:
+# 基本キーのみチェック（起動時）
+_missing_basic = [k for k, v in _REQUIRED_BASIC.items() if not v]
+if _missing_basic:
     raise EnvironmentError(
-        f"以下の環境変数が .env に設定されていません: {', '.join(_missing)}\n"
-        f".env.example を参考に .env ファイルを作成してください。"
+        f"以下の環境変数が未設定です: {', '.join(_missing_basic)}"
+    )
+
+# トレードキーは警告のみ
+_missing_trade = [k for k, v in _REQUIRED_TRADE.items() if not v]
+if _missing_trade:
+    import warnings
+    warnings.warn(
+        f"トレードボット用キーが未設定です: {', '.join(_missing_trade)}"
     )
