@@ -236,7 +236,7 @@ with st.sidebar:
         st.error("🔴 ボット停止中")
         if st.button("▶ ボット起動", key="start_bot", use_container_width=True):
             subprocess.Popen(
-                ["python", "scheduler.py"],
+                [sys.executable, "scheduler.py"],
                 cwd=BASE_DIR,
                 start_new_session=True,
             )
