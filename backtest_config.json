@@ -17,15 +17,20 @@
     "NZD_JPY",
     "CAD_JPY",
     "CHF_JPY",
+    "TRY_JPY",
     "ZAR_JPY",
+    "MXN_JPY",
     "EUR_USD",
     "GBP_USD",
     "AUD_USD",
+    "NZD_USD",
     "EUR_GBP",
     "AUD_NZD",
-    "EUR_CHF",
-    "GBP_CHF",
-    "EUR_AUD"
+    "AUD_CAD",
+    "NZD_CAD",
+    "HUF_JPY",
+    "SEK_JPY",
+    "NOK_SEK"
   ],
   "grid_search_symbols": [
     "GBP_USD",
@@ -72,9 +77,8 @@
   "min_pf": 0.8,
   "min_wft_sharpe": -0.5,
   "active_symbols": [
-    "GBP_USD",
     "EUR_GBP",
-    "GBP_CHF"
+    "GBP_USD"
   ],
   "max_workers": 14
 }
