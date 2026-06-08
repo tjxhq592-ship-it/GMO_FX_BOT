@@ -173,7 +173,9 @@ def _download_gmo(symbol: str) -> pd.DataFrame:
     # タイムゾーン除去
     if df.index.tz is not None:
         df.index = df.index.tz_convert(None)
-    return df[["Open", "High", "Low", "Close", "Volume"]].dropna()
+    # FX はボリュームが NaN のため OHLC のみで dropna する
+    df = df[["Open", "High", "Low", "Close", "Volume"]]
+    return df.dropna(subset=["Open", "High", "Low", "Close"])
 
 def get_historical_data(symbol: str) -> pd.DataFrame:
     """バックテスト用データを取得（TTLキャッシュ付き）"""

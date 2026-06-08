@@ -532,19 +532,19 @@ def debug_run(config: dict, score_weights: dict) -> None:
     print("=== デバッグモード: スコアゼロ原因調査 ===")
     print("=" * 60)
 
-    # デバッグ用固定パラメータ（前回グリッドサーチでスコア3.86が出たパラメータ）
+    # デバッグ用固定パラメータ（GBP_USDでスコアが出た値）
     params_dict = {
-        "bb_period":   20,
-        "bb_std":      1.5,
+        "bb_period":   25,
+        "bb_std":      2.0,
         "rsi_period":  14,
         "rsi_upper":   80,
         "rsi_lower":   20,
         "atr_period":  14,
-        "atr_sl_mult": 1.0,
+        "atr_sl_mult": 2.5,
         "atr_tp_mult": 1.5,
     }
 
-    symbol     = "EUR_GBP"
+    symbol     = "GBP_USD"
     wft_cutoff = END_DATE - relativedelta(months=WF_TEST_MONTHS)
 
     # 除外条件（backtest_config.json から読み込み）

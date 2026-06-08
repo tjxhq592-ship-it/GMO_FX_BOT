@@ -1,26 +1,9 @@
 {
-  "current": 2,
-  "total_symbols": 2,
+  "current": 0,
+  "total_symbols": 0,
   "current_symbol": "",
   "status": "error",
   "log": [
-    "バックテスト期間 : 2024-06-07 〜 2026-06-07",
-    "WFT cutoff       : 2026-04-07",
-    "フォワードテスト : 2026-03-10 〜 2026-06-07",
-    "対象ペア         : ['EUR_GBP', 'GBP_USD']",
-    "（最適化なし: params.json のパラメータで直接 run）",
-    "",
-    "\n==================================================",
-    "[1/2] EUR_GBP 開始...",
-    "[1/2] EUR_GBP エラー: index 0 is out of bounds for axis 0 with size 0",
-    "\n==================================================",
-    "[2/2] GBP_USD 開始...",
-    "[2/2] GBP_USD エラー: index 0 is out of bounds for axis 0 with size 0",
-    "\n==================================================",
-    "フォワードテスト開始",
-    "",
-    "  ⚠️ EUR_GBP エラー: index 0 is out of bounds for axis 0 with size 0",
-    "  ⚠️ GBP_USD エラー: index 0 is out of bounds for axis 0 with size 0",
-    "\n全銘柄でエラーが発生しました。処理を終了します。"
+    "params.json にパラメータがありません。グリッドサーチを先に実行してください。"
   ]
 }
