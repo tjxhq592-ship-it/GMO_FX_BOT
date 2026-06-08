@@ -234,11 +234,6 @@ def _run_symbol_search(args: tuple) -> dict:
     _ensure_valid_stream("stdout")
     _ensure_valid_stream("stderr")
 
-    import yfinance as yf
-    _cache = f".cache/sym_{os.getpid()}"
-    os.makedirs(_cache, exist_ok=True)
-    yf.set_tz_cache_location(_cache)
-
     from datetime import datetime as _dt
     wft_cutoff = _dt.fromtimestamp(wft_cutoff_ts)
 
