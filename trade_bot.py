@@ -194,6 +194,25 @@ def should_block_entry(signal: dict) -> bool:
     return signal.get("risk_block", False) or signal.get("surge_detected", False)
 
 
+# ── Claude API 失敗時のフォールバック判断 ────────────────────────────────
+def ask_claude_fallback(bars, symbol: str, symbol_params: dict) -> dict:
+    """Claude API 失敗時のルールベースフォールバック判断"""
+    p      = symbol_params[symbol]
+    latest = bars.iloc[-1]
+
+    price    = float(latest["close"])
+    bb_upper = float(latest["BB_upper"])
+    bb_lower = float(latest["BB_lower"])
+    rsi      = float(latest["RSI"])
+
+    if price < bb_lower and rsi <= p["rsi_lower"]:
+        return {"action": "buy",  "reason": "[FALLBACK] BB下限+RSI売られすぎ"}
+    elif price > bb_upper and rsi >= p["rsi_upper"]:
+        return {"action": "sell", "reason": "[FALLBACK] BB上限+RSI買われすぎ"}
+    else:
+        return {"action": "hold", "reason": "[FALLBACK] Claude API失敗のため待機"}
+
+
 # ── Claudeに判断を依頼 ─────────────────────────────────────────────────
 def ask_claude(bars, symbol: str, symbol_params: dict, poly_signal: dict) -> dict:
     import pandas as pd
@@ -247,19 +266,77 @@ ATR: {atr_now:.5f} / ATR20期間平均: {atr_avg_str}
 {{"action": "buy" または "sell" または "hold", "reason": "理由を日本語で簡潔に"}}
 """
 
-    message = claude.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=200,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    response = message.content[0].text
-    logging.info(f"Claudeの返答({symbol}): {response}")
+    max_attempts = 3
+    last_error: Exception | None = None
 
-    match = re.search(r'\{.*?\}', response, re.DOTALL)
-    if match:
-        return json.loads(match.group())
-    logging.warning(f"JSON取得失敗({symbol})、holdとして処理")
-    return {"action": "hold", "reason": "判断取得失敗"}
+    for attempt in range(1, max_attempts + 1):
+        try:
+            message = claude.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=200,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            response = message.content[0].text
+            logging.info(f"Claudeの返答({symbol}): {response}")
+
+            match = re.search(r'\{.*?\}', response, re.DOTALL)
+            if match:
+                return json.loads(match.group())
+            logging.warning(f"JSON取得失敗({symbol})、holdとして処理")
+            return {"action": "hold", "reason": "判断取得失敗"}
+
+        except anthropic.AuthenticationError as e:
+            # 401: 認証エラー → リトライ不要、即フォールバック
+            msg = f"⚠️ Claude API 認証エラー（401）: {e}"
+            logging.error(msg)
+            send_telegram(msg)
+            return ask_claude_fallback(bars, symbol, symbol_params)
+
+        except anthropic.RateLimitError as e:
+            # 429: レート制限 → 60秒待機してリトライ
+            logging.warning(f"Claude API レート制限（429）attempt={attempt}: {e}")
+            last_error = e
+            if attempt < max_attempts:
+                time.sleep(60)
+                continue
+            # 3回失敗
+            break
+
+        except anthropic.APIStatusError as e:
+            status = getattr(e, "status_code", 0)
+            # クレジット切れ (529 / 402 など) → 即フォールバック
+            if status in (402, 529) or "credit" in str(e).lower():
+                msg = f"⚠️ Claude API クレジット不足: {e}"
+                logging.error(msg)
+                send_telegram(msg)
+                return ask_claude_fallback(bars, symbol, symbol_params)
+            # 500系サーバーエラー → 2秒待機してリトライ
+            logging.warning(f"Claude API サーバーエラー（{status}）attempt={attempt}: {e}")
+            last_error = e
+            if attempt < max_attempts:
+                time.sleep(2)
+                continue
+            break
+
+        except anthropic.APIError as e:
+            # その他 API エラー → 2秒待機してリトライ
+            logging.warning(f"Claude API エラー attempt={attempt}: {e}")
+            last_error = e
+            if attempt < max_attempts:
+                time.sleep(2)
+                continue
+            break
+
+        except Exception as e:
+            logging.error(f"ask_claude 予期しないエラー({symbol}): {e}")
+            last_error = e
+            break
+
+    # 全リトライ失敗 → フォールバック
+    msg = f"⚠️ Claude API失敗 フォールバックモードで動作中\n最終エラー: {last_error}"
+    logging.error(msg)
+    send_telegram(msg)
+    return ask_claude_fallback(bars, symbol, symbol_params)
 
 
 # ── ポジション確認 ────────────────────────────────────────────────────────
