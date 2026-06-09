@@ -3,3 +3,14 @@ __pycache__/
 *.pyc
 .env
 backtest_results.json
+
+# ランタイム生成ファイル
+trade_log.txt
+backtest_pid.json
+backtest_progress.json
+grid_search_pid.json
+grid_search_progress.json
+grid_search_results.json
+paper_positions.json
+paper_trade_log.json
+scheduler_pid.json
