@@ -109,6 +109,7 @@ def _start_ws_thread() -> threading.Thread:
 # ── スケジューラセットアップ ─────────────────────────────────────────────
 def _setup_schedule() -> None:
     schedule.every().hour.at(":00").do(_entry_job)
+    schedule.every().hour.at(":30").do(_entry_job)
     schedule.every().monday.at("06:30").do(_backtest_job)
 
 
