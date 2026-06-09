@@ -439,7 +439,7 @@ def run_bot() -> None:
                 logging.info(f"AI判断OFF: テクニカルのみで判断 → {decision['action']} - {decision['reason']}")
 
             price = float(bars.iloc[-1]["close"])
-            size  = calc_trade_size(gmo.get_cash_jpy() if not PAPER_TRADE else 1_000_000, price)
+            size  = 1 if PAPER_TRADE else calc_trade_size(gmo.get_cash_jpy(), price)
 
             atr         = float(bars.iloc[-1]["ATR"])
             atr_sl_mult = p.get("atr_sl_mult", 1.5)
