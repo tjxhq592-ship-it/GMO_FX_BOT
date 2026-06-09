@@ -1,15 +1,15 @@
 {
-  "updated_at": "2026-06-08 19:09:33",
+  "updated_at": "2026-06-09 11:26:25",
   "params": {
     "USD_JPY": {
-      "bb_period": 30,
-      "bb_std": 1.0,
+      "bb_period": 15,
+      "bb_std": 2.0,
       "rsi_period": 14,
       "rsi_upper": 75,
       "rsi_lower": 30,
       "atr_period": 14,
-      "atr_sl_mult": 2.0,
-      "atr_tp_mult": 2.0
+      "atr_sl_mult": 1.0,
+      "atr_tp_mult": 2.5
     },
     "EUR_JPY": {
       "bb_period": 30,
@@ -53,13 +53,13 @@
     },
     "GBP_USD": {
       "bb_period": 15,
-      "bb_std": 1.0,
+      "bb_std": 2.0,
       "rsi_period": 14,
-      "rsi_upper": 65,
-      "rsi_lower": 25,
+      "rsi_upper": 70,
+      "rsi_lower": 35,
       "atr_period": 14,
-      "atr_sl_mult": 1.5,
-      "atr_tp_mult": 1.5
+      "atr_sl_mult": 1.0,
+      "atr_tp_mult": 3.5
     },
     "CAD_JPY": {
       "bb_period": 35,
@@ -83,13 +83,13 @@
     },
     "EUR_USD": {
       "bb_period": 30,
-      "bb_std": 1.0,
+      "bb_std": 1.5,
       "rsi_period": 14,
-      "rsi_upper": 70,
-      "rsi_lower": 20,
+      "rsi_upper": 80,
+      "rsi_lower": 25,
       "atr_period": 14,
-      "atr_sl_mult": 1.0,
-      "atr_tp_mult": 3.5
+      "atr_sl_mult": 2.0,
+      "atr_tp_mult": 2.5
     },
     "NZD_JPY": {
       "bb_period": 10,
