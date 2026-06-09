@@ -1,154 +1,120 @@
 {
-  "current": 78014,
-  "total": 134400,
-  "best_score": 0.0,
-  "best_params": {},
-  "elapsed": 5471,
-  "remaining": 3954,
-  "status": "running",
+  "current": 28800,
+  "total": 28800,
+  "best_score": 4.2102,
+  "best_params": {
+    "bb_period": 30,
+    "bb_std": 1.5,
+    "rsi_period": 14,
+    "rsi_upper": 80,
+    "rsi_lower": 25,
+    "atr_period": 14,
+    "atr_sl_mult": 2.0,
+    "atr_tp_mult": 2.5,
+    "symbol": "EUR_USD"
+  },
+  "elapsed": 16659,
+  "remaining": 0,
+  "status": "completed",
   "log": [
-    "組み合わせ数: 9600 x 14銘柄 = 134400 件",
-    "WFT期間: 2026-03-07 〜 2026-04-07 (offset=2ヶ月)",
+    "組み合わせ数: 9600 x 3銘柄 = 28800 件",
+    "WFT期間: 2026-03-08 〜 2026-04-08 (offset=2ヶ月)",
     "スコア重み: WFT=0.5 IS=0.15 PF=0.2 取引=0.15",
     "除外条件: 取引>=50  PF>=0.8  WFTシャープ>=-0.5",
     "",
     "全ペアのデータを事前取得中...",
-    "  USD_JPY: 24580件 OK",
-    "  EUR_JPY: 24581件 OK",
-    "  GBP_JPY: 24581件 OK",
-    "  AUD_JPY: 24581件 OK",
-    "  NZD_JPY: 24581件 OK",
-    "  CAD_JPY: 24581件 OK",
-    "  CHF_JPY: 24581件 OK",
-    "  TRY_JPY: 20347件 OK",
-    "  ZAR_JPY: 24487件 OK",
-    "  MXN_JPY: 24401件 OK",
-    "  EUR_USD: 24582件 OK",
-    "  GBP_USD: 24582件 OK",
-    "  AUD_USD: 24582件 OK",
-    "  NZD_USD: 24581件 OK",
+    "  USD_JPY: 130090件 OK",
+    "  EUR_USD: 130094件 OK",
+    "  GBP_USD: 130069件 OK",
     "全データ取得完了 処理開始...",
     "=== プランB: 1コア1銘柄の並列グリッドサーチ ===",
-    "対象ペア (14件): ['USD_JPY', 'EUR_JPY', 'GBP_JPY', 'AUD_JPY', 'NZD_JPY', 'CAD_JPY', 'CHF_JPY', 'TRY_JPY', 'ZAR_JPY', 'MXN_JPY', 'EUR_USD', 'GBP_USD', 'AUD_USD', 'NZD_USD']",
-    "ワーカー数: 14  (CPU=16 / 使用率=0% / MEM=71%)",
-    "プロセス gs-USD_JPY: alive=True pid=30012",
-    "プロセス gs-EUR_JPY: alive=True pid=38512",
-    "プロセス gs-GBP_JPY: alive=True pid=40348",
-    "プロセス gs-AUD_JPY: alive=True pid=39540",
-    "プロセス gs-NZD_JPY: alive=True pid=23112",
-    "プロセス gs-CAD_JPY: alive=True pid=32868",
-    "プロセス gs-CHF_JPY: alive=True pid=35892",
-    "プロセス gs-TRY_JPY: alive=True pid=12872",
-    "プロセス gs-ZAR_JPY: alive=True pid=12960",
-    "プロセス gs-MXN_JPY: alive=True pid=28156",
-    "プロセス gs-EUR_USD: alive=True pid=39888",
-    "プロセス gs-GBP_USD: alive=True pid=32884",
-    "プロセス gs-AUD_USD: alive=True pid=28756",
-    "プロセス gs-NZD_USD: alive=True pid=8040"
+    "対象ペア (3件): ['USD_JPY', 'EUR_USD', 'GBP_USD']",
+    "ワーカー数: 3  (CPU=16 / 使用率=0% / MEM=57%)",
+    "プロセス gs-USD_JPY: alive=True pid=5832",
+    "プロセス gs-EUR_USD: alive=True pid=3380",
+    "プロセス gs-GBP_USD: alive=True pid=14148",
+    "[GBP_USD] 完了 (1/3)  ベスト=3.3009  コンボ=9600/9600",
+    "[EUR_USD] 完了 (2/3)  ベスト=4.2102  コンボ=9600/9600",
+    "[USD_JPY] 完了 (3/3)  ベスト=0.9863  コンボ=9600/9600",
+    "\n=== top_N=10 採用判定 ===",
+    "  #1 EUR_USD: score=4.2102  → adopted",
+    "  [ADOPTED] EUR_USD params.json に保存",
+    "  #2 GBP_USD: score=3.3009  → adopted",
+    "  [ADOPTED] GBP_USD params.json に保存",
+    "  #3 USD_JPY: score=0.9863  → adopted",
+    "  [ADOPTED] USD_JPY params.json に保存",
+    "\n=== 完了 ===  28800件  ベストスコア=4.2102",
+    "結果を grid_search_results.json に保存しました。"
   ],
-  "completed_symbols": {},
+  "completed_symbols": {
+    "GBP_USD": {
+      "status": "saved",
+      "reason": "",
+      "best_score": 3.3009,
+      "best_params": {
+        "bb_period": 15,
+        "bb_std": 2.0,
+        "rsi_period": 14,
+        "rsi_upper": 70,
+        "rsi_lower": 35,
+        "atr_period": 14,
+        "atr_sl_mult": 1.0,
+        "atr_tp_mult": 3.5
+      }
+    },
+    "EUR_USD": {
+      "status": "saved",
+      "reason": "",
+      "best_score": 4.2102,
+      "best_params": {
+        "bb_period": 30,
+        "bb_std": 1.5,
+        "rsi_period": 14,
+        "rsi_upper": 80,
+        "rsi_lower": 25,
+        "atr_period": 14,
+        "atr_sl_mult": 2.0,
+        "atr_tp_mult": 2.5
+      }
+    },
+    "USD_JPY": {
+      "status": "saved",
+      "reason": "",
+      "best_score": 0.9863,
+      "best_params": {
+        "bb_period": 15,
+        "bb_std": 2.0,
+        "rsi_period": 14,
+        "rsi_upper": 75,
+        "rsi_lower": 30,
+        "atr_period": 14,
+        "atr_sl_mult": 1.0,
+        "atr_tp_mult": 2.5
+      }
+    }
+  },
   "current_symbol": "",
   "symbol_current": 0,
   "symbol_total": 0,
-  "ranking": [],
-  "symbol_progress": {
-    "USD_JPY": {
-      "current": 5501,
-      "total": 9600,
-      "status": "running",
-      "best_score": 2.1869,
-      "pct": 57.3
+  "ranking": [
+    {
+      "rank": 1,
+      "symbol": "EUR_USD",
+      "score": 4.2102,
+      "status": "adopted"
     },
-    "EUR_JPY": {
-      "current": 5501,
-      "total": 9600,
-      "status": "running",
-      "best_score": 5.0246,
-      "pct": 57.3
+    {
+      "rank": 2,
+      "symbol": "GBP_USD",
+      "score": 3.3009,
+      "status": "adopted"
     },
-    "GBP_JPY": {
-      "current": 5501,
-      "total": 9600,
-      "status": "running",
-      "best_score": 3.52,
-      "pct": 57.3
-    },
-    "AUD_JPY": {
-      "current": 5501,
-      "total": 9600,
-      "status": "running",
-      "best_score": 3.439,
-      "pct": 57.3
-    },
-    "NZD_JPY": {
-      "current": 5501,
-      "total": 9600,
-      "status": "running",
-      "best_score": 4.8793,
-      "pct": 57.3
-    },
-    "CAD_JPY": {
-      "current": 5501,
-      "total": 9600,
-      "status": "running",
-      "best_score": 1.5185,
-      "pct": 57.3
-    },
-    "CHF_JPY": {
-      "current": 5501,
-      "total": 9600,
-      "status": "running",
-      "best_score": 2.2328,
-      "pct": 57.3
-    },
-    "TRY_JPY": {
-      "current": 6501,
-      "total": 9600,
-      "status": "running",
-      "best_score": 0.0,
-      "pct": 67.7
-    },
-    "ZAR_JPY": {
-      "current": 5501,
-      "total": 9600,
-      "status": "running",
-      "best_score": 0.0,
-      "pct": 57.3
-    },
-    "MXN_JPY": {
-      "current": 5501,
-      "total": 9600,
-      "status": "running",
-      "best_score": 0.0,
-      "pct": 57.3
-    },
-    "EUR_USD": {
-      "current": 5501,
-      "total": 9600,
-      "status": "running",
-      "best_score": 4.6992,
-      "pct": 57.3
-    },
-    "GBP_USD": {
-      "current": 5501,
-      "total": 9600,
-      "status": "running",
-      "best_score": 4.1131,
-      "pct": 57.3
-    },
-    "AUD_USD": {
-      "current": 5501,
-      "total": 9600,
-      "status": "running",
-      "best_score": 4.5695,
-      "pct": 57.3
-    },
-    "NZD_USD": {
-      "current": 5501,
-      "total": 9600,
-      "status": "running",
-      "best_score": 5.2639,
-      "pct": 57.3
+    {
+      "rank": 3,
+      "symbol": "USD_JPY",
+      "score": 0.9863,
+      "status": "adopted"
     }
-  }
+  ],
+  "symbol_progress": {}
 }

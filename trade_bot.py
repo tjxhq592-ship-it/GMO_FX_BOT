@@ -48,9 +48,10 @@ def _load_bt_config() -> dict:
     except Exception:
         return {}
 
-_bt_cfg        = _load_bt_config()
-PAPER_TRADE    = _bt_cfg.get("paper_trade", True)
-TRADE_INTERVAL = _bt_cfg.get("interval", "30min")
+_bt_cfg             = _load_bt_config()
+PAPER_TRADE         = _bt_cfg.get("paper_trade", True)
+TRADE_INTERVAL      = _bt_cfg.get("interval", "30min")
+AI_JUDGMENT_ENABLED = _bt_cfg.get("ai_judgment_enabled", True)
 
 
 # ── パラメータ読み込み ────────────────────────────────────────────────────
@@ -431,9 +432,13 @@ def run_bot() -> None:
                 summary_lines.append(f"  {symbol}: Polymarket急変決済")
                 continue
 
-            logging.info("Claudeに判断を依頼中...")
-            decision = ask_claude(bars, symbol, symbol_params, poly_signal)
-            logging.info(f"Claudeの判断: {decision['action']} - {decision['reason']}")
+            if AI_JUDGMENT_ENABLED:
+                logging.info("Claudeに判断を依頼中...")
+                decision = ask_claude(bars, symbol, symbol_params, poly_signal)
+                logging.info(f"Claudeの判断: {decision['action']} - {decision['reason']}")
+            else:
+                decision = ask_claude_fallback(bars, symbol, symbol_params)
+                logging.info(f"AI判断OFF: テクニカルのみで判断 → {decision['action']} - {decision['reason']}")
 
             price = float(bars.iloc[-1]["close"])
             size  = calc_trade_size(gmo.get_cash_jpy() if not PAPER_TRADE else 1_000_000, price)

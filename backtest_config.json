@@ -74,5 +74,6 @@
     "EUR_USD"
   ],
   "max_workers": 14,
-  "paper_trade": true
+  "paper_trade": true,
+  "ai_judgment_enabled": true
 }

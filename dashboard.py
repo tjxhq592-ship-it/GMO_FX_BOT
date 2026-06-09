@@ -398,6 +398,17 @@ def show_settings():
     else:
         st.error("⚠️ 本番トレードモード：実際の発注が行われます")
 
+    # ── AI判断 ON/OFF ───────────────────────────────────────────────────
+    ai_enabled = st.toggle(
+        "AI判断（Claude API）を使用する",
+        value=cfg.get("ai_judgment_enabled", True),
+        help="OFFにするとテクニカル指標のみで判断（フォールバックロジック使用）",
+    )
+    if ai_enabled:
+        st.success("🤖 AI判断モード：Claudeが最終判断を行います")
+    else:
+        st.warning("📊 テクニカルモード：BB+RSIのルールベースで判断します")
+
     st.markdown("#### データ期間")
     d_col1, d_col2 = st.columns(2)
     with d_col1:
@@ -615,6 +626,7 @@ def show_settings():
             "min_wft_sharpe":      float(min_wft_sharpe),
             "max_workers":           max_workers_val,
             "paper_trade":           paper_trade,
+            "ai_judgment_enabled":   ai_enabled,
             "interval":              interval,
             "data_source":           data_source,
             "dukascopy_start_year":  int(dukascopy_start_year),
