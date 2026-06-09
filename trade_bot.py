@@ -48,8 +48,9 @@ def _load_bt_config() -> dict:
     except Exception:
         return {}
 
-_bt_cfg    = _load_bt_config()
-PAPER_TRADE = _bt_cfg.get("paper_trade", True)
+_bt_cfg        = _load_bt_config()
+PAPER_TRADE    = _bt_cfg.get("paper_trade", True)
+TRADE_INTERVAL = _bt_cfg.get("interval", "30min")
 
 
 # ── パラメータ読み込み ────────────────────────────────────────────────────
@@ -157,7 +158,7 @@ def close_position_paper(symbol: str, exit_price: float, reason: str) -> None:
 # ── 市場データ取得 ────────────────────────────────────────────────────────
 def get_market_data(symbol: str, symbol_params: dict) -> object:
     p    = symbol_params[symbol]
-    bars = gmo.get_klines_bulk(symbol, interval="4hour", years=1)
+    bars = gmo.get_klines_bulk(symbol, interval=TRADE_INTERVAL, years=1)
 
     bb_period = p.get("bb_period", 20)
     bb_std    = p.get("bb_std", 2.0)
