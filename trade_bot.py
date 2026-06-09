@@ -457,7 +457,7 @@ def run_bot() -> None:
             pos_side = position["side"] if position else None
 
             # ── 新規ロング ─────────────────────────────────────────────
-            if decision["action"] == "buy" and position is None and market == "bull":
+            if decision["action"] == "buy" and position is None:
                 if should_block_entry(poly_signal):
                     logging.info(f"{symbol} Polymarketリスクブロック: ロングスキップ")
                     summary_lines.append(f"  {symbol}: Polymarketリスクブロックでスキップ")
@@ -481,7 +481,7 @@ def run_bot() -> None:
                 summary_lines.append(f"  {symbol}: {'[PAPER]' if PAPER_TRADE else ''}指値ロング @ {long_limit:.5f}")
 
             # ── 新規ショート ────────────────────────────────────────────
-            elif decision["action"] == "sell" and position is None and market == "bear":
+            elif decision["action"] == "sell" and position is None:
                 if should_block_entry(poly_signal):
                     logging.info(f"{symbol} Polymarketリスクブロック: ショートスキップ")
                     summary_lines.append(f"  {symbol}: Polymarketリスクブロックでスキップ")
