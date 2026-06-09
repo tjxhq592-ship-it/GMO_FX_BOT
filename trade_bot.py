@@ -444,13 +444,14 @@ def run_bot() -> None:
             atr         = float(bars.iloc[-1]["ATR"])
             atr_sl_mult = p.get("atr_sl_mult", 1.5)
             atr_tp_mult = p.get("atr_tp_mult", 2.5)
-            long_sl  = round(price - atr * atr_sl_mult, 5)
-            long_tp  = round(price + atr * atr_tp_mult, 5)
-            short_sl = round(price + atr * atr_sl_mult, 5)
-            short_tp = round(price - atr * atr_tp_mult, 5)
 
             long_limit  = round(float(bars.iloc[-1]["BB_lower"]), 5)
             short_limit = round(float(bars.iloc[-1]["BB_upper"]), 5)
+
+            long_sl  = round(long_limit - atr * atr_sl_mult, 5)
+            long_tp  = round(long_limit + atr * atr_tp_mult, 5)
+            short_sl = round(short_limit + atr * atr_sl_mult, 5)
+            short_tp = round(short_limit - atr * atr_tp_mult, 5)
 
             pos_side = position["side"] if position else None
 
