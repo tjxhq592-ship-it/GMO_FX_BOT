@@ -81,7 +81,6 @@ def place_order_paper(
     def _updater(curr: dict) -> dict:
         if curr is None:
             curr = {}
-        curr.setdefault("", None)
         curr[symbol] = {
             "side":        side,
             "size":        size,

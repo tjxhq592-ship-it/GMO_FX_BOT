@@ -2,14 +2,10 @@
 .cache/
 __pycache__/
 *.pyc
-paper_positions.json
-paper_trade_log.json
-*.sqlite3
-*.pkl.cache/
-__pycache__/
-*.pyc
 *.log
-.env
+*.sqlite3
+*.pkl
+
 backtest_results.json
 
 # ダッシュボード設定（設定タブで管理）
