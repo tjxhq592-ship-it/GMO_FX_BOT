@@ -120,7 +120,7 @@ def close_position_paper(symbol: str, exit_price: float, reason: str) -> None:
     pos = load_paper_position(symbol)
     if not pos:
         return
-    pnl = (exit_price - pos["entry_price"]) * pos["size"]
+    pnl = (exit_price - pos["entry_price"]) * pos["size"] * 1000
     if pos["side"] == "SELL":
         pnl = -pnl
     send_telegram(

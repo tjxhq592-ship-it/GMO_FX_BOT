@@ -984,7 +984,7 @@ def show_paper_trade():
                         pass
 
                 if current_price is not None:
-                    pnl = (current_price - pos["entry_price"]) * pos["size"]
+                    pnl = (current_price - pos["entry_price"]) * pos["size"] * 1000
                     if pos["side"] == "SELL":
                         pnl = -pnl
                     pnl_str = f"{pnl:+.0f}円"
