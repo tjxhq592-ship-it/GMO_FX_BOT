@@ -18,6 +18,22 @@ jobs:
             cd /home/trader/GMO_FX_BOT
             git fetch origin
             git reset --hard origin/main
-            sudo systemctl restart gmo-fx-bot
-            sudo systemctl restart gmo-fx-dashboard
+
+            # 変更ファイルを取得
+            CHANGED=$(git diff HEAD@{1} HEAD --name-only)
+
+            # scheduler.py・trade_bot.py・ws_monitor.py・
+            # config.py・gmo_client.py・polymarket.py・
+            # notifier.py・backtest_config.json・params.json が変更された場合
+            if echo "$CHANGED" | grep -qE "scheduler\.py|trade_bot\.py|ws_monitor\.py|config\.py|gmo_client\.py|polymarket\.py|notifier\.py|backtest_config\.json|params\.json"; then
+              sudo systemctl restart gmo-fx-bot
+              echo "gmo-fx-bot 再起動しました"
+            fi
+
+            # dashboard.py が変更された場合
+            if echo "$CHANGED" | grep -q "dashboard\.py"; then
+              sudo systemctl restart gmo-fx-dashboard
+              echo "gmo-fx-dashboard 再起動しました"
+            fi
+
             echo "デプロイ完了"
