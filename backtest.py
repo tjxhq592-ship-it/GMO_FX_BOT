@@ -161,15 +161,6 @@ SYMBOLS = _cfg.get("active_symbols", _cfg.get("symbols", ["AUD_NZD"]))
 from config import GMO_API_KEY, GMO_SECRET_KEY, LOG_FILE
 from gmo_client import GmoFxClient
 _gmo_client = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY)
-
-# trade_log.txt へのログ出力設定
-logging.basicConfig(
-    filename=str(LOG_FILE),
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(message)s",
-    datefmt="%y/%m/%d %H:%M:%S",
-    encoding="utf-8",
-)
 bt_logger = logging.getLogger("backtest")
 
 # === データキャッシュ ===
@@ -615,6 +606,8 @@ def run_backtest_job() -> None:
 
 if __name__ == "__main__":
     import argparse
+    from logger_config import configure_logging
+    configure_logging(LOG_FILE)
     parser = argparse.ArgumentParser()
     parser.add_argument("--grid-search", action="store_true",
                         help="グリッドサーチモードで実行")

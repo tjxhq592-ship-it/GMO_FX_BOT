@@ -61,18 +61,28 @@ _REQUIRED_TRADE = {
     "TELEGRAM_BOT_TOKEN": TELEGRAM_BOT_TOKEN,
     "TELEGRAM_CHAT_ID":   TELEGRAM_CHAT_ID,
 }
+def check_required_keys(raise_on_missing: bool = False) -> list:
+    """
+    Check required environment keys and return a list of missing keys.
 
-# 基本キーのみチェック（起動時）
-_missing_basic = [k for k, v in _REQUIRED_BASIC.items() if not v]
-if _missing_basic:
-    raise EnvironmentError(
-        f"以下の環境変数が未設定です: {', '.join(_missing_basic)}"
-    )
+    Parameters
+    - raise_on_missing: if True and basic keys are missing, raise EnvironmentError.
 
-# トレードキーは警告のみ
-_missing_trade = [k for k, v in _REQUIRED_TRADE.items() if not v]
-if _missing_trade:
-    import warnings
-    warnings.warn(
-        f"トレードボット用キーが未設定です: {', '.join(_missing_trade)}"
-    )
+    Returns
+    - List[str]: list of missing environment variable names (may include trade keys).
+    """
+    missing_basic = [k for k, v in _REQUIRED_BASIC.items() if not v]
+    missing_trade = [k for k, v in _REQUIRED_TRADE.items() if not v]
+
+    if raise_on_missing and missing_basic:
+        raise EnvironmentError(
+            f"以下の環境変数が未設定です: {', '.join(missing_basic)}"
+        )
+
+    if missing_trade:
+        import warnings
+        warnings.warn(
+            f"トレードボット用キーが未設定です: {', '.join(missing_trade)}"
+        )
+
+    return missing_basic + missing_trade

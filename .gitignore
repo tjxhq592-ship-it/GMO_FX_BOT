@@ -1,8 +1,20 @@
+/.env
 .cache/
 __pycache__/
 *.pyc
+paper_positions.json
+paper_trade_log.json
+*.sqlite3
+*.pkl.cache/
+__pycache__/
+*.pyc
+*.log
 .env
 backtest_results.json
+
+# ダッシュボード設定（設定タブで管理）
+backtest_config.json
+grid_search_config.json
 
 # ランタイム生成ファイル
 trade_log.txt

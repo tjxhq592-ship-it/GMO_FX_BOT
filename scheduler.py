@@ -35,6 +35,7 @@ logging.basicConfig(
 )
 
 
+
 # ── 起動時ポジション同期 ─────────────────────────────────────────────────
 def init_position_sync() -> None:
     if PAPER_TRADE:
@@ -114,11 +115,21 @@ def _setup_schedule() -> None:
 
 
 # ── メイン ───────────────────────────────────────────────────────────────
+def _read_bt_config() -> dict:
+    try:
+        with open(BT_CONFIG_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
 def main() -> None:
+    _cfg      = _read_bt_config()
+    _symbols  = _cfg.get("active_symbols", _cfg.get("symbols", SYMBOLS))
     now_jst   = datetime.now(JST)
     next_hour = now_jst.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
     next_str  = next_hour.strftime("%H:%M")
-    pairs     = " / ".join(SYMBOLS)
+    pairs     = " / ".join(_symbols)
 
     if PAPER_TRADE:
         startup_msg = (
@@ -156,4 +167,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    from logger_config import configure_logging
+    configure_logging(LOG_FILE)
     main()

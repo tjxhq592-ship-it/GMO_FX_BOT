@@ -46,6 +46,8 @@ class GmoFxClient:
         self.api_key    = api_key
         self.secret_key = secret_key
         self._notify_fn = notify_fn   # LINE 通知などのコールバック
+        # Use a requests.Session for connection pooling and performance
+        self._session = requests.Session()
 
     # ── 認証ヘッダー生成 ────────────────────────────────────────────────
     def _sign(self, method: str, path: str, body: dict | None = None) -> dict:
@@ -80,7 +82,7 @@ class GmoFxClient:
         for attempt in range(MAX_RETRIES):
             # HTTP リクエスト送信
             try:
-                r = requests.request(method, url, timeout=10, **kwargs)
+                r = self._session.request(method, url, timeout=10, **kwargs)
             except requests.exceptions.Timeout:
                 if attempt < MAX_RETRIES - 1:
                     time.sleep(2 ** attempt)
@@ -91,8 +93,13 @@ class GmoFxClient:
 
             # 429: レートリミット
             if r.status_code == 429:
-                wait = 5 * (2 ** attempt)   # 5 / 10 / 20 秒
-                logging.warning(f"429 Rate limit. {wait}秒後にリトライ ({attempt+1}/{MAX_RETRIES})")
+                # Respect Retry-After header when available
+                ra = r.headers.get("Retry-After")
+                try:
+                    wait = int(ra) if ra is not None else 5 * (2 ** attempt)
+                except Exception:
+                    wait = 5 * (2 ** attempt)
+                logging.warning(f"429 Rate limit. Retry-After={ra} wait={wait}s ({attempt+1}/{MAX_RETRIES})")
                 if attempt < MAX_RETRIES - 1:
                     time.sleep(wait)
                     continue
@@ -100,7 +107,7 @@ class GmoFxClient:
 
             # 503: メンテナンス
             if r.status_code == 503:
-                logging.warning(f"503 Maintenance ({attempt+1}/{MAX_RETRIES})")
+                logging.warning(f"503 Maintenance ({attempt+1}/{MAX_RETRIES}) Response: {r.text[:200]}")
                 if self._notify_fn:
                     self._notify_fn("⚠️ GMO FX メンテナンス中\n5分後に再試行します")
                 if attempt < MAX_RETRIES - 1:
@@ -230,7 +237,7 @@ class GmoFxClient:
                         frames.append(df)
                     time.sleep(0.3)
                 except Exception as e:
-                    print(f"  {year}年データ取得失敗: {e}")
+                    logging.warning(f"  {year}年データ取得失敗: {e}")
 
         if not frames:
             raise RuntimeError(f"{symbol} のデータ取得失敗")
@@ -341,10 +348,7 @@ class GmoFxClient:
     def get_cash_jpy(self) -> float:
         """日本円の有効証拠金を返す"""
         assets = self.get_assets()
-
-        # デバッグ用に構造を出力
-        print("assets type:", type(assets))
-        print("assets:", assets)
+        logging.debug("get_assets result type=%s", type(assets))
 
         # assetsがdictの場合
         if isinstance(assets, dict):

@@ -198,4 +198,6 @@ def start_ws_monitor() -> None:
 
 
 if __name__ == "__main__":
+    from logger_config import configure_logging
+    configure_logging(LOG_FILE)
     start_ws_monitor()

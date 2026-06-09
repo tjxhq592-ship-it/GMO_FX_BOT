@@ -23,16 +23,11 @@ from utils import (
     calculate_rsi, calculate_bollinger, calculate_atr,
     get_market_condition, calc_trade_size,
 )
+from fileops import atomic_write_json, locked_read_json, locked_update_json
+from logger_config import configure_logging
 
 JST = timezone(timedelta(hours=9))
 
-logging.basicConfig(
-    filename=LOG_FILE,
-    level=logging.INFO,
-    format="%(asctime)s %(levelname)s %(message)s",
-    datefmt="%y/%m/%d %H:%M:%S",
-    encoding="utf-8",
-)
 
 BASE_DIR             = os.path.dirname(os.path.abspath(__file__))
 BT_CONFIG_FILE       = os.path.join(BASE_DIR, "backtest_config.json")
@@ -48,10 +43,9 @@ def _load_bt_config() -> dict:
     except Exception:
         return {}
 
-_bt_cfg             = _load_bt_config()
-PAPER_TRADE         = _bt_cfg.get("paper_trade", True)
-TRADE_INTERVAL      = _bt_cfg.get("interval", "30min")
-AI_JUDGMENT_ENABLED = _bt_cfg.get("ai_judgment_enabled", True)
+_bt_cfg        = _load_bt_config()
+PAPER_TRADE    = _bt_cfg.get("paper_trade", True)
+TRADE_INTERVAL = _bt_cfg.get("interval", "30min")
 
 
 # ── パラメータ読み込み ────────────────────────────────────────────────────
@@ -67,17 +61,10 @@ claude = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 # ── ペーパーポジション管理 ────────────────────────────────────────────────
 def _load_paper_positions() -> dict:
-    if not os.path.exists(PAPER_POSITIONS_FILE):
-        return {}
-    try:
-        with open(PAPER_POSITIONS_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {}
+    return locked_read_json(PAPER_POSITIONS_FILE, default={})
 
 def _save_paper_positions(positions: dict) -> None:
-    with open(PAPER_POSITIONS_FILE, "w", encoding="utf-8") as f:
-        json.dump(positions, f, ensure_ascii=False, indent=2)
+    atomic_write_json(PAPER_POSITIONS_FILE, positions)
 
 def load_paper_position(symbol: str) -> dict | None:
     return _load_paper_positions().get(symbol)
@@ -91,16 +78,21 @@ def place_order_paper(
     tp: float,
 ) -> None:
     """ペーパーポジションを paper_positions.json に記録して通知。"""
-    positions = _load_paper_positions()
-    positions[symbol] = {
-        "side":        side,
-        "size":        size,
-        "entry_price": entry_price,
-        "entry_time":  datetime.now().isoformat(),
-        "sl":          sl,
-        "tp":          tp,
-    }
-    _save_paper_positions(positions)
+    def _updater(curr: dict) -> dict:
+        if curr is None:
+            curr = {}
+        curr.setdefault("", None)
+        curr[symbol] = {
+            "side":        side,
+            "size":        size,
+            "entry_price": entry_price,
+            "entry_time":  datetime.now().isoformat(),
+            "sl":          sl,
+            "tp":          tp,
+        }
+        return curr
+
+    locked_update_json(PAPER_POSITIONS_FILE, _updater, default={})
     send_telegram(
         f"📝[PAPER] {side}注文\n"
         f"銘柄: {symbol}\n"
@@ -113,14 +105,13 @@ def place_order_paper(
 def _append_paper_log(trade: dict) -> None:
     """paper_trade_log.json に取引結果を追記する。"""
     try:
-        if os.path.exists(PAPER_LOG_FILE):
-            with open(PAPER_LOG_FILE, "r", encoding="utf-8") as f:
-                log = json.load(f)
-        else:
-            log = {"trades": []}
-        log.setdefault("trades", []).append(trade)
-        with open(PAPER_LOG_FILE, "w", encoding="utf-8") as f:
-            json.dump(log, f, ensure_ascii=False, indent=2)
+        def _updater(curr: dict) -> dict:
+            if curr is None:
+                curr = {"trades": []}
+            curr.setdefault("trades", []).append(trade)
+            return curr
+
+        locked_update_json(PAPER_LOG_FILE, _updater, default={"trades": []})
     except Exception as e:
         logging.error(f"paper_trade_log.json 書き込みエラー: {e}")
 
@@ -151,9 +142,13 @@ def close_position_paper(symbol: str, exit_price: float, reason: str) -> None:
         "pnl":         round(pnl, 2),
         "reason":      reason,
     })
-    positions = _load_paper_positions()
-    positions.pop(symbol, None)
-    _save_paper_positions(positions)
+    def _remover(curr: dict) -> dict:
+        if not curr:
+            return {}
+        curr.pop(symbol, None)
+        return curr
+
+    locked_update_json(PAPER_POSITIONS_FILE, _remover, default={})
 
 
 # ── 市場データ取得 ────────────────────────────────────────────────────────
@@ -376,6 +371,10 @@ def _cancel_stale_orders(symbol: str) -> None:
 
 # ── メインループ ──────────────────────────────────────────────────────────
 def run_bot() -> None:
+    _cfg = _load_bt_config()
+    ai_judgment_enabled = _cfg.get("ai_judgment_enabled", True)
+    current_symbols = _cfg.get("active_symbols", _cfg.get("symbols", SYMBOLS))
+
     mode_label = "📝ペーパートレード" if PAPER_TRADE else "🚀本番トレード"
     logging.info(f"=== GMO FXボット起動 [{mode_label}] ===")
 
@@ -388,7 +387,7 @@ def run_bot() -> None:
     send_telegram(
         f"🤖 GMO FXボット起動 [{mode_label}]\n"
         f"有効証拠金: {cash_str}\n"
-        f"対象ペア: {', '.join(SYMBOLS)}"
+        f"対象ペア: {', '.join(current_symbols)}"
     )
 
     symbol_params = load_params()
@@ -398,7 +397,7 @@ def run_bot() -> None:
     buy_count  = 0
     sell_count = 0
 
-    for symbol in SYMBOLS:
+    for symbol in current_symbols:
         if symbol not in symbol_params:
             logging.warning(f"{symbol} のパラメータが params.json に存在しません。スキップします。")
             continue
@@ -432,7 +431,7 @@ def run_bot() -> None:
                 summary_lines.append(f"  {symbol}: Polymarket急変決済")
                 continue
 
-            if AI_JUDGMENT_ENABLED:
+            if ai_judgment_enabled:
                 logging.info("Claudeに判断を依頼中...")
                 decision = ask_claude(bars, symbol, symbol_params, poly_signal)
                 logging.info(f"Claudeの判断: {decision['action']} - {decision['reason']}")
@@ -538,6 +537,11 @@ def run_bot() -> None:
             error_msg = f"⚠️ エラー発生\n通貨ペア: {symbol}\n内容: {str(e)}"
             logging.error(error_msg)
             send_telegram(error_msg)
+            # 短時間に連続エラーが発生するのを防ぐため簡易バックオフ
+            try:
+                time.sleep(60)
+            except Exception:
+                pass
 
     # サマリー通知
     if not PAPER_TRADE:
@@ -558,4 +562,5 @@ def run_bot() -> None:
 
 
 if __name__ == "__main__":
+    configure_logging(LOG_FILE)
     run_bot()

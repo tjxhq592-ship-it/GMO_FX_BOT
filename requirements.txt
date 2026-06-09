@@ -13,3 +13,5 @@ streamlit-autorefresh
 loky
 psutil
 dukascopy-python
+filelock
+pytest
