@@ -143,11 +143,11 @@ def _on_open(ws: websocket.WebSocketApp) -> None:
         })
         ws.send(subscribe_msg)
         logging.info(f"  購読開始: {symbol}")
+        time.sleep(0.5)
 
 
 def _on_message(ws: websocket.WebSocketApp, message: str) -> None:
     try:
-        logging.info(f"[RAW] {message[:120]}")
         data = json.loads(message)
         symbol = data.get("symbol")
         if not symbol or symbol not in SYMBOLS:
