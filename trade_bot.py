@@ -154,7 +154,7 @@ def close_position_paper(symbol: str, exit_price: float, reason: str) -> None:
 # ── 市場データ取得 ────────────────────────────────────────────────────────
 def get_market_data(symbol: str, symbol_params: dict) -> object:
     p    = symbol_params[symbol]
-    bars = gmo.get_klines_bulk(symbol, interval=TRADE_INTERVAL, years=1)
+    bars = gmo.get_klines_bulk(symbol, interval=TRADE_INTERVAL, lookback_days=30)
 
     bb_period = p.get("bb_period", 20)
     bb_std    = p.get("bb_std", 2.0)
@@ -352,8 +352,10 @@ def get_position(symbol: str) -> dict | None:
 # ── 高スプレッド時間帯チェック ────────────────────────────────────────────
 def _is_high_spread_period() -> bool:
     now = datetime.now(JST)
-    h = now.hour
-    return 3 <= h < 9
+    # 日曜は週次オープン直後で流動性が低くスプレッドが広いため終日ブロック
+    if now.weekday() == 6:
+        return True
+    return 3 <= now.hour < 9
 
 
 # ── 期限切れ指値注文のキャンセル ──────────────────────────────────────────

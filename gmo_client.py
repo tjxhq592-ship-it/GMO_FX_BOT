@@ -192,29 +192,33 @@ class GmoFxClient:
         symbol: str,
         interval: str = "30min",
         years: int = 2,
+        lookback_days: int | None = None,
         price_type: str = "BID",
     ) -> pd.DataFrame:
-        """複数年分の KLine データを取得して結合する。
+        """複数年分（または指定日数分）の KLine データを取得して結合する。
 
         Parameters
         ----------
-        symbol   : 通貨ペア（例: "USD_JPY"）
-        interval : 足種（1min/5min/15min/30min/1hour/4hour/1day など）
-        years    : 取得年数（直近 N 年分）
+        symbol        : 通貨ペア（例: "USD_JPY"）
+        interval      : 足種（1min/5min/15min/30min/1hour/4hour/1day など）
+        years         : 取得年数（直近 N 年分）。lookback_days が指定された場合は無視。
+        lookback_days : 取得日数（直近 N 日分）。years より優先される。
+                        リアルタイム取引用に小さな値を指定することで API 呼び出しを削減できる。
 
         Note
         ----
         _DAILY_INTERVALS  → 日単位（YYYYMMDD）でリクエスト
         _YEARLY_INTERVALS → 年単位（YYYY）でリクエスト
-        2年分の日単位取得は約730リクエスト。キャッシュが効くため
-        2回目以降は高速。
         """
         frames = []
 
         if interval in self._DAILY_INTERVALS:
             # 日単位で取得（YYYYMMDDフォーマット）
             # ※20231028以降のみ取得可能
-            start   = datetime.now() - timedelta(days=365 * years)
+            if lookback_days is not None:
+                start = datetime.now() - timedelta(days=lookback_days)
+            else:
+                start = datetime.now() - timedelta(days=365 * years)
             start   = max(start, datetime(2023, 10, 28))  # 取扱開始日
             current = start
             while current <= datetime.now():
