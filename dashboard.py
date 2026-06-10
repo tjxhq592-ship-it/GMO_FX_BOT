@@ -241,6 +241,22 @@ def load_log():
 
 # ==================== サイドバーナビゲーション ====================
 
+PAGE_OPTIONS = [
+    "📊 ダッシュボード",
+    "⚙️ 設定",
+    "🚀 バックテスト実行",
+    "🔍 グリッドサーチ",
+    "📝 ペーパートレード",
+    "📋 ログ",
+]
+
+# ブラウザリロード対応: URLクエリパラメータからページインデックスを復元
+_qp_page = st.query_params.get("page", "0")
+try:
+    _page_idx = max(0, min(int(_qp_page), len(PAGE_OPTIONS) - 1))
+except (ValueError, TypeError):
+    _page_idx = 0
+
 with st.sidebar:
     st.title("GMO FX Bot")
     if DASHBOARD_AUTH_ENABLED:
@@ -251,14 +267,13 @@ with st.sidebar:
 
     page = st.radio(
         "メニュー",
-        ["📊 ダッシュボード",
-         "⚙️ 設定",
-         "🚀 バックテスト実行",
-         "🔍 グリッドサーチ",
-         "📝 ペーパートレード",
-         "📋 ログ"],
+        PAGE_OPTIONS,
+        index=_page_idx,
+        key="nav_page",
         label_visibility="collapsed",
     )
+    # タブ選択をURLに同期（ブラウザリロード後も維持）
+    st.query_params["page"] = str(PAGE_OPTIONS.index(page))
 
     st.divider()
 

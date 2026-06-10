@@ -13,6 +13,7 @@ import anthropic
 import requests
 
 from polymarket import get_polymarket_signal
+from economic_calendar import is_near_high_impact_event, build_calendar_context
 from config import (
     GMO_API_KEY, GMO_SECRET_KEY, ANTHROPIC_API_KEY,
     LOG_FILE, PARAMS_FILE, SYMBOLS,
@@ -224,6 +225,7 @@ def ask_claude(bars, symbol: str, symbol_params: dict, poly_signal: dict) -> dic
     ])
 
     poly_context = build_polymarket_context(poly_signal)
+    cal_context  = build_calendar_context(symbol)
 
     atr_now     = latest["ATR"]
     atr_avg     = latest["ATR_avg20"]
@@ -249,6 +251,9 @@ ATR: {atr_now:.5f} / ATR20期間平均: {atr_avg_str}
 【Polymarketマクロ環境】
 {poly_context}
 
+【経済指標カレンダー（今後24h）】
+{cal_context}
+
 ルール：
 - レンジ相場（ATRが平均以下）でのみエントリーを推奨
 - 終値がBB下限を下回り RSI≦{p['rsi_lower']}なら買いシグナル
@@ -256,6 +261,7 @@ ATR: {atr_now:.5f} / ATR20期間平均: {atr_avg_str}
 - 終値がBB中心付近なら決済を検討
 - トレンド相場ではholdを優先すること
 - Polymarketで急変・高確率イベントがある場合はholdすること
+- 経済指標カレンダーで高インパクト指標の前後1時間以内はholdすること
 - FXはレバレッジがあるため特にリスク管理を優先すること
 
 以下のJSON形式のみで回答してください（他の文章は不要）：
@@ -414,6 +420,13 @@ def run_bot() -> None:
             market = get_market_condition(bars)
             logging.info(f"市場環境({symbol}): {market}")
             logging.info(f"Polymarket({symbol}): risk_block={poly_signal['risk_block']}  surge={poly_signal['surge_detected']}")
+            econ_skip, econ_reason = is_near_high_impact_event(
+                symbol,
+                skip_before=_cfg.get("skip_hours_before_event", 1),
+                skip_after=_cfg.get("skip_hours_after_event", 1),
+                impact_levels=_cfg.get("skip_impact_levels", ["High"]),
+            )
+            logging.info(f"経済指標({symbol}): skip={econ_skip}  reason={econ_reason or 'なし'}")
 
             # ポジション保有中に急変検知 → 即決済
             if position and poly_signal.get("surge_detected"):
@@ -461,6 +474,10 @@ def run_bot() -> None:
                     logging.info(f"{symbol} Polymarketリスクブロック: ロングスキップ")
                     summary_lines.append(f"  {symbol}: Polymarketリスクブロックでスキップ")
                     continue
+                if econ_skip:
+                    logging.info(f"{symbol} 経済指標スキップ: {econ_reason}")
+                    summary_lines.append(f"  {symbol}: 経済指標スキップ ({econ_reason})")
+                    continue
                 if _is_high_spread_period():
                     logging.info(f"{symbol} 高スプレッド時間帯: ロングエントリーをスキップ")
                     summary_lines.append(f"  {symbol}: 高スプレッド時間帯スキップ")
@@ -484,6 +501,10 @@ def run_bot() -> None:
                 if should_block_entry(poly_signal):
                     logging.info(f"{symbol} Polymarketリスクブロック: ショートスキップ")
                     summary_lines.append(f"  {symbol}: Polymarketリスクブロックでスキップ")
+                    continue
+                if econ_skip:
+                    logging.info(f"{symbol} 経済指標スキップ: {econ_reason}")
+                    summary_lines.append(f"  {symbol}: 経済指標スキップ ({econ_reason})")
                     continue
                 if _is_high_spread_period():
                     logging.info(f"{symbol} 高スプレッド時間帯: ショートエントリーをスキップ")
