@@ -1,104 +1,104 @@
 {
-  "updated_at": "2026-06-09 11:26:25",
+  "updated_at": "2026-06-10 21:33:42",
   "params": {
-    "USD_JPY": {
-      "bb_period": 15,
-      "bb_std": 2.0,
-      "rsi_period": 14,
-      "rsi_upper": 75,
-      "rsi_lower": 30,
-      "atr_period": 14,
-      "atr_sl_mult": 1.0,
-      "atr_tp_mult": 2.5
-    },
     "EUR_JPY": {
       "bb_period": 30,
-      "bb_std": 1.0,
-      "rsi_period": 14,
-      "rsi_upper": 75,
-      "rsi_lower": 35,
-      "atr_period": 14,
-      "atr_sl_mult": 2.0,
-      "atr_tp_mult": 3.5
-    },
-    "CHF_JPY": {
-      "bb_period": 20,
-      "bb_std": 1.0,
-      "rsi_period": 14,
-      "rsi_upper": 80,
-      "rsi_lower": 35,
-      "atr_period": 14,
-      "atr_sl_mult": 1.0,
-      "atr_tp_mult": 1.5
-    },
-    "AUD_USD": {
-      "bb_period": 30,
-      "bb_std": 1.5,
+      "bb_std": 3.0,
       "rsi_period": 14,
       "rsi_upper": 65,
-      "rsi_lower": 20,
+      "rsi_lower": 30,
       "atr_period": 14,
       "atr_sl_mult": 2.5,
-      "atr_tp_mult": 3.5
+      "atr_tp_mult": 1.5
+    },
+    "CHF_JPY": {
+      "bb_period": 15,
+      "bb_std": 3.0,
+      "rsi_period": 14,
+      "rsi_upper": 70,
+      "rsi_lower": 20,
+      "atr_period": 14,
+      "atr_sl_mult": 1.0,
+      "atr_tp_mult": 2.0
+    },
+    "AUD_USD": {
+      "bb_period": 35,
+      "bb_std": 3.0,
+      "rsi_period": 14,
+      "rsi_upper": 65,
+      "rsi_lower": 25,
+      "atr_period": 14,
+      "atr_sl_mult": 2.5,
+      "atr_tp_mult": 1.5
     },
     "GBP_JPY": {
       "bb_period": 25,
-      "bb_std": 1.0,
+      "bb_std": 3.0,
       "rsi_period": 14,
-      "rsi_upper": 80,
-      "rsi_lower": 35,
+      "rsi_upper": 70,
+      "rsi_lower": 30,
       "atr_period": 14,
-      "atr_sl_mult": 1.5,
-      "atr_tp_mult": 1.5
+      "atr_sl_mult": 2.0,
+      "atr_tp_mult": 2.5
     },
     "GBP_USD": {
       "bb_period": 15,
       "bb_std": 2.0,
       "rsi_period": 14,
-      "rsi_upper": 70,
+      "rsi_upper": 80,
       "rsi_lower": 35,
       "atr_period": 14,
-      "atr_sl_mult": 1.0,
-      "atr_tp_mult": 3.5
+      "atr_sl_mult": 2.0,
+      "atr_tp_mult": 2.5
     },
     "CAD_JPY": {
-      "bb_period": 35,
-      "bb_std": 2.5,
+      "bb_period": 15,
+      "bb_std": 3.0,
       "rsi_period": 14,
       "rsi_upper": 65,
+      "rsi_lower": 20,
+      "atr_period": 14,
+      "atr_sl_mult": 2.5,
+      "atr_tp_mult": 1.5
+    },
+    "AUD_JPY": {
+      "bb_period": 20,
+      "bb_std": 3.0,
+      "rsi_period": 14,
+      "rsi_upper": 70,
       "rsi_lower": 25,
       "atr_period": 14,
       "atr_sl_mult": 2.0,
       "atr_tp_mult": 1.5
     },
-    "AUD_JPY": {
-      "bb_period": 20,
-      "bb_std": 2.0,
-      "rsi_period": 14,
-      "rsi_upper": 80,
-      "rsi_lower": 30,
-      "atr_period": 14,
-      "atr_sl_mult": 2.0,
-      "atr_tp_mult": 2.5
-    },
     "EUR_USD": {
-      "bb_period": 30,
-      "bb_std": 1.5,
+      "bb_period": 10,
+      "bb_std": 1.0,
       "rsi_period": 14,
       "rsi_upper": 80,
       "rsi_lower": 25,
       "atr_period": 14,
       "atr_sl_mult": 2.0,
-      "atr_tp_mult": 2.5
+      "atr_tp_mult": 1.5
     },
     "NZD_JPY": {
-      "bb_period": 10,
-      "bb_std": 1.5,
+      "bb_period": 15,
+      "bb_std": 3.0,
       "rsi_period": 14,
       "rsi_upper": 75,
-      "rsi_lower": 25,
+      "rsi_lower": 35,
       "atr_period": 14,
       "atr_sl_mult": 2.5,
+      "atr_tp_mult": 1.5
+    },
+    "NZD_USD": {
+      "bb_period": 20,
+      "bb_std": 1.0,
+      "rsi_period": 14,
+      "rsi_upper": 80,
+      "rsi_lower": 20,
+      "atr_period": 14,
+      "atr_sl_mult": 2.0,
       "atr_tp_mult": 1.5
     }
   },
@@ -112,9 +112,9 @@
     "HUF_JPY(全パターンでスコア0)",
     "SEK_JPY(全パターンでスコア0)",
     "NOK_SEK(全パターンでスコア0)",
-    "NZD_USD(top_10圏外(score=2.6513))",
-    "MXN_JPY(PF(0.20) < 最小値(0.8))",
-    "ZAR_JPY(PF(0.02) < 最小値(0.8))",
-    "TRY_JPY(全パターンでスコア0)"
+    "USD_JPY(PF(0.77) < 最小値(0.8))",
+    "ZAR_JPY(PF(0.03) < 最小値(0.8))",
+    "TRY_JPY(PF(0.00) < 最小値(0.8))",
+    "MXN_JPY(PF(0.01) < 最小値(0.8))"
   ]
 }

@@ -701,7 +701,7 @@ def show_backtest():
     else:
         if st.button("▶ バックテスト開始", type="primary", key="bt_start"):
             try:
-                proc = _launch_detached(["python", "backtest.py"])
+                proc = _launch_detached([sys.executable, "backtest.py"])
                 pid_data = {
                     "pid":        proc.pid,
                     "started_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -781,7 +781,7 @@ def show_grid_search():
     else:
         if st.button("▶ 開始", type="primary", key="gs_start"):
             try:
-                proc = _launch_detached(["python", "grid_search_runner.py"])
+                proc = _launch_detached([sys.executable, "grid_search_runner.py"])
                 _init_pid = {
                     "pid":        proc.pid,
                     "started_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),

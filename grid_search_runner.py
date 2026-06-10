@@ -56,6 +56,22 @@ from backtest import (
 )
 from backtesting import Backtest
 
+# GPU バックテスト（利用可能な場合のみ）
+_GPU_INIT_ERROR: str = ""
+try:
+    from gpu_backtest import gpu_batch_backtest, is_gpu_available
+    _GPU_AVAILABLE = is_gpu_available()
+    if not _GPU_AVAILABLE:
+        _GPU_INIT_ERROR = "is_gpu_available() が False を返しました"
+except Exception as _e:
+    _GPU_AVAILABLE = False
+    _GPU_INIT_ERROR = str(_e)
+
+if _GPU_AVAILABLE:
+    print("[GPU] RTX GPU 検出: グリッドサーチにGPU加速を使用します", flush=True)
+elif _GPU_INIT_ERROR:
+    print(f"[GPU] 初期化失敗: {_GPU_INIT_ERROR}", flush=True)
+
 PID_FILE      = "grid_search_pid.json"
 PROGRESS_FILE = "grid_search_progress.json"
 RESULTS_FILE  = "grid_search_results.json"
@@ -85,11 +101,108 @@ def get_optimal_workers(symbols: list, max_from_cfg: int = 14) -> int:
 
 # ── 1銘柄のグリッドサーチ（multiprocessing.Process のターゲット関数） ────────
 
+def _search_one_symbol_gpu(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
+                           wft_cutoff, sym_data, sym_train_data,
+                           progress_queue) -> tuple:
+    """GPU を使って1銘柄の全コンボを一括バックテスト。(rows, best_score, best_params, best_row) を返す。"""
+    from gpu_backtest import gpu_batch_backtest
+
+    total_combos = len(combos)
+    commission = calc_commission(symbol, float(sym_data["Close"].iloc[-1]))
+
+    # WFT スライス
+    from backtest import WFT_OFFSET_MONTHS, WF_TEST_MONTHS
+    from dateutil.relativedelta import relativedelta
+    wft_end   = END_DATE - relativedelta(months=WFT_OFFSET_MONTHS)
+    wft_start = wft_end  - relativedelta(months=WF_TEST_MONTHS)
+    sym_wft_data = sym_data[(sym_data.index >= wft_start) & (sym_data.index < wft_end)]
+
+    # コンボを dict リストへ変換
+    params_list = [
+        {
+            "bb_period":   bb_p, "bb_std":      bb_s,
+            "rsi_upper":   rsi_u, "rsi_lower":  rsi_l,
+            "atr_sl_mult": sl_m, "atr_tp_mult": tp_m,
+        }
+        for (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in combos
+    ]
+
+    # IS バックテスト（全コンボ一括）
+    is_results = gpu_batch_backtest(
+        sym_train_data, params_list,
+        initial_cash=INITIAL_CASH, trade_size=0.2, commission=commission,
+    )
+
+    # WFT バックテスト（全コンボ一括、データ不足なら None 扱い）
+    wft_results: list[dict | None]
+    if len(sym_wft_data) >= 20:
+        wft_results = gpu_batch_backtest(
+            sym_wft_data, params_list,
+            initial_cash=INITIAL_CASH, trade_size=0.2, commission=commission,
+        )
+    else:
+        wft_results = [None] * total_combos
+
+    rows:        list  = []
+    best_score:  float = 0.0
+    best_params: dict  = {}
+    best_row:    dict | None = None
+
+    for combo_i, (params_dict, is_s, wft_r) in enumerate(
+            zip(params_list, is_results, wft_results)):
+
+        n          = is_s["n_trades"]
+        pf         = is_s["pf"] or 0.0
+        is_sharpe  = is_s["sharpe"]
+        wft_sharpe = wft_r["sharpe"] if wft_r else float("nan")
+        nan_check  = wft_sharpe != wft_sharpe
+
+        score = 0.0
+        if n >= 50 and not nan_check:
+            score = (
+                wft_sharpe           * wt_wft +
+                max(is_sharpe, 0.0)  * wt_is  +
+                max(pf, 0.0)         * wt_pf  +
+                min(n / 200.0, 1.0)  * wt_trades
+            )
+
+        row = {
+            "symbol":      symbol,
+            "bb_period":   params_dict["bb_period"],
+            "bb_std":      params_dict["bb_std"],
+            "rsi_upper":   params_dict["rsi_upper"],
+            "rsi_lower":   params_dict["rsi_lower"],
+            "atr_sl_mult": params_dict["atr_sl_mult"],
+            "atr_tp_mult": params_dict["atr_tp_mult"],
+            "n_trades":    n,
+            "pf":          is_s["pf"],
+            "is_sharpe":   is_sharpe,
+            "wft_sharpe":  wft_r["sharpe"] if wft_r else None,
+            "score":       round(score, 4),
+        }
+        rows.append(row)
+
+        if score > best_score:
+            best_score  = score
+            best_params = {**params_dict, "rsi_period": 14, "atr_period": 14}
+            best_row    = row
+
+        # 進捗通知（全完了時のみ）
+        if combo_i == total_combos - 1:
+            try:
+                progress_queue.put((symbol, total_combos, total_combos,
+                                    round(best_score, 4)))
+            except Exception:
+                pass
+
+    return rows, best_score, best_params, best_row
+
+
 def search_one_symbol(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
                       wft_cutoff_ts, progress_file_base, result_queue,
                       progress_queue):
-    """1銘柄の全コンボをシングルスレッドで処理し、結果を result_queue に put する。
-    進捗は progress_queue 経由でメインプロセスに送り、メインプロセスが一元書き込みする。
+    """1銘柄の全コンボを処理し、結果を result_queue に put する。
+    GPU が利用可能な場合は一括GPU処理、それ以外はCPU逐次処理。
     multiprocessing.Process(target=...) から別プロセスで実行される。
     """
     # Windows DETACHED_PROCESS 対応
@@ -123,49 +236,69 @@ def search_one_symbol(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
     best_row:    dict | None = None
     total_combos = len(combos)
 
-    # ── 全コンボを順次実行 ──────────────────────────────────────────────────
-    for combo_i, (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in enumerate(combos):
-        params_dict = {
-            "bb_period":   bb_p,  "bb_std":      bb_s,
-            "rsi_period":  14,    "rsi_upper":   rsi_u,
-            "rsi_lower":   rsi_l, "atr_period":  14,
-            "atr_sl_mult": sl_m,  "atr_tp_mult": tp_m,
-        }
-        task_args = (combo_i, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
-                     symbol, sym_data, sym_train_data)
+    # ── GPU 一括処理 ────────────────────────────────────────────────────────
+    use_gpu = False
+    try:
+        from gpu_backtest import is_gpu_available
+        use_gpu = is_gpu_available()
+    except Exception:
+        pass
+
+    if use_gpu:
         try:
-            _, params_dict, is_s, wft_r, score, err = _worker_task(task_args)
-        except Exception:
-            continue
+            print(f"[{symbol}] GPU一括処理開始", flush=True)
+            rows, best_score, best_params, best_row = _search_one_symbol_gpu(
+                symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
+                wft_cutoff, sym_data, sym_train_data, progress_queue,
+            )
+            print(f"[{symbol}] GPU処理完了 ベスト={best_score:.4f}", flush=True)
+        except Exception as e:
+            print(f"[{symbol}] GPU処理失敗、CPUにフォールバック: {e}", flush=True)
+            use_gpu = False
 
-        row = {
-            "symbol":      symbol,
-            "bb_period":   params_dict.get("bb_period"),
-            "bb_std":      params_dict.get("bb_std"),
-            "rsi_upper":   params_dict.get("rsi_upper"),
-            "rsi_lower":   params_dict.get("rsi_lower"),
-            "atr_sl_mult": params_dict.get("atr_sl_mult"),
-            "atr_tp_mult": params_dict.get("atr_tp_mult"),
-            "n_trades":    is_s["n_trades"] if is_s else 0,
-            "pf":          is_s["pf"]       if is_s else None,
-            "is_sharpe":   is_s["sharpe"]   if is_s else None,
-            "wft_sharpe":  wft_r["sharpe"]  if wft_r else None,
-            "score":       round(score, 4),
-        }
-        rows.append(row)
-
-        if score > best_score:
-            best_score  = score
-            best_params = params_dict
-            best_row    = row
-
-        # 500コンボごと（および最終コンボ）に progress_queue で進捗を送信
-        if combo_i % 500 == 0 or combo_i == total_combos - 1:
+    # ── CPU 逐次処理（フォールバック） ──────────────────────────────────────
+    if not use_gpu:
+        for combo_i, (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in enumerate(combos):
+            params_dict = {
+                "bb_period":   bb_p,  "bb_std":      bb_s,
+                "rsi_period":  14,    "rsi_upper":   rsi_u,
+                "rsi_lower":   rsi_l, "atr_period":  14,
+                "atr_sl_mult": sl_m,  "atr_tp_mult": tp_m,
+            }
+            task_args = (combo_i, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
+                         symbol, sym_data, sym_train_data)
             try:
-                progress_queue.put((symbol, combo_i + 1, total_combos,
-                                    round(best_score, 4)))
+                _, params_dict, is_s, wft_r, score, err = _worker_task(task_args)
             except Exception:
-                pass
+                continue
+
+            row = {
+                "symbol":      symbol,
+                "bb_period":   params_dict.get("bb_period"),
+                "bb_std":      params_dict.get("bb_std"),
+                "rsi_upper":   params_dict.get("rsi_upper"),
+                "rsi_lower":   params_dict.get("rsi_lower"),
+                "atr_sl_mult": params_dict.get("atr_sl_mult"),
+                "atr_tp_mult": params_dict.get("atr_tp_mult"),
+                "n_trades":    is_s["n_trades"] if is_s else 0,
+                "pf":          is_s["pf"]       if is_s else None,
+                "is_sharpe":   is_s["sharpe"]   if is_s else None,
+                "wft_sharpe":  wft_r["sharpe"]  if wft_r else None,
+                "score":       round(score, 4),
+            }
+            rows.append(row)
+
+            if score > best_score:
+                best_score  = score
+                best_params = params_dict
+                best_row    = row
+
+            if combo_i % 500 == 0 or combo_i == total_combos - 1:
+                try:
+                    progress_queue.put((symbol, combo_i + 1, total_combos,
+                                        round(best_score, 4)))
+                except Exception:
+                    pass
 
     result_queue.put({
         "symbol":      symbol,
@@ -829,6 +962,16 @@ def main(debug: bool = False) -> None:
         max_workers_cfg = int(gs_cfg.get("max_workers", 4))
         max_workers     = get_optimal_workers(symbols, max_workers_cfg)
         log(f"=== プランB: 1コア1銘柄の並列グリッドサーチ ===")
+        if _GPU_AVAILABLE:
+            try:
+                import cupy as cp
+                gpu_name = cp.cuda.Device(0).attributes.get("DeviceName", b"GPU").decode()
+            except Exception:
+                gpu_name = "GPU"
+            log(f"[GPU] {gpu_name} 検出: 各銘柄のバックテストをGPUで一括実行します")
+        else:
+            reason = f": {_GPU_INIT_ERROR}" if _GPU_INIT_ERROR else ""
+            log(f"[GPU] GPUが利用できません。CPUで実行します{reason}")
         log(f"対象ペア ({len(symbols)}件): {symbols}")
         log(f"ワーカー数: {max_workers}  (CPU={os.cpu_count()} / "
             f"使用率={psutil.cpu_percent():.0f}% / MEM={psutil.virtual_memory().percent:.0f}%)")
@@ -952,7 +1095,8 @@ def main(debug: bool = False) -> None:
                                 best_score  = sym_best_score
                                 best_params = {**sym_best_params, "symbol": symbol}
 
-                            log(f"[{symbol}] 完了 ({completed_syms_count}/{len(symbols)})  "
+                            mode_tag = "[GPU]" if _GPU_AVAILABLE else "[CPU]"
+                            log(f"{mode_tag} [{symbol}] 完了 ({completed_syms_count}/{len(symbols)})  "
                                 f"ベスト={sym_best_score:.4f}  コンボ={len(sym_rows)}/{len(combos)}")
 
                             completed_symbols[symbol] = {
