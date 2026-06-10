@@ -147,6 +147,7 @@ def _on_open(ws: websocket.WebSocketApp) -> None:
 
 def _on_message(ws: websocket.WebSocketApp, message: str) -> None:
     try:
+        logging.info(f"[RAW] {message[:120]}")
         data = json.loads(message)
         symbol = data.get("symbol")
         if not symbol or symbol not in SYMBOLS:
@@ -157,8 +158,6 @@ def _on_message(ws: websocket.WebSocketApp, message: str) -> None:
         if ask is None or bid is None:
             return
         current_price = (float(ask) + float(bid)) / 2.0
-
-        logging.info(f"[DEBUG] tick symbol={symbol} mid={current_price:.5f}")
 
         _check_sl_tp(symbol, current_price)
 
