@@ -117,10 +117,24 @@ def _append_paper_log(trade: dict) -> None:
 
 
 def close_position_paper(symbol: str, exit_price: float, reason: str) -> None:
-    """ペーパーポジションを決済して損益を通知し、ログに記録する。"""
-    pos = load_paper_position(symbol)
+    """ペーパーポジションを決済して損益を通知し、ログに記録する。
+    ws_monitor と run_bot() の同時呼び出しを防ぐため、削除を先行してアトミックに実行する。
+    """
+    # 先に削除してポジションを取得。他スレッドが先に削除済みなら pos=None で即リターン
+    removed = [None]
+
+    def _remove_if_exists(curr: dict) -> dict:
+        if not curr:
+            return curr or {}
+        removed[0] = curr.get(symbol)
+        curr.pop(symbol, None)
+        return curr
+
+    locked_update_json(PAPER_POSITIONS_FILE, _remove_if_exists, default={})
+    pos = removed[0]
     if not pos:
         return
+
     pnl = (exit_price - pos["entry_price"]) * pos["size"] * 1000
     if pos["side"] == "SELL":
         pnl = -pnl
@@ -142,13 +156,6 @@ def close_position_paper(symbol: str, exit_price: float, reason: str) -> None:
         "pnl":         round(pnl, 2),
         "reason":      reason,
     })
-    def _remover(curr: dict) -> dict:
-        if not curr:
-            return {}
-        curr.pop(symbol, None)
-        return curr
-
-    locked_update_json(PAPER_POSITIONS_FILE, _remover, default={})
 
 
 # ── 市場データ取得 ────────────────────────────────────────────────────────
@@ -391,12 +398,6 @@ def run_bot() -> None:
         cash     = gmo.get_cash_jpy()
         cash_str = f"¥{cash:,.0f}"
 
-    send_telegram(
-        f"🤖 GMO FXボット起動 [{mode_label}]\n"
-        f"有効証拠金: {cash_str}\n"
-        f"対象ペア: {', '.join(current_symbols)}"
-    )
-
     symbol_params = load_params()
     logging.info(f"パラメータ読み込み完了: {list(symbol_params.keys())}")
 
@@ -566,22 +567,10 @@ def run_bot() -> None:
             except Exception:
                 pass
 
-    # サマリー通知
-    if not PAPER_TRADE:
-        cash = gmo.get_cash_jpy()
-        cash_str = f"¥{cash:,.0f}"
-    else:
-        cash_str = "（ペーパー）"
-
-    summary = (
-        f"📊 {'[PAPER] ' if PAPER_TRADE else ''}本日のサマリー\n"
-        f"有効証拠金: {cash_str}\n"
-        f"買い注文: {buy_count}件\n"
-        f"決済注文: {sell_count}件\n"
-        f"取引詳細:\n" + "\n".join(summary_lines)
+    logging.info(
+        f"=== ボット終了 買い:{buy_count}件 決済:{sell_count}件 ==="
+        + "".join(f"\n{l}" for l in summary_lines)
     )
-    send_telegram(summary)
-    logging.info("=== ボット終了 ===")
 
 
 if __name__ == "__main__":

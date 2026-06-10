@@ -126,9 +126,12 @@ def _read_bt_config() -> dict:
 def main() -> None:
     _cfg      = _read_bt_config()
     _symbols  = _cfg.get("active_symbols", _cfg.get("symbols", SYMBOLS))
-    now_jst   = datetime.now(JST)
-    next_hour = now_jst.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-    next_str  = next_hour.strftime("%H:%M")
+    now_jst  = datetime.now(JST)
+    if now_jst.minute < 30:
+        next_run = now_jst.replace(minute=30, second=0, microsecond=0)
+    else:
+        next_run = now_jst.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+    next_str = next_run.strftime("%H:%M")
     pairs     = " / ".join(_symbols)
 
     if PAPER_TRADE:
