@@ -138,6 +138,18 @@ def stop_bot():
 
 st.set_page_config(page_title="GMO FX Bot Dashboard", layout="wide")
 
+# ブラウザの翻訳ダイアログを抑制（Streamlit が lang="en" を出力するため上書き）
+st.markdown("""
+<script>
+    (function() {
+        var h = document.documentElement;
+        h.setAttribute('lang', 'ja');
+        h.setAttribute('translate', 'no');
+        h.classList.add('notranslate');
+    })();
+</script>
+""", unsafe_allow_html=True)
+
 # ===== 認証ゲート =====
 _ALLOWED_USERS = {"tjxhq592@gmail.com"}
 
