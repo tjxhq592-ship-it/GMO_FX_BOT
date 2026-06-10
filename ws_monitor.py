@@ -158,8 +158,7 @@ def _on_message(ws: websocket.WebSocketApp, message: str) -> None:
             return
         current_price = (float(ask) + float(bid)) / 2.0
 
-        if symbol == "CHF_JPY":
-            logging.info(f"[DEBUG] CHF_JPY tick ask={ask} bid={bid} mid={current_price:.5f}")
+        logging.info(f"[DEBUG] tick symbol={symbol} mid={current_price:.5f}")
 
         _check_sl_tp(symbol, current_price)
 
