@@ -95,7 +95,8 @@ MIN_TRADES       = int(_cfg.get("min_trades",     200))
 PF_THRESHOLD     = float(_cfg.get("min_pf",       1.2))
 SHARPE_THRESHOLD = float(_cfg.get("min_wft_sharpe", 0.0))
 
-INTERVAL            = _cfg.get("interval", "30min")
+_interval_raw = _cfg.get("interval", "30min")
+INTERVAL      = _interval_raw[0] if isinstance(_interval_raw, list) else _interval_raw
 DATA_SOURCE         = _cfg.get("data_source", "gmo")           # "gmo" or "dukascopy"
 DUKASCOPY_START_YR  = int(_cfg.get("dukascopy_start_year", 2016))
 INITIAL_CASH = 1_000_000  # 円（固定）
@@ -164,14 +165,16 @@ _gmo_client = GmoFxClient(GMO_API_KEY, GMO_SECRET_KEY)
 bt_logger = logging.getLogger("backtest")
 
 # === データキャッシュ ===
-def _cache_path(symbol: str) -> str:
+def _cache_path(symbol: str, interval: str = INTERVAL) -> str:
     """シンボル単位のキャッシュパス（ソース+interval 別ディレクトリ・TTL で鮮度管理）"""
-    key = f"{DATA_SOURCE}_{symbol}_{INTERVAL}"
-    return os.path.join(CACHE_DIR, hashlib.md5(key.encode()).hexdigest() + ".pkl")
+    key = f"{DATA_SOURCE}_{symbol}_{interval}"
+    cache_dir = os.path.join(".cache", DATA_SOURCE, interval)
+    os.makedirs(cache_dir, exist_ok=True)
+    return os.path.join(cache_dir, hashlib.md5(key.encode()).hexdigest() + ".pkl")
 
-def _download_gmo(symbol: str) -> pd.DataFrame:
-    """GMO KLine API から直近データを取得して返す（interval は INTERVAL 定数に従う）"""
-    df = _gmo_client.get_klines_bulk(symbol, interval=INTERVAL, years=2)
+def _download_gmo(symbol: str, interval: str = INTERVAL) -> pd.DataFrame:
+    """GMO KLine API から直近データを取得して返す"""
+    df = _gmo_client.get_klines_bulk(symbol, interval=interval, years=2)
     if df.empty:
         raise ValueError(f"{symbol}: GMO APIからデータ取得失敗")
     # backtesting ライブラリ用に列名を大文字化
@@ -183,32 +186,31 @@ def _download_gmo(symbol: str) -> pd.DataFrame:
     df = df[["Open", "High", "Low", "Close", "Volume"]]
     return df.dropna(subset=["Open", "High", "Low", "Close"])
 
-def _download_dukascopy(symbol: str) -> pd.DataFrame:
+def _download_dukascopy(symbol: str, interval: str = INTERVAL) -> pd.DataFrame:
     """Dukascopy から履歴データを取得して返す（キャッシュは get_historical_data が管理）"""
     from dukascopy_fetcher import fetch_dukascopy
     return fetch_dukascopy(
         symbol,
-        interval=INTERVAL,
+        interval=interval,
         start_year=DUKASCOPY_START_YR,
         use_cache=False,   # キャッシュは下の get_historical_data が一括管理
     )
 
-def get_historical_data(symbol: str) -> pd.DataFrame:
+def get_historical_data(symbol: str, interval: str = INTERVAL) -> pd.DataFrame:
     """バックテスト用データを取得（TTLキャッシュ付き）
 
     data_source 設定に応じて GMO API / Dukascopy を切り替える。
     キャッシュは .cache/{source}/{interval}/ に保存。
     """
-    os.makedirs(CACHE_DIR, exist_ok=True)
-    path = _cache_path(symbol)
+    path = _cache_path(symbol, interval)
     if os.path.exists(path) and time.time() - os.path.getmtime(path) < CACHE_TTL:
         with open(path, "rb") as f:
             return pickle.load(f)
 
     if DATA_SOURCE == "dukascopy":
-        df = _download_dukascopy(symbol)
+        df = _download_dukascopy(symbol, interval)
     else:
-        df = _download_gmo(symbol)
+        df = _download_gmo(symbol, interval)
 
     with open(path, "wb") as f:
         pickle.dump(df, f)
@@ -289,6 +291,7 @@ def _extract_stats(stats):
 
 # === ウォークフォワードテスト ===
 def walk_forward_test(data, params_dict, symbol: str = ""):
+    params_dict = {k: v for k, v in params_dict.items() if k != "interval"}
     # WFT 期間: END_DATE から wft_offset_months 遡った時点を終端とする
     # 例: offset=2, test=2 → END-4ヶ月 〜 END-2ヶ月
     wft_end   = END_DATE - relativedelta(months=WFT_OFFSET_MONTHS)
@@ -305,6 +308,7 @@ def walk_forward_test(data, params_dict, symbol: str = ""):
 # === フォワードテスト ===
 def run_forward_test(symbol, params_dict):
     """FW_START_DATE〜FW_END_DATE で最適パラメータをそのまま適用"""
+    params_dict = {k: v for k, v in params_dict.items() if k != "interval"}
     try:
         fw_data = get_forward_data(symbol)
     except Exception:
@@ -331,9 +335,11 @@ def optimize_symbol(symbol, idx, total, wft_cutoff, saved_params):
         raise ValueError(f"{symbol} のパラメータが params.json に存在しません")
 
     params_dict = saved_params[symbol]
+    symbol_interval = params_dict.get("interval", INTERVAL)
+    bt_params = {k: v for k, v in params_dict.items() if k != "interval"}
 
     print(f"{tag} データ取得中...")
-    data = get_historical_data(symbol)
+    data = get_historical_data(symbol, interval=symbol_interval)
     print(f"  データ: {len(data)}件 ({data.index[0]} 〜 {data.index[-1]})")
 
     # IS バックテスト（全期間データで run）
@@ -341,7 +347,7 @@ def optimize_symbol(symbol, idx, total, wft_cutoff, saved_params):
     _price = float(data["Close"].iloc[-1])
     bt_full = Backtest(data, ImprovedStrategy, cash=INITIAL_CASH,
                        commission=calc_commission(symbol, _price))
-    stats_full = bt_full.run(**params_dict)
+    stats_full = bt_full.run(**bt_params)
     is_stats = _extract_stats(stats_full)
 
     # エクイティカーブ
@@ -351,7 +357,7 @@ def optimize_symbol(symbol, idx, total, wft_cutoff, saved_params):
 
     # WFT（直近 WF_TEST_MONTHS だけで run）
     print(f"{tag} WFTテスト中...")
-    wft_result = walk_forward_test(data, params_dict, symbol=symbol)
+    wft_result = walk_forward_test(data, bt_params, symbol=symbol)
 
     pf_str  = f"{is_stats['pf']:.2f}"       if is_stats["pf"] is not None else "N/A"
     wft_str = f"{wft_result['sharpe']:.2f}" if wft_result is not None     else "N/A"
@@ -452,19 +458,21 @@ def grid_search_job(config: dict, score_weights: dict) -> list:
 
     symbols = config.get("symbols", SYMBOLS)
 
-    bb_cfg   = config.get("bb_period", {"min": 10, "max": 30, "step": 5})
-    bb_stds  = config.get("bb_std",    [1.0, 1.5, 2.0, 2.5])
-    ru_cfg   = config.get("rsi_upper", {"min": 60, "max": 75, "step": 5})
-    rl_cfg   = config.get("rsi_lower", {"min": 25, "max": 40, "step": 5})
-    sl_mults = config.get("atr_sl_mult", [1.5, 2.0])
-    tp_mults = config.get("atr_tp_mult", [2.0, 2.5])
+    bb_cfg      = config.get("bb_period",  {"min": 10, "max": 30, "step": 5})
+    bb_stds     = config.get("bb_std",     [1.0, 1.5, 2.0, 2.5])
+    ru_cfg      = config.get("rsi_upper",  {"min": 60, "max": 75, "step": 5})
+    rl_cfg      = config.get("rsi_lower",  {"min": 25, "max": 40, "step": 5})
+    sl_mults    = config.get("atr_sl_mult", [1.5, 2.0])
+    tp_mults    = config.get("atr_tp_mult", [2.0, 2.5])
+    rsi_periods = config.get("rsi_period", [14])
+    atr_periods = config.get("atr_period", [14])
 
     bb_periods  = list(range(bb_cfg["min"], bb_cfg["max"] + 1, bb_cfg.get("step", 5)))
     rsi_uppers  = list(range(ru_cfg["min"], ru_cfg["max"] + 1, ru_cfg.get("step", 5)))
     rsi_lowers  = list(range(rl_cfg["min"], rl_cfg["max"] + 1, rl_cfg.get("step", 5)))
 
     combos = list(itertools.product(
-        bb_periods, bb_stds, rsi_uppers, rsi_lowers, sl_mults, tp_mults
+        bb_periods, bb_stds, rsi_periods, rsi_uppers, rsi_lowers, atr_periods, sl_mults, tp_mults
     ))
     total   = len(combos) * len(symbols)
     current = 0
@@ -489,15 +497,15 @@ def grid_search_job(config: dict, score_weights: dict) -> list:
             current += len(combos)
             continue
 
-        for (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in combos:
+        for (bb_p, bb_s, rsi_p, rsi_u, rsi_l, atr_p, sl_m, tp_m) in combos:
             current += 1
             params_dict = {
                 "bb_period":   bb_p,
                 "bb_std":      bb_s,
-                "rsi_period":  14,
+                "rsi_period":  rsi_p,
                 "rsi_upper":   rsi_u,
                 "rsi_lower":   rsi_l,
-                "atr_period":  14,
+                "atr_period":  atr_p,
                 "atr_sl_mult": sl_m,
                 "atr_tp_mult": tp_m,
             }
@@ -536,8 +544,10 @@ def grid_search_job(config: dict, score_weights: dict) -> list:
                 "symbol":      symbol,
                 "bb_period":   bb_p,
                 "bb_std":      bb_s,
+                "rsi_period":  rsi_p,
                 "rsi_upper":   rsi_u,
                 "rsi_lower":   rsi_l,
+                "atr_period":  atr_p,
                 "atr_sl_mult": sl_m,
                 "atr_tp_mult": tp_m,
                 "n_trades":    is_s["n_trades"]  if is_s else 0,

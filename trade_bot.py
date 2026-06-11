@@ -44,9 +44,13 @@ def _load_bt_config() -> dict:
     except Exception:
         return {}
 
-_bt_cfg        = _load_bt_config()
-PAPER_TRADE    = _bt_cfg.get("paper_trade", True)
-TRADE_INTERVAL = _bt_cfg.get("interval", "30min")
+_bt_cfg     = _load_bt_config()
+PAPER_TRADE = _bt_cfg.get("paper_trade", True)
+
+# 足種の分数マッピング（キャンドルアライメントチェック用）
+_INTERVAL_MINUTES: dict[str, int] = {
+    "1min": 1, "5min": 5, "10min": 10, "15min": 15, "30min": 30, "1hour": 60,
+}
 
 
 # ── パラメータ読み込み ────────────────────────────────────────────────────
@@ -159,9 +163,9 @@ def close_position_paper(symbol: str, exit_price: float, reason: str) -> None:
 
 
 # ── 市場データ取得 ────────────────────────────────────────────────────────
-def get_market_data(symbol: str, symbol_params: dict) -> object:
+def get_market_data(symbol: str, symbol_params: dict, interval: str = "30min") -> object:
     p    = symbol_params[symbol]
-    bars = gmo.get_klines_bulk(symbol, interval=TRADE_INTERVAL, lookback_days=30)
+    bars = gmo.get_klines_bulk(symbol, interval=interval, lookback_days=30)
 
     bb_period = p.get("bb_period", 20)
     bb_std    = p.get("bb_std", 2.0)
@@ -196,6 +200,67 @@ def build_polymarket_context(signal: dict) -> str:
 
 def should_block_entry(signal: dict) -> bool:
     return signal.get("risk_block", False) or signal.get("surge_detected", False)
+
+
+# ── テクニカル判断詳細ログ（動作検証用） ───────────────────────────────────
+def _log_technical_detail(symbol: str, bars, p: dict) -> None:
+    """エントリー判断時のテクニカル指標値と条件判定を詳細ログ出力する。"""
+    import pandas as pd
+    latest = bars.iloc[-1]
+
+    price    = float(latest["close"])
+    bb_upper = float(latest["BB_upper"])
+    bb_mid   = float(latest["BB_mid"])
+    bb_lower = float(latest["BB_lower"])
+    rsi      = float(latest["RSI"])
+    atr      = float(latest["ATR"])
+    atr_avg  = latest["ATR_avg20"]
+    atr_avg_f = float(atr_avg) if pd.notna(atr_avg) else None
+
+    rsi_upper = p.get("rsi_upper", 70)
+    rsi_lower = p.get("rsi_lower", 30)
+    bb_period = p.get("bb_period", 20)
+    bb_std    = p.get("bb_std", 2.0)
+    rsi_period = p.get("rsi_period", 14)
+    atr_range_mult = p.get("atr_range_mult", 1.0)
+
+    # BB 位置判定
+    if price > bb_upper:
+        bb_pos = f"BB上限超え(+{price - bb_upper:.5f})"
+    elif price < bb_lower:
+        bb_pos = f"BB下限割れ(-{bb_lower - price:.5f})"
+    else:
+        bb_pos = f"BB内({(price - bb_lower) / (bb_upper - bb_lower) * 100:.0f}%位置)"
+
+    # RSI 判定
+    if rsi >= rsi_upper:
+        rsi_cond = f"買われすぎ(>={rsi_upper})"
+    elif rsi <= rsi_lower:
+        rsi_cond = f"売られすぎ(<={rsi_lower})"
+    else:
+        rsi_cond = f"中立({rsi_lower}〜{rsi_upper}の範囲)"
+
+    # ATR 判定
+    if atr_avg_f is not None:
+        atr_ratio = atr / atr_avg_f
+        in_range  = atr < atr_avg_f * atr_range_mult
+        atr_cond  = f"{'レンジ' if in_range else 'トレンド'}(ATR/AVG={atr_ratio:.2f})"
+    else:
+        atr_cond = "N/A(ATR平均未計算)"
+
+    # シグナル判定
+    buy_signal  = price < bb_lower and rsi <= rsi_lower
+    sell_signal = price > bb_upper and rsi >= rsi_upper
+
+    logging.info(
+        f"[TECH] {symbol} ===\n"
+        f"  価格     : {price:.5f}\n"
+        f"  BB({bb_period},{bb_std}) : 上={bb_upper:.5f}  中={bb_mid:.5f}  下={bb_lower:.5f}  → {bb_pos}\n"
+        f"  RSI({rsi_period})  : {rsi:.1f}  → {rsi_cond}\n"
+        f"  ATR      : {atr:.5f}  AVG={f'{atr_avg_f:.5f}' if atr_avg_f else 'N/A'}  → {atr_cond}\n"
+        f"  シグナル  : {'✅BUY' if buy_signal else '✅SELL' if sell_signal else '⏸ HOLD'}"
+        f"  (BB下限割れ&RSI売られすぎ={buy_signal}  BB上限超え&RSI買われすぎ={sell_signal})"
+    )
 
 
 # ── Claude API 失敗時のフォールバック判断 ────────────────────────────────
@@ -412,16 +477,25 @@ def run_bot() -> None:
 
         logging.info(f"--- {symbol} ---")
         p = symbol_params[symbol]
+        symbol_interval = p.get("interval", "30min")
+
+        # キャンドルアライメントチェック: 当該足種のクローズ時刻以外はスキップ
+        interval_min = _INTERVAL_MINUTES.get(symbol_interval, 30)
+        now_jst = datetime.now(JST)
+        if now_jst.minute % interval_min != 0:
+            logging.debug(f"{symbol} スキップ: {symbol_interval} 境界外 ({now_jst.strftime('%H:%M')})")
+            continue
 
         try:
             _cancel_stale_orders(symbol)
 
-            bars        = get_market_data(symbol, symbol_params)
+            bars        = get_market_data(symbol, symbol_params, interval=symbol_interval)
             position    = get_position(symbol)
             poly_signal = get_polymarket_signal(symbol)
 
             market = get_market_condition(bars)
             logging.info(f"市場環境({symbol}): {market}")
+            _log_technical_detail(symbol, bars, p)
             logging.info(f"Polymarket({symbol}): risk_block={poly_signal['risk_block']}  surge={poly_signal['surge_detected']}")
             econ_skip, econ_reason = is_near_high_impact_event(
                 symbol,

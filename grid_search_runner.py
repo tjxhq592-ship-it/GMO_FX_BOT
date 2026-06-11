@@ -103,7 +103,7 @@ def get_optimal_workers(symbols: list, max_from_cfg: int = 14) -> int:
 
 def _search_one_symbol_gpu(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
                            wft_cutoff, sym_data, sym_train_data,
-                           progress_queue) -> tuple:
+                           progress_queue, interval: str = "30min") -> tuple:
     """GPU を使って1銘柄の全コンボを一括バックテスト。(rows, best_score, best_params, best_row) を返す。"""
     from gpu_backtest import gpu_batch_backtest
 
@@ -117,14 +117,14 @@ def _search_one_symbol_gpu(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
     wft_start = wft_end  - relativedelta(months=WF_TEST_MONTHS)
     sym_wft_data = sym_data[(sym_data.index >= wft_start) & (sym_data.index < wft_end)]
 
-    # コンボを dict リストへ変換
+    # コンボを dict リストへ変換（rsi_period/atr_period を含む8タプル）
     params_list = [
         {
             "bb_period":   bb_p, "bb_std":      bb_s,
-            "rsi_upper":   rsi_u, "rsi_lower":  rsi_l,
-            "atr_sl_mult": sl_m, "atr_tp_mult": tp_m,
+            "rsi_period":  rsi_p, "rsi_upper":   rsi_u, "rsi_lower":  rsi_l,
+            "atr_period":  atr_p, "atr_sl_mult": sl_m,  "atr_tp_mult": tp_m,
         }
-        for (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in combos
+        for (bb_p, bb_s, rsi_p, rsi_u, rsi_l, atr_p, sl_m, tp_m) in combos
     ]
 
     # IS バックテスト（全コンボ一括）
@@ -168,10 +168,13 @@ def _search_one_symbol_gpu(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
 
         row = {
             "symbol":      symbol,
+            "interval":    interval,
             "bb_period":   params_dict["bb_period"],
             "bb_std":      params_dict["bb_std"],
+            "rsi_period":  params_dict.get("rsi_period", 14),
             "rsi_upper":   params_dict["rsi_upper"],
             "rsi_lower":   params_dict["rsi_lower"],
+            "atr_period":  params_dict.get("atr_period", 14),
             "atr_sl_mult": params_dict["atr_sl_mult"],
             "atr_tp_mult": params_dict["atr_tp_mult"],
             "n_trades":    n,
@@ -184,7 +187,7 @@ def _search_one_symbol_gpu(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
 
         if score > best_score:
             best_score  = score
-            best_params = {**params_dict, "rsi_period": 14, "atr_period": 14}
+            best_params = dict(params_dict)
             best_row    = row
 
         # 進捗通知（全完了時のみ）
@@ -200,43 +203,32 @@ def _search_one_symbol_gpu(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
 
 def search_one_symbol(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
                       wft_cutoff_ts, progress_file_base, result_queue,
-                      progress_queue):
+                      progress_queue, intervals=None):
     """1銘柄の全コンボを処理し、結果を result_queue に put する。
     GPU が利用可能な場合は一括GPU処理、それ以外はCPU逐次処理。
+    intervals リストが渡された場合は各足種ごとにデータを再取得して処理し、
+    全足種中のベストスコアを採用する。
     multiprocessing.Process(target=...) から別プロセスで実行される。
     """
     # Windows DETACHED_PROCESS 対応
     _ensure_valid_stream("stdout")
     _ensure_valid_stream("stderr")
 
-    print(f"[{symbol}] 処理開始 コンボ数: {len(combos)}", flush=True)
+    if not intervals:
+        intervals = ["30min"]
+
+    total_combos = len(combos)
+    print(f"[{symbol}] 処理開始 コンボ数: {total_combos} × {len(intervals)}足種", flush=True)
 
     from datetime import datetime as _dt
     wft_cutoff = _dt.fromtimestamp(wft_cutoff_ts)
 
-    # ── データ取得 ──────────────────────────────────────────────────────────
-    try:
-        sym_data       = get_historical_data(symbol)
-        sym_train_data = sym_data[sym_data.index < wft_cutoff]
-        print(f"[{symbol}] データ取得完了 {len(sym_data)}件", flush=True)
-    except Exception as e:
-        result_queue.put({
-            "symbol":      symbol,
-            "error":       str(e),
-            "rows":        [],
-            "best_score":  0.0,
-            "best_params": {},
-            "best_row":    None,
-        })
-        return
-
-    rows:        list  = []
-    best_score:  float = 0.0
-    best_params: dict  = {}
+    rows:        list        = []
+    best_score:  float       = 0.0
+    best_params: dict        = {}
     best_row:    dict | None = None
-    total_combos = len(combos)
 
-    # ── GPU 一括処理 ────────────────────────────────────────────────────────
+    # GPU 利用可否は一度だけ判定
     use_gpu = False
     try:
         from gpu_backtest import is_gpu_available
@@ -244,61 +236,101 @@ def search_one_symbol(symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
     except Exception:
         pass
 
-    if use_gpu:
+    any_data_ok = False
+
+    for interval in intervals:
+        # ── データ取得 ────────────────────────────────────────────────────
         try:
-            print(f"[{symbol}] GPU一括処理開始", flush=True)
-            rows, best_score, best_params, best_row = _search_one_symbol_gpu(
-                symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
-                wft_cutoff, sym_data, sym_train_data, progress_queue,
-            )
-            print(f"[{symbol}] GPU処理完了 ベスト={best_score:.4f}", flush=True)
+            sym_data       = get_historical_data(symbol, interval=interval)
+            sym_train_data = sym_data[sym_data.index < wft_cutoff]
+            print(f"[{symbol}] {interval} データ取得完了 {len(sym_data)}件", flush=True)
+            any_data_ok = True
         except Exception as e:
-            print(f"[{symbol}] GPU処理失敗、CPUにフォールバック: {e}", flush=True)
-            use_gpu = False
+            print(f"[{symbol}] {interval} データ取得失敗: {e}", flush=True)
+            continue
 
-    # ── CPU 逐次処理（フォールバック） ──────────────────────────────────────
-    if not use_gpu:
-        for combo_i, (bb_p, bb_s, rsi_u, rsi_l, sl_m, tp_m) in enumerate(combos):
-            params_dict = {
-                "bb_period":   bb_p,  "bb_std":      bb_s,
-                "rsi_period":  14,    "rsi_upper":   rsi_u,
-                "rsi_lower":   rsi_l, "atr_period":  14,
-                "atr_sl_mult": sl_m,  "atr_tp_mult": tp_m,
-            }
-            task_args = (combo_i, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
-                         symbol, sym_data, sym_train_data)
+        # ── GPU 一括処理 ──────────────────────────────────────────────────
+        i_rows:        list        = []
+        i_score:       float       = 0.0
+        i_params:      dict        = {}
+        i_row:         dict | None = None
+        interval_gpu   = use_gpu
+
+        if interval_gpu:
             try:
-                _, params_dict, is_s, wft_r, score, err = _worker_task(task_args)
-            except Exception:
-                continue
+                print(f"[{symbol}] {interval} GPU一括処理開始", flush=True)
+                i_rows, i_score, i_params, i_row = _search_one_symbol_gpu(
+                    symbol, combos, wt_wft, wt_is, wt_pf, wt_trades,
+                    wft_cutoff, sym_data, sym_train_data, progress_queue, interval,
+                )
+                print(f"[{symbol}] {interval} GPU処理完了 ベスト={i_score:.4f}", flush=True)
+            except Exception as e:
+                print(f"[{symbol}] {interval} GPU失敗、CPUにフォールバック: {e}", flush=True)
+                interval_gpu = False
 
-            row = {
-                "symbol":      symbol,
-                "bb_period":   params_dict.get("bb_period"),
-                "bb_std":      params_dict.get("bb_std"),
-                "rsi_upper":   params_dict.get("rsi_upper"),
-                "rsi_lower":   params_dict.get("rsi_lower"),
-                "atr_sl_mult": params_dict.get("atr_sl_mult"),
-                "atr_tp_mult": params_dict.get("atr_tp_mult"),
-                "n_trades":    is_s["n_trades"] if is_s else 0,
-                "pf":          is_s["pf"]       if is_s else None,
-                "is_sharpe":   is_s["sharpe"]   if is_s else None,
-                "wft_sharpe":  wft_r["sharpe"]  if wft_r else None,
-                "score":       round(score, 4),
-            }
-            rows.append(row)
-
-            if score > best_score:
-                best_score  = score
-                best_params = params_dict
-                best_row    = row
-
-            if combo_i % 500 == 0 or combo_i == total_combos - 1:
+        # ── CPU 逐次処理（フォールバック） ────────────────────────────────
+        if not interval_gpu:
+            for combo_i, (bb_p, bb_s, rsi_p, rsi_u, rsi_l, atr_p, sl_m, tp_m) in enumerate(combos):
+                params_dict = {
+                    "bb_period":   bb_p,  "bb_std":      bb_s,
+                    "rsi_period":  rsi_p, "rsi_upper":   rsi_u,
+                    "rsi_lower":   rsi_l, "atr_period":  atr_p,
+                    "atr_sl_mult": sl_m,  "atr_tp_mult": tp_m,
+                }
+                task_args = (combo_i, params_dict, wt_wft, wt_is, wt_pf, wt_trades,
+                             symbol, sym_data, sym_train_data)
                 try:
-                    progress_queue.put((symbol, combo_i + 1, total_combos,
-                                        round(best_score, 4)))
+                    _, params_dict, is_s, wft_r, score, err = _worker_task(task_args)
                 except Exception:
-                    pass
+                    continue
+
+                row = {
+                    "symbol":      symbol,
+                    "interval":    interval,
+                    "bb_period":   params_dict.get("bb_period"),
+                    "bb_std":      params_dict.get("bb_std"),
+                    "rsi_period":  params_dict.get("rsi_period", 14),
+                    "rsi_upper":   params_dict.get("rsi_upper"),
+                    "rsi_lower":   params_dict.get("rsi_lower"),
+                    "atr_period":  params_dict.get("atr_period", 14),
+                    "atr_sl_mult": params_dict.get("atr_sl_mult"),
+                    "atr_tp_mult": params_dict.get("atr_tp_mult"),
+                    "n_trades":    is_s["n_trades"] if is_s else 0,
+                    "pf":          is_s["pf"]       if is_s else None,
+                    "is_sharpe":   is_s["sharpe"]   if is_s else None,
+                    "wft_sharpe":  wft_r["sharpe"]  if wft_r else None,
+                    "score":       round(score, 4),
+                }
+                i_rows.append(row)
+
+                if score > i_score:
+                    i_score  = score
+                    i_params = params_dict
+                    i_row    = row
+
+                if combo_i % 500 == 0 or combo_i == total_combos - 1:
+                    try:
+                        progress_queue.put((symbol, combo_i + 1, total_combos,
+                                            round(i_score, 4)))
+                    except Exception:
+                        pass
+
+        rows.extend(i_rows)
+        if i_score > best_score:
+            best_score  = i_score
+            best_params = {**i_params, "interval": interval}
+            best_row    = i_row
+
+    if not any_data_ok:
+        result_queue.put({
+            "symbol":      symbol,
+            "error":       "全足種でデータ取得失敗",
+            "rows":        [],
+            "best_score":  0.0,
+            "best_params": {},
+            "best_row":    None,
+        })
+        return
 
     result_queue.put({
         "symbol":      symbol,
@@ -554,12 +586,13 @@ def _save_to_params(symbol: str, params_dict: dict | None, log_fn,
         if params_dict is not None:
             # 採用: params に保存、excluded から除去、active_symbols に追加
             best_params = {
+                "interval":    params_dict.get("interval", "30min"),
                 "bb_period":   params_dict.get("bb_period"),
                 "bb_std":      params_dict.get("bb_std"),
-                "rsi_period":  14,
+                "rsi_period":  params_dict.get("rsi_period", 14),
                 "rsi_upper":   params_dict.get("rsi_upper"),
                 "rsi_lower":   params_dict.get("rsi_lower"),
-                "atr_period":  14,
+                "atr_period":  params_dict.get("atr_period", 14),
                 "atr_sl_mult": params_dict.get("atr_sl_mult"),
                 "atr_tp_mult": params_dict.get("atr_tp_mult"),
             }
@@ -891,21 +924,26 @@ def main(debug: bool = False) -> None:
 
         top_n   = int(config.get("grid_search_top_n", 3))
 
-        bb_cfg   = config.get("bb_period", {"min": 10, "max": 30, "step": 5})
-        bb_stds  = config.get("bb_std",    [1.0, 1.5, 2.0, 2.5])
-        ru_cfg   = config.get("rsi_upper", {"min": 60, "max": 75, "step": 5})
-        rl_cfg   = config.get("rsi_lower", {"min": 25, "max": 40, "step": 5})
-        sl_mults = config.get("atr_sl_mult", [1.5, 2.0])
-        tp_mults = config.get("atr_tp_mult", [2.0, 2.5])
+        bb_cfg      = config.get("bb_period",   {"min": 10, "max": 30, "step": 5})
+        bb_stds     = config.get("bb_std",      [1.0, 1.5, 2.0, 2.5])
+        ru_cfg      = config.get("rsi_upper",   {"min": 60, "max": 75, "step": 5})
+        rl_cfg      = config.get("rsi_lower",   {"min": 25, "max": 40, "step": 5})
+        rsi_periods = config.get("rsi_period",  [14])
+        atr_periods = config.get("atr_period",  [14])
+        sl_mults    = config.get("atr_sl_mult", [1.5, 2.0])
+        tp_mults    = config.get("atr_tp_mult", [2.0, 2.5])
+        intervals_raw = config.get("interval", "30min")
+        intervals   = intervals_raw if isinstance(intervals_raw, list) else [intervals_raw]
 
         bb_periods = list(range(bb_cfg["min"], bb_cfg["max"] + 1, bb_cfg.get("step", 5)))
         rsi_uppers = list(range(ru_cfg["min"], ru_cfg["max"] + 1, ru_cfg.get("step", 5)))
         rsi_lowers = list(range(rl_cfg["min"], rl_cfg["max"] + 1, rl_cfg.get("step", 5)))
 
         combos = list(itertools.product(
-            bb_periods, bb_stds, rsi_uppers, rsi_lowers, sl_mults, tp_mults
+            bb_periods, bb_stds, rsi_periods, rsi_uppers, rsi_lowers,
+            atr_periods, sl_mults, tp_mults,
         ))
-        total   = len(combos) * len(symbols)
+        total   = len(combos) * len(symbols) * len(intervals)
         current = 0
         start_t = time.time()
         results = []
@@ -922,7 +960,7 @@ def main(debug: bool = False) -> None:
         min_pf         = float(config.get("min_pf",        1.2))
         min_wft_sharpe = float(config.get("min_wft_sharpe", 0.0))
 
-        log(f"組み合わせ数: {len(combos)} x {len(symbols)}銘柄 = {total} 件")
+        log(f"組み合わせ数: {len(combos)} x {len(intervals)}足種 x {len(symbols)}銘柄 = {total} 件")
         log(f"WFT期間: {wft_cutoff.date()} 〜 {wft_end.date()} (offset={wft_offset_months}ヶ月)")
 
         # 起動直後に progress ファイルを初期化（ダッシュボードが即座に「running」を検知できるよう）
@@ -936,22 +974,28 @@ def main(debug: bool = False) -> None:
         completed_symbols: dict = {}
 
         # ── データ事前取得（キャッシュ温め・失敗検出） ───────────────────────
-        log("全ペアのデータを事前取得中...")
+        log(f"全ペア×全足種のデータを事前取得中... ({len(symbols)}銘柄 × {len(intervals)}足種)")
         valid_symbols = []
         for symbol in symbols:
-            try:
-                data = get_historical_data(symbol)
-                log(f"  {symbol}: {len(data)}件 OK")
+            sym_ok = False
+            for interval in intervals:
+                try:
+                    data = get_historical_data(symbol, interval=interval)
+                    log(f"  {symbol} [{interval}]: {len(data)}件 OK")
+                    sym_ok = True
+                except Exception as e:
+                    log(f"  {symbol} [{interval}]: 取得失敗 ({e})")
+            if sym_ok:
                 valid_symbols.append(symbol)
-            except Exception as e:
-                log(f"  {symbol}: 取得失敗 → スキップ ({e})")
-                current += len(combos)
+            else:
+                log(f"  {symbol}: 全足種で取得失敗 → スキップ")
+                current += len(combos) * len(intervals)
                 completed_symbols[symbol] = {
-                    "status": "error", "reason": f"データ取得失敗: {e}",
+                    "status": "error", "reason": "全足種でデータ取得失敗",
                     "best_score": 0.0, "best_params": {},
                 }
         symbols = valid_symbols
-        total   = len(combos) * len(symbols)  # 有効シンボルで再計算
+        total   = len(combos) * len(symbols) * len(intervals)  # 有効シンボルで再計算
 
         # データ取得完了を通知（ダッシュボードに「処理開始」を表示させる）
         log("全データ取得完了 処理開始...")
@@ -981,7 +1025,7 @@ def main(debug: bool = False) -> None:
         # メインプロセスのこのスレッドだけが grid_search_progress.json を書き込む。
         # ファイル競合を完全に排除し、ステータスを正確に管理する。
         _sym_prog_shared: dict = {
-            s: {"current": 0, "total": len(combos), "status": "waiting", "best_score": 0.0}
+            s: {"current": 0, "total": len(combos) * len(intervals), "status": "waiting", "best_score": 0.0}
             for s in symbols
         }
         _prog_writer_stop = threading.Event()
@@ -1045,7 +1089,7 @@ def main(debug: bool = False) -> None:
                         target=search_one_symbol,
                         args=(sym, combos, wt_wft, wt_is, wt_pf, wt_trades,
                               wft_cutoff.timestamp(), PROGRESS_FILE,
-                              result_queue, progress_queue),
+                              result_queue, progress_queue, intervals),
                         name=f"gs-{sym}",
                         daemon=False,
                     )
@@ -1074,6 +1118,7 @@ def main(debug: bool = False) -> None:
                         symbol = sym_result.get("symbol", "")
                         completed_syms_count += 1
 
+                        sym_total = len(combos) * len(intervals)
                         if sym_result.get("error"):
                             log(f"[{symbol}] エラー: {sym_result['error'].splitlines()[0]}")
                             completed_symbols[symbol] = {
@@ -1081,7 +1126,7 @@ def main(debug: bool = False) -> None:
                                 "reason": sym_result["error"].splitlines()[0],
                                 "best_score": 0.0, "best_params": {},
                             }
-                            current += len(combos)
+                            current += sym_total
                             error_count += 1
                         else:
                             sym_rows        = sym_result["rows"]
@@ -1089,15 +1134,16 @@ def main(debug: bool = False) -> None:
                             sym_best_params = sym_result["best_params"]
 
                             results.extend(sym_rows)
-                            current += len(combos)
+                            current += sym_total
 
                             if sym_best_score > best_score:
                                 best_score  = sym_best_score
                                 best_params = {**sym_best_params, "symbol": symbol}
 
                             mode_tag = "[GPU]" if _GPU_AVAILABLE else "[CPU]"
+                            best_iv  = sym_best_params.get("interval", "?")
                             log(f"{mode_tag} [{symbol}] 完了 ({completed_syms_count}/{len(symbols)})  "
-                                f"ベスト={sym_best_score:.4f}  コンボ={len(sym_rows)}/{len(combos)}")
+                                f"ベスト={sym_best_score:.4f}  足種={best_iv}  コンボ={len(sym_rows)}/{sym_total}")
 
                             completed_symbols[symbol] = {
                                 "status":      "pending",
@@ -1107,8 +1153,8 @@ def main(debug: bool = False) -> None:
                             }
                             # 完了シンボルの symbol_progress ステータスを更新
                             _sym_prog_shared[symbol] = {
-                                "current":    len(combos),
-                                "total":      len(combos),
+                                "current":    sym_total,
+                                "total":      sym_total,
                                 "status":     "completed",
                                 "best_score": round(sym_best_score, 4),
                                 "pct":        100.0,
@@ -1121,8 +1167,8 @@ def main(debug: bool = False) -> None:
                                         elapsed, remaining, log_lines,
                                         completed_symbols=completed_symbols,
                                         current_symbol=symbol,
-                                        symbol_current=len(combos),
-                                        symbol_total=len(combos),
+                                        symbol_current=sym_total,
+                                        symbol_total=sym_total,
                                         symbol_progress=dict(_sym_prog_shared))
 
                     if alive:
@@ -1136,6 +1182,7 @@ def main(debug: bool = False) -> None:
                         break
                     symbol = sym_result.get("symbol", "")
                     if symbol and symbol not in completed_symbols:
+                        sym_total = len(combos) * len(intervals)
                         completed_syms_count += 1
                         if sym_result.get("error"):
                             completed_symbols[symbol] = {
@@ -1143,14 +1190,14 @@ def main(debug: bool = False) -> None:
                                 "reason": sym_result["error"].splitlines()[0],
                                 "best_score": 0.0, "best_params": {},
                             }
-                            current += len(combos)
+                            current += sym_total
                             error_count += 1
                         else:
                             sym_rows        = sym_result["rows"]
                             sym_best_score  = sym_result["best_score"]
                             sym_best_params = sym_result["best_params"]
                             results.extend(sym_rows)
-                            current += len(combos)
+                            current += sym_total
                             if sym_best_score > best_score:
                                 best_score  = sym_best_score
                                 best_params = {**sym_best_params, "symbol": symbol}
@@ -1161,8 +1208,8 @@ def main(debug: bool = False) -> None:
                                 "best_params": sym_best_params,
                             }
                             _sym_prog_shared[symbol] = {
-                                "current":    len(combos),
-                                "total":      len(combos),
+                                "current":    sym_total,
+                                "total":      sym_total,
                                 "status":     "completed",
                                 "best_score": round(sym_best_score, 4),
                                 "pct":        100.0,

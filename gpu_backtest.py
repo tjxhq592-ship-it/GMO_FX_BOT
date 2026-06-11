@@ -33,9 +33,11 @@ void backtest_sim(
     const double* bb_upper_flat,  /* (n_bb * T,) C順    */
     const double* bb_mid_flat,    /* (n_bb * T,)        */
     const double* bb_lower_flat,  /* (n_bb * T,)        */
-    const double* rsi,            /* (T,)               */
-    const double* atr,            /* (T,)               */
+    const double* rsi_flat,       /* (n_rsi * T,)       */
+    const double* atr_flat,       /* (n_atr * T,)       */
     const int*    bb_param_idx,   /* (N,)               */
+    const int*    rsi_idx,        /* (N,)               */
+    const int*    atr_idx,        /* (N,)               */
     const double* rsi_upper,      /* (N,)               */
     const double* rsi_lower,      /* (N,)               */
     const double* sl_mult,        /* (N,)               */
@@ -61,6 +63,8 @@ void backtest_sim(
     if (idx >= N) return;
 
     int    bb_idx = bb_param_idx[idx];
+    int    rsi_i  = rsi_idx[idx];
+    int    atr_i  = atr_idx[idx];
     double rsi_u  = rsi_upper[idx];
     double rsi_l  = rsi_lower[idx];
     double sl_m   = sl_mult[idx];
@@ -87,8 +91,8 @@ void backtest_sim(
         double price  = close[t];
         double high_t = high[t];
         double low_t  = low[t];
-        double atr_t  = atr[t];
-        double rsi_t  = rsi[t];
+        double atr_t  = atr_flat[atr_i * T + t];
+        double rsi_t  = rsi_flat[rsi_i * T + t];
         double bb_u   = bb_upper_flat[bb_idx * T + t];
         double bb_m   = bb_mid_flat  [bb_idx * T + t];
         double bb_l   = bb_lower_flat[bb_idx * T + t];
@@ -171,6 +175,7 @@ void backtest_sim(
 """
 
 _compiled_kernel: cp.RawKernel | None = None
+_KERNEL_VERSION = 2  # rsi/atr period 対応に伴うカーネル更新
 
 
 def _get_kernel() -> cp.RawKernel:
@@ -265,8 +270,27 @@ def gpu_batch_backtest(
         bb_mid_all[i]   = m
         bb_lower_all[i] = l
 
-    rsi_arr = _compute_rsi(close, period=14)
-    atr_arr = _compute_atr(high, low, close, period=14)
+    # ── ユニーク RSI period を収集して事前計算 ──────────────────────────────
+    seen_rsi: dict[int, int] = {}
+    rsi_arrays: list[np.ndarray] = []
+    for p in params_list:
+        rp = int(p.get("rsi_period", 14))
+        if rp not in seen_rsi:
+            seen_rsi[rp] = len(rsi_arrays)
+            rsi_arrays.append(_compute_rsi(close, period=rp))
+    rsi_idx_list = [seen_rsi[int(p.get("rsi_period", 14))] for p in params_list]
+    rsi_all = np.stack(rsi_arrays)  # (n_rsi, T)
+
+    # ── ユニーク ATR period を収集して事前計算 ──────────────────────────────
+    seen_atr: dict[int, int] = {}
+    atr_arrays: list[np.ndarray] = []
+    for p in params_list:
+        ap = int(p.get("atr_period", 14))
+        if ap not in seen_atr:
+            seen_atr[ap] = len(atr_arrays)
+            atr_arrays.append(_compute_atr(high, low, close, period=ap))
+    atr_idx_list = [seen_atr[int(p.get("atr_period", 14))] for p in params_list]
+    atr_all = np.stack(atr_arrays)  # (n_atr, T)
 
     # NaN → IEEE NaN のまま転送（カーネルで検出）
     # ── GPU 転送 ──────────────────────────────────────────────────────────
@@ -276,9 +300,11 @@ def gpu_batch_backtest(
     bb_upper_g   = cp.asarray(bb_upper_all)   # (n_bb, T) C順
     bb_mid_g     = cp.asarray(bb_mid_all)
     bb_lower_g   = cp.asarray(bb_lower_all)
-    rsi_g        = cp.asarray(rsi_arr)
-    atr_g        = cp.asarray(atr_arr)
+    rsi_flat_g   = cp.asarray(rsi_all.ravel())
+    atr_flat_g   = cp.asarray(atr_all.ravel())
     bb_idx_g     = cp.asarray(np.array(bb_idx_list, dtype=np.int32))
+    rsi_idx_g    = cp.asarray(np.array(rsi_idx_list, dtype=np.int32))
+    atr_idx_g    = cp.asarray(np.array(atr_idx_list, dtype=np.int32))
     rsi_upper_g  = cp.asarray(np.array([p["rsi_upper"]   for p in params_list], dtype=np.float64))
     rsi_lower_g  = cp.asarray(np.array([p["rsi_lower"]   for p in params_list], dtype=np.float64))
     sl_mult_g    = cp.asarray(np.array([p["atr_sl_mult"] for p in params_list], dtype=np.float64))
@@ -304,8 +330,8 @@ def gpu_batch_backtest(
         (
             close_g, high_g, low_g,
             bb_upper_g, bb_mid_g, bb_lower_g,
-            rsi_g, atr_g,
-            bb_idx_g,
+            rsi_flat_g, atr_flat_g,
+            bb_idx_g, rsi_idx_g, atr_idx_g,
             rsi_upper_g, rsi_lower_g, sl_mult_g, tp_mult_g,
             np.int32(N), np.int32(T),
             np.float64(initial_cash), np.float64(trade_size),

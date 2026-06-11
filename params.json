@@ -1,105 +1,126 @@
 {
-  "updated_at": "2026-06-10 21:33:42",
+  "updated_at": "2026-06-11 14:34:09",
   "params": {
     "EUR_JPY": {
-      "bb_period": 30,
-      "bb_std": 3.0,
+      "interval": "5min",
+      "bb_period": 10,
+      "bb_std": 2.5,
       "rsi_period": 14,
-      "rsi_upper": 65,
-      "rsi_lower": 30,
-      "atr_period": 14,
+      "rsi_upper": 75,
+      "rsi_lower": 35,
+      "atr_period": 10,
       "atr_sl_mult": 2.5,
       "atr_tp_mult": 1.5
     },
     "CHF_JPY": {
+      "interval": "5min",
       "bb_period": 15,
       "bb_std": 3.0,
       "rsi_period": 14,
-      "rsi_upper": 70,
-      "rsi_lower": 20,
-      "atr_period": 14,
-      "atr_sl_mult": 1.0,
-      "atr_tp_mult": 2.0
+      "rsi_upper": 80,
+      "rsi_lower": 35,
+      "atr_period": 7,
+      "atr_sl_mult": 2.5,
+      "atr_tp_mult": 1.0
     },
     "AUD_USD": {
-      "bb_period": 35,
+      "interval": "5min",
+      "bb_period": 16,
       "bb_std": 3.0,
       "rsi_period": 14,
-      "rsi_upper": 65,
-      "rsi_lower": 25,
-      "atr_period": 14,
+      "rsi_upper": 78,
+      "rsi_lower": 34,
+      "atr_period": 7,
       "atr_sl_mult": 2.5,
-      "atr_tp_mult": 1.5
+      "atr_tp_mult": 3.5
     },
     "GBP_JPY": {
+      "interval": "5min",
       "bb_period": 25,
       "bb_std": 3.0,
       "rsi_period": 14,
-      "rsi_upper": 70,
-      "rsi_lower": 30,
-      "atr_period": 14,
+      "rsi_upper": 75,
+      "rsi_lower": 20,
+      "atr_period": 10,
       "atr_sl_mult": 2.0,
-      "atr_tp_mult": 2.5
-    },
-    "GBP_USD": {
-      "bb_period": 15,
-      "bb_std": 2.0,
-      "rsi_period": 14,
-      "rsi_upper": 80,
-      "rsi_lower": 35,
-      "atr_period": 14,
-      "atr_sl_mult": 2.0,
-      "atr_tp_mult": 2.5
+      "atr_tp_mult": 1.5
     },
     "CAD_JPY": {
-      "bb_period": 15,
+      "interval": "5min",
+      "bb_period": 35,
       "bb_std": 3.0,
       "rsi_period": 14,
-      "rsi_upper": 65,
+      "rsi_upper": 80,
+      "rsi_lower": 30,
+      "atr_period": 7,
+      "atr_sl_mult": 2.0,
+      "atr_tp_mult": 3.5
+    },
+    "AUD_JPY": {
+      "interval": "5min",
+      "bb_period": 25,
+      "bb_std": 3.0,
+      "rsi_period": 14,
+      "rsi_upper": 80,
+      "rsi_lower": 30,
+      "atr_period": 14,
+      "atr_sl_mult": 1.5,
+      "atr_tp_mult": 1.0
+    },
+    "EUR_USD": {
+      "interval": "5min",
+      "bb_period": 16,
+      "bb_std": 3.0,
+      "rsi_period": 10,
+      "rsi_upper": 80,
       "rsi_lower": 20,
       "atr_period": 14,
       "atr_sl_mult": 2.5,
-      "atr_tp_mult": 1.5
-    },
-    "AUD_JPY": {
-      "bb_period": 20,
-      "bb_std": 3.0,
-      "rsi_period": 14,
-      "rsi_upper": 70,
-      "rsi_lower": 25,
-      "atr_period": 14,
-      "atr_sl_mult": 2.0,
-      "atr_tp_mult": 1.5
-    },
-    "EUR_USD": {
-      "bb_period": 10,
-      "bb_std": 1.0,
-      "rsi_period": 14,
-      "rsi_upper": 80,
-      "rsi_lower": 25,
-      "atr_period": 14,
-      "atr_sl_mult": 2.0,
-      "atr_tp_mult": 1.5
+      "atr_tp_mult": 1.0
     },
     "NZD_JPY": {
+      "interval": "5min",
       "bb_period": 15,
       "bb_std": 3.0,
-      "rsi_period": 14,
-      "rsi_upper": 75,
-      "rsi_lower": 35,
-      "atr_period": 14,
+      "rsi_period": 7,
+      "rsi_upper": 70,
+      "rsi_lower": 25,
+      "atr_period": 7,
       "atr_sl_mult": 2.5,
       "atr_tp_mult": 1.5
     },
     "NZD_USD": {
+      "interval": "5min",
+      "bb_period": 10,
+      "bb_std": 2.5,
+      "rsi_period": 10,
+      "rsi_upper": 75,
+      "rsi_lower": 20,
+      "atr_period": 7,
+      "atr_sl_mult": 2.5,
+      "atr_tp_mult": 3.5
+    },
+    "USD_JPY": {
+      "interval": "5min",
       "bb_period": 20,
-      "bb_std": 1.0,
+      "bb_std": 3.0,
       "rsi_period": 14,
       "rsi_upper": 80,
-      "rsi_lower": 20,
-      "atr_period": 14,
-      "atr_sl_mult": 2.0,
-      "atr_tp_mult": 1.5
+      "rsi_lower": 25,
+      "atr_period": 10,
+      "atr_sl_mult": 2.5,
+      "atr_tp_mult": 1.0
+    },
+    "GBP_USD": {
+      "interval": "5min",
+      "bb_period": 14,
+      "bb_std": 3.0,
+      "rsi_period": 10,
+      "rsi_upper": 72,
+      "rsi_lower": 33,
+      "atr_period": 10,
+      "atr_sl_mult": 2.5,
+      "atr_tp_mult": 3.5
     }
   },
   "excluded": [
@@ -112,9 +133,8 @@
     "HUF_JPY(全パターンでスコア0)",
     "SEK_JPY(全パターンでスコア0)",
     "NOK_SEK(全パターンでスコア0)",
-    "USD_JPY(PF(0.77) < 最小値(0.8))",
-    "ZAR_JPY(PF(0.03) < 最小値(0.8))",
-    "TRY_JPY(PF(0.00) < 最小値(0.8))",
-    "MXN_JPY(PF(0.01) < 最小値(0.8))"
+    "TRY_JPY(全パターンでスコア0)",
+    "ZAR_JPY(全パターンでスコア0)",
+    "MXN_JPY(全パターンでスコア0)"
   ]
 }

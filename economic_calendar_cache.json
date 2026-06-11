@@ -1,5 +1,5 @@
 {
-  "ts": 1781097890.0542395,
+  "ts": 1781152507.4287775,
   "events": [
     {
       "title": "OPEC-JMMC Meetings",
@@ -340,7 +340,7 @@
     {
       "title": "Federal Budget Balance",
       "country": "USD",
-      "date": "2026-06-10T14:00:00-04:00",
+      "date": "2026-06-10T13:59:00-04:00",
       "impact": "Low",
       "forecast": "-282.9B",
       "previous": "215.0B"

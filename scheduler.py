@@ -109,8 +109,8 @@ def _start_ws_thread() -> threading.Thread:
 
 # ── スケジューラセットアップ ─────────────────────────────────────────────
 def _setup_schedule() -> None:
-    schedule.every().hour.at(":00").do(_entry_job)
-    schedule.every().hour.at(":30").do(_entry_job)
+    for _m in range(0, 60, 5):
+        schedule.every().hour.at(f":{_m:02d}").do(_entry_job)
     schedule.every().monday.at("06:30").do(_backtest_job)
 
 
@@ -127,10 +127,11 @@ def main() -> None:
     _cfg      = _read_bt_config()
     _symbols  = _cfg.get("active_symbols", _cfg.get("symbols", SYMBOLS))
     now_jst  = datetime.now(JST)
-    if now_jst.minute < 30:
-        next_run = now_jst.replace(minute=30, second=0, microsecond=0)
-    else:
-        next_run = now_jst.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
+    elapsed  = now_jst.minute % 5
+    delta    = (5 - elapsed) % 5
+    if delta == 0 and now_jst.second > 0:
+        delta = 5
+    next_run = now_jst.replace(second=0, microsecond=0) + timedelta(minutes=delta)
     next_str = next_run.strftime("%H:%M")
     pairs     = " / ".join(_symbols)
 
@@ -138,6 +139,7 @@ def main() -> None:
         startup_msg = (
             f"📝 ペーパートレードモードで起動\n"
             f"監視ペア: {pairs}\n"
+            f"エントリー間隔: 5分\n"
             f"次回エントリー判断: {next_str}\n"
             f"※実際の発注は行いません"
         )
@@ -149,6 +151,7 @@ def main() -> None:
         startup_msg = (
             f"🚀 本番トレードモードで起動\n"
             f"監視ペア: {pairs}\n"
+            f"エントリー間隔: 5分\n"
             f"次回エントリー判断: {next_str}"
         )
 
